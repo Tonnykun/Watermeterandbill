@@ -479,25 +479,46 @@ input[type="password"]::-ms-clear {
 .divider-label { font-size: 11px; font-weight: 600; color: var(--ios-blue); text-transform: uppercase; letter-spacing: 0.05em; }
 
 .reading-input-wrap {
-  display: flex; align-items: center;
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  overflow: hidden;
   background: var(--ios-blue-light);
   border: 1.5px solid var(--ios-blue);
   border-radius: var(--radius-inner);
-  padding: 14px 16px; gap: 8px;
+  padding: 14px 16px;
+  gap: 8px;
   transition: box-shadow 0.2s;
 }
 .reading-input-wrap:focus-within { box-shadow: 0 0 0 4px rgba(0,122,255,0.15); }
 .reading-input {
-  flex: 1; font-family: var(--mono); font-size: 26px; font-weight: 600;
-  letter-spacing: 3px; color: var(--ios-blue); background: none;
+  flex: 1;
+  width: 100%;
+  box-sizing: border-box;
+  padding-right: 72px;
+  font-family: var(--mono);
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: 3px;
+  color: var(--ios-blue);
+  background: none;
 }
 .reading-input::placeholder { color: var(--label-tertiary); letter-spacing: 1px; }
 .reading-input::-webkit-inner-spin-button, .reading-input::-webkit-outer-spin-button { -webkit-appearance: none; }
 .reading-input { -moz-appearance: textfield; }
-.reading-unit-inline { font-size: 13px; color: var(--ios-blue); opacity: 0.7; white-space: nowrap; }
-.input-hint { font-size: 12px; margin-top: 6px; padding-left: 2px; }
-.input-hint.ok  { color: var(--ios-green); }
-.input-hint.err { color: var(--ios-red); }
+.reading-unit-inline {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 13px;
+  color: var(--ios-blue);
+  opacity: 0.7;
+  white-space: nowrap;
+  pointer-events: none;
+  line-height: 1;
+}
 
 /* ── Cost Section ── */
 .cost-rows { margin-bottom: 10px; }
