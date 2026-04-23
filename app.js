@@ -7,9 +7,12 @@
 
 /* ── Config ── */
 let HOUSES = [];
+let HOUSE_MAP = new Map();
 const API_URL       = 'https://script.google.com/macros/s/AKfycbwDYBiYgoew9Cq1o6J0tSjO5Or8oWgUPqcswr6h0n3HDj76SVRKwRx8tlaxMw8k-a-b/exec';
 const RATE_PER_UNIT = 3;
 const SERVICE_FEE   = 20;
+const BOOTSTRAP_CACHE_KEY = 'wm_bootstrap_cache_v1';
+const BOOTSTRAP_CACHE_TTL = 5 * 60 * 1000; // 5 นาที
 
 /* ── Auth Config (แก้ตรงนี้) ──
    สำหรับ Production ควรตรวจสอบฝั่ง server แทน */
@@ -259,6 +262,33 @@ function checkSavedSession() {
   return false;
 }
 
+function saveBootstrapCache(data) {
+  try {
+    const payload = {
+      ts: Date.now(),
+      houses: data
+    };
+    sessionStorage.setItem(BOOTSTRAP_CACHE_KEY, JSON.stringify(payload));
+  } catch (e) {}
+}
+
+function loadBootstrapCache() {
+  try {
+    const raw = sessionStorage.getItem(BOOTSTRAP_CACHE_KEY);
+    if (!raw) return null;
+
+    const parsed = JSON.parse(raw);
+    if (!parsed || !Array.isArray(parsed.houses)) return null;
+
+    const isExpired = (Date.now() - Number(parsed.ts || 0)) > BOOTSTRAP_CACHE_TTL;
+    if (isExpired) return null;
+
+    return parsed.houses;
+  } catch (e) {
+    return null;
+  }
+}
+
 /* ════════════════════════════════
    HISTORY — open helper for HTML onclick
 ════════════════════════════════ */
@@ -311,7 +341,7 @@ function closeDropdown() {
 }
 
 function pickHouse(id) {
-  const house = HOUSES.find(h => h.id === id);
+  const house = HOUSE_MAP.get(String(id));
   if (!house) return;
 
   if (!Array.isArray(house.meters) || house.meters.length === 0) {
@@ -745,10 +775,27 @@ window.enterApp = function(displayName) {
   });
 };
 
-async function loadBootstrap() {
-  const res  = await fetch(`${API_URL}?action=bootstrap`);
+async function loadBootstrap(force = false) {
+  if (!force) {
+    const cached = loadBootstrapCache();
+    if (cached) {
+      HOUSES = cached;
+      HOUSE_MAP = new Map(HOUSES.map(h => [String(h.id), h]));
+      renderList();
+      return;
+    }
+  }
+
+  const res = await fetch(`${API_URL}?action=bootstrap`);
   const json = await res.json();
-  if (!json.ok) throw new Error(json.error || 'โหลดข้อมูลไม่สำเร็จ');
-  HOUSES = json.houses || [];
-  if (dom.dropdownList) renderList();
+
+  if (!json.ok) {
+    throw new Error(json.error || 'โหลดข้อมูลไม่สำเร็จ');
+  }
+
+  HOUSES = Array.isArray(json.houses) ? json.houses : [];
+  HOUSE_MAP = new Map(HOUSES.map(h => [String(h.id), h]));
+
+  saveBootstrapCache(HOUSES);
+  renderList();
 }
