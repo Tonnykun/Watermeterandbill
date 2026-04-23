@@ -220,6 +220,7 @@ function cancelLogout() {
 function confirmLogout() {
   // Clear session
   try { localStorage.removeItem(SESSION_KEY); } catch (e) {}
+  try { sessionStorage.removeItem(BOOTSTRAP_CACHE_KEY); } catch (e) {}
   state.currentUser = null;
   cancelLogout();
 
@@ -260,6 +261,33 @@ function checkSavedSession() {
     }
   } catch (e) {}
   return false;
+}
+
+function saveBootstrapCache(data) {
+  try {
+    const payload = {
+      ts: Date.now(),
+      houses: data
+    };
+    sessionStorage.setItem(BOOTSTRAP_CACHE_KEY, JSON.stringify(payload));
+  } catch (e) {}
+}
+
+function loadBootstrapCache() {
+  try {
+    const raw = sessionStorage.getItem(BOOTSTRAP_CACHE_KEY);
+    if (!raw) return null;
+
+    const parsed = JSON.parse(raw);
+    if (!parsed || !Array.isArray(parsed.houses)) return null;
+
+    const expired = (Date.now() - Number(parsed.ts || 0)) > BOOTSTRAP_CACHE_TTL;
+    if (expired) return null;
+
+    return parsed.houses;
+  } catch (e) {
+    return null;
+  }
 }
 
 function saveBootstrapCache(data) {
