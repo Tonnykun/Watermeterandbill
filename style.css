@@ -692,6 +692,52 @@ input[type="password"]::-ms-clear {
 .history-badge { flex-shrink: 0; font-size: 11px; font-weight: 700; padding: 5px 10px; border-radius: 100px; }
 .history-badge.paid   { color: var(--ios-green); background: rgba(52,199,89,0.10); }
 .history-badge.unpaid { color: var(--ios-orange); background: rgba(255,149,0,0.10); }
+.history-top-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.history-edit-btn {
+  border: none;
+  outline: none;
+  background: rgba(0, 122, 255, 0.10);
+  color: var(--ios-blue);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 10px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.history-edit-btn:hover {
+  background: rgba(0, 122, 255, 0.16);
+}
+
+.history-edit-btn:active {
+  transform: scale(0.98);
+}
+
+@media (max-width: 640px) {
+  .history-top {
+    align-items: flex-start;
+  }
+
+  .history-top-right {
+    justify-content: flex-end;
+    flex-wrap: wrap;
+  }
+
+  .history-edit-btn {
+    padding: 5px 9px;
+    font-size: 11px;
+  }
+}
 .history-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 12px; font-size: 12px; margin-bottom: 10px; }
 .history-meta div { color: var(--label-secondary); }
 .history-meta strong { color: var(--label-primary); font-weight: 600; }
@@ -976,3 +1022,29 @@ input[type="password"]::-ms-clear {
 .epo-texts { display: flex; flex-direction: column; gap: 2px; text-align: left; }
 .epo-text  { font-size: 15px; font-weight: 700; color: var(--label-primary); }
 .epo-sub   { font-size: 12px; color: var(--label-secondary); }
+
+.edit-pay-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.edit-pay-cancel,
+.edit-pay-save {
+  height: 54px;
+  border: none;
+  border-radius: 14px;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.edit-pay-cancel {
+  background: var(--fill-secondary);
+  color: var(--label-primary);
+}
+
+.edit-pay-save {
+  background: var(--ios-blue);
+  color: #fff;
+}

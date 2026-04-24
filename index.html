@@ -146,6 +146,12 @@
             <div class="stat-num orange" id="statUnpaid">—</div>
             <div class="stat-label">ค้างชำระ<br><span class="stat-unit">ครัวเรือน</span></div>
           </div>
+            <div class="stat-divider"></div>
+            <div class="stat-cell">
+              <div class="stat-num" id="statPending">—</div>
+              <div class="stat-label">ยังไม่บันทึก<br><span class="stat-unit">ครัวเรือน</span></div>
+            </div>
+          </div>
         </div>
 
         <!-- Dropdown เลือกลูกบ้าน -->
@@ -414,14 +420,14 @@
           <div class="edit-pay-sub" id="editPaySub">—</div>
         </div>
         <div class="edit-pay-choices">
-          <button class="edit-pay-opt" id="editOptPaid" onclick="submitEditPayment('paid')">
+          <button class="edit-pay-opt" id="editOptPaid" onclick="selectEditPaymentStatus('paid')">
             <span class="epo-icon">✅</span>
             <div class="epo-texts">
               <span class="epo-text">ชำระแล้ว</span>
               <span class="epo-sub">อัปเดตสถานะและออกใบเสร็จ</span>
             </div>
           </button>
-          <button class="edit-pay-opt" id="editOptUnpaid" onclick="submitEditPayment('unpaid')">
+          <button class="edit-pay-opt" id="editOptUnpaid" onclick="selectEditPaymentStatus('unpaid')">
             <span class="epo-icon">🕐</span>
             <div class="epo-texts">
               <span class="epo-text">ยังไม่ชำระ</span>
@@ -433,7 +439,10 @@
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
           <span id="editPayErrorText">เกิดข้อผิดพลาด</span>
         </div>
-        <button class="sheet-btn secondary" onclick="closeEditPaySheet()" style="margin-top:8px">ยกเลิก</button>
+        <div class="edit-pay-actions">
+          <button class="edit-pay-cancel" onclick="closeEditPaySheet()">ยกเลิก</button>
+          <button class="edit-pay-save" id="editPaySaveBtn" onclick="saveEditPayment()">บันทึก</button>
+        </div>
       </div>
     </div>
 

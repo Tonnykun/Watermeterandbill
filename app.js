@@ -12,7 +12,7 @@ const API_URL             = 'https://script.google.com/macros/s/AKfycbwDYBiYgoew
 const RATE_PER_UNIT       = 3;
 const SERVICE_FEE         = 20;
 const BOOTSTRAP_CACHE_KEY = 'wm_bootstrap_cache_v1';
-const BOOTSTRAP_CACHE_TTL = 5 * 60 * 1000;
+const BOOTSTRAP_CACHE_TTL = 10 * 1000;
 
 const VALID_USERS = [
   { username: 'admin', password: 'water1234', displayName: 'ผู้ดูแลระบบ' },
@@ -32,6 +32,7 @@ let state = {
   selectedMonth:  '',         // 'YYYY-MM'  ← NEW
   currentUser:    null,
   editingItem:    null,       // history item being edited  ← NEW
+  editingStatus: null,
 };
 
 let historyLoaded = false;
@@ -59,6 +60,7 @@ function buildDomRefs() {
     statTotal:    $('statTotal'),
     statPaid:     $('statPaid'),
     statUnpaid:   $('statUnpaid'),
+    statPending:  $('statPending'),
 
     dropdownTrigger: $('dropdownTrigger'), dropdownChevron: $('dropdownChevron'),
     dropdownPanel: $('dropdownPanel'), dropdownSearch: $('dropdownSearch'),
@@ -94,6 +96,7 @@ function buildDomRefs() {
     editPaySub: $('editPaySub'), editPayError: $('editPayError'),
     editPayErrorText: $('editPayErrorText'),
     editOptPaid: $('editOptPaid'), editOptUnpaid: $('editOptUnpaid'),
+    editPaySaveBtn: $('editPaySaveBtn'),
   };
 }
 
@@ -129,15 +132,18 @@ function onMonthChange() {
    STAT BAR  (new)
 ════════════════════════════════ */
 function refreshStatBar() {
-  const ym = state.selectedMonth; // 'YYYY-MM'
+  const ym = state.selectedMonth;
+  const total = HOUSES.length || 0;
+
+  dom.statTotal.textContent = total;
+
   if (!ym || state.historyItems.length === 0) {
-    dom.statTotal.textContent  = HOUSES.length || '—';
-    dom.statPaid.textContent   = '—';
-    dom.statUnpaid.textContent = '—';
+    dom.statPaid.textContent = 0;
+    dom.statUnpaid.textContent = 0;
+    dom.statPending.textContent = total;
     return;
   }
 
-  // Filter historyItems to selected month
   const monthItems = state.historyItems.filter(item => {
     if (!item.read_date) return false;
     const d = new Date(item.read_date);
@@ -146,21 +152,31 @@ function refreshStatBar() {
     return itemYM === ym;
   });
 
-  // Deduplicate by house_id (latest record per house)
-  const houseMap = new Map();
-  monthItems.forEach(item => {
-    const key = item.house_id || item.house_no;
-    if (!houseMap.has(key)) houseMap.set(key, item);
-  });
+  const latestByHouse = new Map();
 
-  const total  = HOUSES.length;
-  const paid   = [...houseMap.values()].filter(i => i.payment_status !== 'unpaid').length;
-  const unpaid = [...houseMap.values()].filter(i => i.payment_status === 'unpaid').length;
-  const notYet = total - houseMap.size; // ยังไม่ได้จด
+  monthItems
+    .slice()
+    .sort((a, b) => new Date(b.read_date) - new Date(a.read_date))
+    .forEach(item => {
+      const key = item.house_id || item.house_no;
+      if (!latestByHouse.has(key)) {
+        latestByHouse.set(key, item);
+      }
+    });
 
-  dom.statTotal.textContent  = total;
-  dom.statPaid.textContent   = paid;
-  dom.statUnpaid.textContent = unpaid + notYet;
+  const paid = [...latestByHouse.values()].filter(
+    i => i.payment_status !== 'unpaid'
+  ).length;
+
+  const unpaid = [...latestByHouse.values()].filter(
+    i => i.payment_status === 'unpaid'
+  ).length;
+
+  const pending = Math.max(0, total - paid - unpaid);
+
+  dom.statPaid.textContent = paid;
+  dom.statUnpaid.textContent = unpaid;
+  dom.statPending.textContent = pending;
 }
 
 /* ════════════════════════════════
@@ -214,6 +230,7 @@ function applyNavAvatarRole() {
 function enterApp(displayName) {
   dom.loginScreen.style.transition = 'opacity 0.4s';
   dom.loginScreen.style.opacity    = '0';
+
   setTimeout(() => {
     dom.loginScreen.style.display = 'none';
     dom.appScreen.style.display   = 'block';
@@ -221,6 +238,10 @@ function enterApp(displayName) {
     dom.navInfoUser.textContent   = displayName;
     applyNavAvatarRole();
     buildMonthOptions();
+
+    loadHistory()
+      .then(() => refreshStatBar())
+      .catch(() => refreshStatBar());
   }, 400);
 }
 
@@ -569,17 +590,26 @@ function showToast(msg = 'บันทึกสำเร็จ!') {
    HISTORY  (updated)
 ════════════════════════════════ */
 async function loadHistory(force = false) {
-  if (historyLoaded && !force) { renderHistoryList(dom.historySearchInput.value); return; }
+  if (historyLoaded && !force) {
+    renderHistoryList(dom.historySearchInput.value);
+    return;
+  }
+
   try {
     dom.historySummary.textContent = 'กำลังโหลดข้อมูล...';
-    const res  = await fetch(`${API_URL}?action=history&limit=200`);
+    const res = await fetch(`${API_URL}?action=history&limit=200`);
     const json = await res.json();
     if (!json.ok) throw new Error(json.error || 'โหลดประวัติไม่สำเร็จ');
+
     state.historyItems = Array.isArray(json.items) ? json.items : [];
     historyLoaded = true;
     refreshStatBar();
     renderHistoryList(dom.historySearchInput.value);
+
   } catch (err) {
+    state.historyItems = [];
+    historyLoaded = false;
+    refreshStatBar();
     dom.historySummary.textContent = 'โหลดข้อมูลไม่สำเร็จ';
     dom.historyList.innerHTML = `<div class="history-empty">${err.message || 'เกิดข้อผิดพลาด'}</div>`;
   }
@@ -601,60 +631,70 @@ function renderHistoryList(query = '') {
   const ym = state.selectedMonth;
   const f  = state.historyFilter;
 
-  let items = state.historyItems.filter(item => {
-    // Text search
-    const matchQ = !q ||
-      String(item.house_no   || '').toLowerCase().includes(q) ||
-      String(item.owner_name || '').toLowerCase().includes(q);
-    // Payment filter
-    const matchF = f === 'all' ? true :
-      f === 'paid'   ? item.payment_status !== 'unpaid' :
-      f === 'unpaid' ? item.payment_status === 'unpaid' : true;
-    // Month filter (from month dropdown)
-    let matchM = true;
-    if (ym && item.read_date) {
-      const d = new Date(item.read_date);
-      if (!isNaN(d)) {
-        const iym = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
-        matchM = iym === ym;
+  const filteredItems = state.historyItems
+    .map((item, realIdx) => ({ item, realIdx }))
+    .filter(({ item }) => {
+      const matchQ = !q ||
+        String(item.house_no || '').toLowerCase().includes(q) ||
+        String(item.owner_name || '').toLowerCase().includes(q);
+
+      const matchF = f === 'all' ? true :
+        f === 'paid'   ? item.payment_status !== 'unpaid' :
+        f === 'unpaid' ? item.payment_status === 'unpaid' : true;
+
+      let matchM = true;
+      if (ym && item.read_date) {
+        const d = new Date(item.read_date);
+        if (!isNaN(d)) {
+          const iym = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+          matchM = iym === ym;
+        }
       }
-    }
+
     return matchQ && matchF && matchM;
   });
 
-  dom.historySummary.textContent = `แสดง ${items.length.toLocaleString()} รายการ`;
+  dom.historySummary.textContent = `แสดง ${filteredItems.length.toLocaleString()} รายการ`;
 
-  if (items.length === 0) {
+  if (filteredItems.length === 0) {
     dom.historyList.innerHTML = `<div class="history-empty">ไม่พบข้อมูลย้อนหลัง</div>`;
     return;
   }
 
-  dom.historyList.innerHTML = items.map((item, idx) => {
+  dom.historyList.innerHTML = filteredItems.map(({ item, realIdx }, idx) => {
     const paidClass = item.payment_status === 'unpaid' ? 'unpaid' : 'paid';
     const paidLabel = item.payment_status === 'unpaid' ? 'ค้างชำระ' : 'ชำระแล้ว';
     return `
-      <div class="history-item-outer" id="hio-${idx}">
-        <!-- Swipe action (edit button) revealed behind -->
-        <div class="history-item-action" onclick="openEditPaySheet(${idx})">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-            <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
-            <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
-          </svg>
-          แก้ไข
-        </div>
-        <!-- Slideable card -->
-        <div class="history-item" id="hi-${idx}" data-idx="${idx}"
-          ontouchstart="swipeStart(event,${idx})"
-          ontouchmove="swipeMove(event,${idx})"
-          ontouchend="swipeEnd(event,${idx})"
-        >
-          <div class="history-top">
-            <div>
-              <div class="history-house">${item.house_no || '-'} · ${item.meter_label || '-'}</div>
-              <div class="history-name">${item.owner_name || '-'}</div>
-            </div>
-            <span class="history-badge ${paidClass}">${paidLabel}</span>
+        <div class="history-item-outer" id="hio-${idx}">
+          <div class="history-item-action" onclick="openEditPaySheetById('${item.reading_id || ''}')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+              <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+              <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+            </svg>
+            แก้ไข
           </div>
+
+          <div class="history-item" id="hi-${idx}" data-idx="${realIdx}"
+            ontouchstart="swipeStart(event,${idx})"
+            ontouchmove="swipeMove(event,${idx})"
+            ontouchend="swipeEnd(event,${idx})">
+            <div class="history-top">
+              <div>
+                <div class="history-house">${item.house_no || '-'} · ${item.meter_label || '-'}</div>
+                <div class="history-name">${item.owner_name || '-'}</div>
+              </div>
+
+              <div class="history-top-right">
+                <span class="history-badge ${paidClass}">${paidLabel}</span>
+                <button
+                  type="button"
+                  class="history-edit-btn"
+                  onclick="event.stopPropagation(); openEditPaySheetById('${item.reading_id || ''}')"
+                >
+                  ✏️ แก้ไข
+                </button>
+              </div>
+            </div>
           <div class="history-meta">
             <div>วันที่จด: <strong>${formatDisplayDate(item.read_date)}</strong></div>
             <div>เลขมิเตอร์: <strong>${item.meter_code || '-'}</strong></div>
@@ -673,6 +713,20 @@ function renderHistoryList(query = '') {
 
   // Close any open swipe when tapping elsewhere
   dom.historyList.addEventListener('click', collapseAllSwipes, { once: true });
+}
+
+function editHistoryItem(readingId) {
+  const item = state.historyItems.find(
+    x => String(x.reading_id || '') === String(readingId || '')
+  );
+
+  if (!item) {
+    showToast('ไม่พบรายการที่ต้องการแก้ไข');
+    return;
+  }
+
+  showToast(`เลือกแก้ไขรายการ ${item.house_no || '-'} ${item.meter_label || ''}`);
+  console.log('edit item =', item);
 }
 
 /* ════════════════════════════════
@@ -737,19 +791,16 @@ function collapseAllSwipes() {
    EDIT PAYMENT SHEET  (new)
 ════════════════════════════════ */
 function openEditPaySheet(idx) {
-  const item = state.historyItems[idx] ||
-    // find by rendered index in filtered list
-    (() => {
-      const cards = dom.historyList.querySelectorAll('.history-item');
-      const card  = cards[idx];
-      const realIdx = card ? parseInt(card.dataset.idx, 10) : -1;
-      return realIdx >= 0 ? state.historyItems[realIdx] : null;
-    })();
+  const cards = dom.historyList.querySelectorAll('.history-item');
+  const card  = cards[idx];
+  const realIdx = card ? parseInt(card.dataset.idx, 10) : -1;
+  const item = realIdx >= 0 ? state.historyItems[realIdx] : null;
 
   if (!item) return;
 
   state.editingItem = item;
   const isPaid = item.payment_status !== 'unpaid';
+  state.editingStatus = isPaid ? 'paid' : 'unpaid';
 
   dom.editPaySub.textContent = `${item.house_no || '-'} · ${item.owner_name || '-'}`;
   dom.editPayError.style.display = 'none';
@@ -767,7 +818,22 @@ function closeEditPaySheet() {
   dom.editPaySheet.classList.remove('open');
   document.body.style.overflow = '';
   state.editingItem = null;
+  state.editingStatus = null;
   collapseAllSwipes();
+}
+
+function selectEditPaymentStatus(status) {
+  state.editingStatus = status;
+
+  dom.editOptPaid.classList.toggle('active-paid', status === 'paid');
+  dom.editOptUnpaid.classList.toggle('active-unpaid', status === 'unpaid');
+
+  dom.editPayError.style.display = 'none';
+}
+
+function saveEditPayment() {
+  if (!state.editingItem) return;
+  submitEditPayment(state.editingStatus || 'paid');
 }
 
 async function submitEditPayment(newStatus) {
@@ -784,7 +850,7 @@ async function submitEditPayment(newStatus) {
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify({
         action:         'updatePaymentStatus',
-        record_id:      item.record_id || item.id,
+        reading_id: item.reading_id,
         payment_status: newStatus,
         editor_name:    state.currentUser?.displayName || 'เจ้าหน้าที่',
       })
@@ -805,6 +871,7 @@ async function submitEditPayment(newStatus) {
     dom.editPayErrorText.textContent = err.message || 'เกิดข้อผิดพลาด';
     dom.editPayError.style.display   = 'flex';
   }
+  state.editingStatus = null;
 }
 
 function openHistorySheet()  { dom.historyOverlay.classList.add('show');    dom.historySheet.classList.add('open');    document.body.style.overflow = 'hidden'; }
@@ -843,17 +910,29 @@ function formatMonthTH(d) {
   });
 
   const autoLogged = checkSavedSession();
-  if (autoLogged) loadBootstrap().catch(err => console.error('[bootstrap]', err));
+  if (autoLogged) {
+  loadBootstrap(true)
+    .then(() => loadHistory(true))
+    .then(() => refreshStatBar())
+    .catch(err => console.error('[bootstrap]', err));
+  }
 })();
 
 const _enterApp = enterApp;
 window.enterApp = function(displayName) {
   _enterApp(displayName);
-  loadBootstrap().catch(err => console.error('[bootstrap]', err));
+  loadBootstrap(true)
+    .then(() => loadHistory(true))
+    .then(() => refreshStatBar())
+    .catch(err => console.error('[bootstrap]', err));
 };
 
 async function loadBootstrap(force = false) {
   if (!force) {
+    try {
+      sessionStorage.removeItem(BOOTSTRAP_CACHE_KEY);
+    } catch (e) {}
+
     const cached = loadBootstrapCache();
     if (cached) {
       HOUSES = cached;
@@ -871,4 +950,26 @@ async function loadBootstrap(force = false) {
   saveBootstrapCache(HOUSES);
   renderList();
   refreshStatBar();
+}
+
+function openEditPaySheetById(readingId) {
+  const item = state.historyItems.find(
+    x => String(x.reading_id || '') === String(readingId || '')
+  );
+
+  if (!item) return;
+
+  state.editingItem = item;
+  const isPaid = item.payment_status !== 'unpaid';
+  state.editingStatus = isPaid ? 'paid' : 'unpaid';
+
+  dom.editPaySub.textContent = `${item.house_no || '-'} · ${item.owner_name || '-'}`;
+  dom.editPayError.style.display = 'none';
+
+  dom.editOptPaid.classList.toggle('active-paid', isPaid);
+  dom.editOptUnpaid.classList.toggle('active-unpaid', !isPaid);
+
+  dom.editPayOverlay.classList.add('show');
+  dom.editPaySheet.classList.add('open');
+  document.body.style.overflow = 'hidden';
 }
