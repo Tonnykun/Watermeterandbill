@@ -22,14 +22,12 @@
       <div class="login-circle c2"></div>
       <div class="login-circle c3"></div>
     </div>
-
     <div class="login-card">
       <div class="login-logo">
         <div class="login-logo-icon">💧</div>
         <div class="login-logo-text">ระบบประปา</div>
         <div class="login-logo-sub">บ้านแสนสุข หมู่ 4</div>
       </div>
-
       <div class="login-form">
         <div class="login-field-group">
           <label class="login-field-label">ชื่อผู้ใช้</label>
@@ -37,30 +35,16 @@
             <svg class="login-field-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
               <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/>
             </svg>
-            <input
-              type="text"
-              id="loginUsername"
-              class="login-field-input"
-              placeholder="กรอกชื่อผู้ใช้"
-              autocomplete="username"
-              autocapitalize="none"
-            >
+            <input type="text" id="loginUsername" class="login-field-input" placeholder="กรอกชื่อผู้ใช้" autocomplete="username" autocapitalize="none">
           </div>
         </div>
-
         <div class="login-field-group">
           <label class="login-field-label">รหัสผ่าน</label>
           <div class="login-field-wrap">
             <svg class="login-field-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
               <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/>
             </svg>
-            <input
-              type="password"
-              id="loginPassword"
-              class="login-field-input"
-              placeholder="กรอกรหัสผ่าน"
-              autocomplete="current-password"
-            >
+            <input type="password" id="loginPassword" class="login-field-input" placeholder="กรอกรหัสผ่าน" autocomplete="current-password">
             <button class="login-eye-btn" id="loginEyeBtn" onclick="togglePassword()" type="button">
               <svg id="eyeIconShow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
                 <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
@@ -71,7 +55,6 @@
             </button>
           </div>
         </div>
-
         <div class="login-remember-row">
           <label class="login-remember-label" id="rememberLabel">
             <div class="login-toggle" id="rememberToggle" onclick="toggleRemember()">
@@ -81,17 +64,14 @@
           </label>
           <span class="login-remember-hint">ไม่ต้องล็อกอินซ้ำ</span>
         </div>
-
         <div class="login-error" id="loginError" style="display:none">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
           <span id="loginErrorText">ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง</span>
         </div>
-
         <button class="login-btn" id="loginBtn" onclick="handleLogin()">
           <span id="loginBtnLabel">เข้าสู่ระบบ</span>
         </button>
       </div>
-
       <div class="login-footer">ระบบจัดการน้ำประปาชุมชน · v2.0</div>
     </div>
   </div>
@@ -100,31 +80,23 @@
        MAIN APP
   ════════════════════════════════ -->
   <div class="app-screen" id="appScreen" style="display:none">
-
     <div class="status-bar-spacer"></div>
 
-    <!-- Nav Bar — Redesigned -->
     <header class="nav-bar">
       <div class="nav-left">
-        <div class="nav-logo-wrap">
-          <span class="nav-logo-icon">💧</span>
-        </div>
+        <div class="nav-logo-wrap"><span class="nav-logo-icon">💧</span></div>
         <div class="nav-text">
           <h1 class="nav-heading">ระบบประปา</h1>
           <p class="nav-sub">บ้านแสนสุข หมู่ 4</p>
         </div>
       </div>
-
       <div class="nav-right">
-        <!-- History Button — with label -->
         <button class="nav-action-btn" id="historyBtn" onclick="openHistorySheetAndLoad()">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
           </svg>
           <span>ประวัติ</span>
         </button>
-
-        <!-- User + Logout -->
         <div class="nav-user-wrap" id="navUserWrap">
           <div class="nav-avatar" id="navAvatar">A</div>
           <button class="nav-logout-btn" id="navLogoutBtn" onclick="handleLogout()">
@@ -136,7 +108,6 @@
       </div>
     </header>
 
-    <!-- Nav Info Bar (date + user greeting) -->
     <div class="nav-info-bar">
       <span class="nav-info-date" id="navInfoDate">—</span>
       <span class="nav-info-user">สวัสดี, <strong id="navInfoUser">—</strong></span>
@@ -144,9 +115,40 @@
 
     <main class="main-scroll">
 
-      <!-- SECTION 1: เลือกบ้าน -->
+      <!-- SECTION 1: เลือกบ้าน (รวม dropdown เดือน + stat bar) -->
       <section class="card" id="sectionHouse">
         <div class="section-label">เลือกบ้าน</div>
+
+        <!-- 1.1 Dropdown เดือน -->
+        <div class="month-select-wrap">
+          <svg class="field-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+          </svg>
+          <select class="month-select" id="monthSelect" onchange="onMonthChange()"></select>
+          <svg class="month-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+            <polyline points="6 9 12 15 18 9"/>
+          </svg>
+        </div>
+
+        <!-- 1.2 Stat Bar: ทั้งหมด / ชำระแล้ว / ค้างชำระ -->
+        <div class="stat-bar" id="statBar">
+          <div class="stat-cell">
+            <div class="stat-num" id="statTotal">—</div>
+            <div class="stat-label">ทั้งหมด<br><span class="stat-unit">ครัวเรือน</span></div>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="stat-cell">
+            <div class="stat-num green" id="statPaid">—</div>
+            <div class="stat-label">ชำระแล้ว<br><span class="stat-unit">ครัวเรือน</span></div>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="stat-cell">
+            <div class="stat-num orange" id="statUnpaid">—</div>
+            <div class="stat-label">ค้างชำระ<br><span class="stat-unit">ครัวเรือน</span></div>
+          </div>
+        </div>
+
+        <!-- Dropdown เลือกลูกบ้าน -->
         <div class="dropdown-wrapper" id="dropdownWrapper">
           <div class="dropdown-trigger" id="dropdownTrigger">
             <svg class="field-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -167,6 +169,7 @@
             <ul class="dropdown-list" id="dropdownList"></ul>
           </div>
         </div>
+
         <div class="house-info-row" id="houseInfoRow" style="display:none">
           <div class="house-info-chip">
             <span class="chip-dot"></span>
@@ -207,29 +210,18 @@
             <span class="reading-unit">หน่วย</span>
           </div>
         </div>
-
         <div class="reading-divider">
           <div class="divider-line"></div>
           <span class="divider-label">ยอดใหม่</span>
           <div class="divider-line"></div>
         </div>
-
         <div class="reading-group">
           <div class="reading-label-row">
             <span class="reading-label">ยอดมิเตอร์ปัจจุบัน</span>
             <span class="reading-date" id="todayDate">—</span>
           </div>
           <div class="reading-input-wrap" id="currentInputWrap">
-            <input
-              type="text"
-              inputmode="numeric"
-              pattern="[0-9]*"
-              class="reading-input"
-              id="currentMeterInput"
-              placeholder="กรอกตัวเลข"
-              autocomplete="off"
-              oninput="onMeterInput()"
-            >
+            <input type="text" inputmode="numeric" pattern="[0-9]*" class="reading-input" id="currentMeterInput" placeholder="กรอกตัวเลข" autocomplete="off" oninput="onMeterInput()">
             <span class="reading-unit-inline">หน่วย</span>
           </div>
           <p class="input-hint" id="inputHint" style="display:none"></p>
@@ -239,7 +231,6 @@
       <!-- SECTION 5 & 6: ค่าใช้จ่าย + ชำระ + บันทึก -->
       <section class="card cost-card" id="sectionCost" style="display:none">
         <div class="section-label">รายละเอียดค่าใช้จ่าย</div>
-
         <div class="cost-rows">
           <div class="cost-row">
             <span class="cost-label">หน่วยที่ใช้</span>
@@ -258,16 +249,13 @@
             <span class="cost-value">20.00 บาท</span>
           </div>
         </div>
-
         <p class="last-save-warning" id="lastSaveWarning" style="display:none">
           วันที่บันทึกล่าสุด: <span id="lastSavedDate">—</span>
         </p>
-
         <div class="cost-total-row">
           <span class="cost-total-label">ยอดรวมที่ต้องชำระ</span>
           <span class="cost-total-amount" id="totalAmount">—</span>
         </div>
-
         <div class="payment-label">สถานะการชำระเงิน</div>
         <div class="payment-selector">
           <button class="payment-opt active" id="payOptPaid" onclick="selectPayment('paid')">
@@ -285,12 +273,10 @@
             </div>
           </button>
         </div>
-
         <div class="error-box" id="errorBox" style="display:none">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
           <span id="errorText">เลขมิเตอร์ไม่ถูกต้อง</span>
         </div>
-
         <button class="save-btn" id="saveBtn" disabled onclick="handleSave()">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/>
@@ -323,7 +309,6 @@
           <div class="receipt-sub">บ้านแสนสุข หมู่ 4</div>
           <div class="receipt-no-badge" id="rNo">ใบเสร็จ #—</div>
         </div>
-
         <div class="receipt-block">
           <div class="receipt-row"><span class="rl">ชื่อลูกค้า</span><span class="rv" id="rName">—</span></div>
           <div class="receipt-row"><span class="rl">บ้านเลขที่</span><span class="rv" id="rAddr">—</span></div>
@@ -331,37 +316,26 @@
           <div class="receipt-row"><span class="rl">ประจำเดือน</span><span class="rv" id="rMonth">—</span></div>
           <div class="receipt-row"><span class="rl">วันที่จด</span><span class="rv" id="rDate">—</span></div>
         </div>
-
         <div class="receipt-meter-grid">
-          <div class="meter-cell">
-            <div class="mc-label">มิเตอร์ก่อน</div>
-            <div class="mc-val" id="rPrev">—</div>
-          </div>
+          <div class="meter-cell"><div class="mc-label">มิเตอร์ก่อน</div><div class="mc-val" id="rPrev">—</div></div>
           <div class="meter-arrow-cell">→</div>
-          <div class="meter-cell">
-            <div class="mc-label">มิเตอร์ใหม่</div>
-            <div class="mc-val" id="rCurr">—</div>
-          </div>
+          <div class="meter-cell"><div class="mc-label">มิเตอร์ใหม่</div><div class="mc-val" id="rCurr">—</div></div>
           <div class="meter-arrow-cell">=</div>
           <div class="meter-cell accent-cell">
             <div class="mc-label" style="color:var(--ios-blue)">หน่วยที่ใช้</div>
             <div class="mc-val" style="color:var(--ios-blue)" id="rUnits">—</div>
           </div>
         </div>
-
         <div class="receipt-block">
           <div class="receipt-row"><span class="rl">ค่าน้ำ</span><span class="rv" id="rWater">—</span></div>
           <div class="receipt-row"><span class="rl">ค่าบริการ</span><span class="rv">20.00 บาท</span></div>
         </div>
-
         <div class="receipt-total">
           <div class="rt-label">ชำระแล้ว</div>
           <div class="rt-amount" id="rTotal">—</div>
         </div>
-
         <div class="receipt-sign">ลงชื่อผู้รับเงิน ................................</div>
         <div class="receipt-note">ใบเสร็จนี้ใช้เป็นหลักฐานการชำระเงิน</div>
-
         <div class="sheet-btn-group">
           <button class="sheet-btn primary" onclick="printReceipt()">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
@@ -384,20 +358,26 @@
         <div class="history-header">
           <div>
             <div class="history-title">ประวัติย้อนหลัง</div>
-            <div class="history-subtitle">ค้นหารายการจดมิเตอร์ย้อนหลัง</div>
+            <div class="history-subtitle">ค้นหาและจัดการรายการจดมิเตอร์</div>
           </div>
           <button class="history-close-btn" onclick="closeHistorySheet()">ปิด</button>
         </div>
 
+        <!-- Search -->
         <div class="history-toolbar">
-          <input
-            type="text"
-            id="historySearchInput"
-            class="history-search-input"
-            placeholder="ค้นหาเลขที่บ้าน / ชื่อลูกบ้าน"
-            autocomplete="off"
-          >
+          <input type="text" id="historySearchInput" class="history-search-input" placeholder="ค้นหาเลขที่บ้าน / ชื่อลูกบ้าน" autocomplete="off">
           <button class="history-refresh-btn" onclick="refreshHistory()">รีเฟรช</button>
+        </div>
+
+        <!-- Filter Chips -->
+        <div class="history-filter-row" id="historyFilterRow">
+          <button class="hfilter-chip active" data-filter="all"    onclick="setHistoryFilter('all')">ทั้งหมด</button>
+          <button class="hfilter-chip"         data-filter="paid"   onclick="setHistoryFilter('paid')">
+            <span class="hchip-dot paid"></span>ชำระแล้ว
+          </button>
+          <button class="hfilter-chip"         data-filter="unpaid" onclick="setHistoryFilter('unpaid')">
+            <span class="hchip-dot unpaid"></span>ค้างชำระ
+          </button>
         </div>
 
         <div class="history-summary" id="historySummary">—</div>
@@ -420,6 +400,40 @@
           <button class="logout-btn-cancel" onclick="cancelLogout()">ยกเลิก</button>
           <button class="logout-btn-confirm" onclick="confirmLogout()">ออกจากระบบ</button>
         </div>
+      </div>
+    </div>
+
+    <!-- EDIT PAYMENT SHEET -->
+    <div class="sheet-overlay" id="editPayOverlay" onclick="closeEditPaySheet()"></div>
+    <div class="bottom-sheet edit-pay-sheet" id="editPaySheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-scroll">
+        <div class="edit-pay-header">
+          <div class="edit-pay-icon">✏️</div>
+          <div class="edit-pay-title">แก้ไขสถานะการชำระ</div>
+          <div class="edit-pay-sub" id="editPaySub">—</div>
+        </div>
+        <div class="edit-pay-choices">
+          <button class="edit-pay-opt" id="editOptPaid" onclick="submitEditPayment('paid')">
+            <span class="epo-icon">✅</span>
+            <div class="epo-texts">
+              <span class="epo-text">ชำระแล้ว</span>
+              <span class="epo-sub">อัปเดตสถานะและออกใบเสร็จ</span>
+            </div>
+          </button>
+          <button class="edit-pay-opt" id="editOptUnpaid" onclick="submitEditPayment('unpaid')">
+            <span class="epo-icon">🕐</span>
+            <div class="epo-texts">
+              <span class="epo-text">ยังไม่ชำระ</span>
+              <span class="epo-sub">บันทึกว่ายังไม่ชำระ</span>
+            </div>
+          </button>
+        </div>
+        <div class="error-box" id="editPayError" style="display:none">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <span id="editPayErrorText">เกิดข้อผิดพลาด</span>
+        </div>
+        <button class="sheet-btn secondary" onclick="closeEditPaySheet()" style="margin-top:8px">ยกเลิก</button>
       </div>
     </div>
 

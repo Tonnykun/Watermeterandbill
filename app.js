@@ -1,26 +1,24 @@
 /* ═══════════════════════════════════════════
-   WATER METER APP — Logic & State v3
+   WATER METER APP — Logic & State v4
    app.js
    ═══════════════════════════════════════════ */
 
 'use strict';
 
 /* ── Config ── */
-let HOUSES = [];
+let HOUSES   = [];
 let HOUSE_MAP = new Map();
-const API_URL       = 'https://script.google.com/macros/s/AKfycbwDYBiYgoew9Cq1o6J0tSjO5Or8oWgUPqcswr6h0n3HDj76SVRKwRx8tlaxMw8k-a-b/exec';
-const RATE_PER_UNIT = 3;
-const SERVICE_FEE   = 20;
+const API_URL             = 'https://script.google.com/macros/s/AKfycbwDYBiYgoew9Cq1o6J0tSjO5Or8oWgUPqcswr6h0n3HDj76SVRKwRx8tlaxMw8k-a-b/exec';
+const RATE_PER_UNIT       = 3;
+const SERVICE_FEE         = 20;
 const BOOTSTRAP_CACHE_KEY = 'wm_bootstrap_cache_v1';
-const BOOTSTRAP_CACHE_TTL = 5 * 60 * 1000; // 5 นาที
+const BOOTSTRAP_CACHE_TTL = 5 * 60 * 1000;
 
-/* ── Auth Config (แก้ตรงนี้) ──
-   สำหรับ Production ควรตรวจสอบฝั่ง server แทน */
 const VALID_USERS = [
-  { username: 'admin',  password: 'water1234', displayName: 'ผู้ดูแลระบบ' },
-  { username: 'staff',  password: 'staff1234', displayName: 'เจ้าหน้าที่' },
+  { username: 'admin', password: 'water1234', displayName: 'ผู้ดูแลระบบ' },
+  { username: 'staff', password: '0000',      displayName: 'เจ้าหน้าที่' },
 ];
-const SESSION_KEY  = 'wm_session';   // localStorage key
+const SESSION_KEY = 'wm_session';
 
 /* ── State ── */
 let state = {
@@ -30,106 +28,151 @@ let state = {
   isValid:        false,
   paymentStatus:  'paid',
   historyItems:   [],
-  currentUser:    null,   // { username, displayName }
+  historyFilter:  'all',      // 'all' | 'paid' | 'unpaid'  ← NEW
+  selectedMonth:  '',         // 'YYYY-MM'  ← NEW
+  currentUser:    null,
+  editingItem:    null,       // history item being edited  ← NEW
 };
 
 let historyLoaded = false;
+let rememberMe    = false;
+let dom           = {};
 
-/* ── DOM refs ── */
-let dom = {};
-
+/* ════════════════════════════════
+   DOM REFS
+════════════════════════════════ */
 function buildDomRefs() {
   const $ = id => document.getElementById(id);
   dom = {
-    /* Login */
-    loginScreen:      $('loginScreen'),
-    loginUsername:    $('loginUsername'),
-    loginPassword:    $('loginPassword'),
-    loginEyeBtn:      $('loginEyeBtn'),
-    eyeIconShow:      $('eyeIconShow'),
-    eyeIconHide:      $('eyeIconHide'),
-    rememberToggle:   $('rememberToggle'),
-    rememberThumb:    $('rememberThumb'),
-    loginError:       $('loginError'),
-    loginErrorText:   $('loginErrorText'),
-    loginBtn:         $('loginBtn'),
-    loginBtnLabel:    $('loginBtnLabel'),
+    loginScreen: $('loginScreen'), loginUsername: $('loginUsername'),
+    loginPassword: $('loginPassword'), loginEyeBtn: $('loginEyeBtn'),
+    eyeIconShow: $('eyeIconShow'), eyeIconHide: $('eyeIconHide'),
+    rememberToggle: $('rememberToggle'), rememberThumb: $('rememberThumb'),
+    loginError: $('loginError'), loginErrorText: $('loginErrorText'),
+    loginBtn: $('loginBtn'), loginBtnLabel: $('loginBtnLabel'),
 
-    /* App */
-    appScreen:        $('appScreen'),
-    navInfoDate:      $('navInfoDate'),
-    navInfoUser:      $('navInfoUser'),
-    navAvatar:        $('navAvatar'),
+    appScreen: $('appScreen'), navInfoDate: $('navInfoDate'),
+    navInfoUser: $('navInfoUser'), navAvatar: $('navAvatar'),
 
-    /* Dropdown */
-    dropdownTrigger:  $('dropdownTrigger'),
-    dropdownChevron:  $('dropdownChevron'),
-    dropdownPanel:    $('dropdownPanel'),
-    dropdownSearch:   $('dropdownSearch'),
-    dropdownList:     $('dropdownList'),
-    dropdownDisplay:  $('dropdownDisplay'),
-    dropdownWrapper:  $('dropdownWrapper'),
+    /* Month + Stat */
+    monthSelect:  $('monthSelect'),
+    statTotal:    $('statTotal'),
+    statPaid:     $('statPaid'),
+    statUnpaid:   $('statUnpaid'),
 
-    houseInfoRow:     $('houseInfoRow'),
-    houseInfoName:    $('houseInfoName'),
-    changeHouseBtn:   $('changeHouseBtn'),
+    dropdownTrigger: $('dropdownTrigger'), dropdownChevron: $('dropdownChevron'),
+    dropdownPanel: $('dropdownPanel'), dropdownSearch: $('dropdownSearch'),
+    dropdownList: $('dropdownList'), dropdownDisplay: $('dropdownDisplay'),
+    dropdownWrapper: $('dropdownWrapper'),
 
-    /* Meter */
-    sectionMeter:     $('sectionMeter'),
-    sectionReadings:  $('sectionReadings'),
-    sectionCost:      $('sectionCost'),
-    segThumb:         $('segThumb'),
-    meterDesc:        $('meterDesc'),
+    houseInfoRow: $('houseInfoRow'), houseInfoName: $('houseInfoName'),
+    changeHouseBtn: $('changeHouseBtn'),
 
-    prevDate:         $('prevDate'),
-    prevDigits:       $('prevDigits'),
-    todayDate:        $('todayDate'),
-    currentInput:     $('currentMeterInput'),
-    inputHint:        $('inputHint'),
+    sectionMeter: $('sectionMeter'), sectionReadings: $('sectionReadings'),
+    sectionCost: $('sectionCost'), segThumb: $('segThumb'), meterDesc: $('meterDesc'),
 
-    unitsUsed:        $('unitsUsed'),
-    waterCost:        $('waterCost'),
-    totalAmount:      $('totalAmount'),
-    errorBox:         $('errorBox'),
-    errorText:        $('errorText'),
-    saveBtn:          $('saveBtn'),
-    saveBtnLabel:     $('saveBtnLabel'),
+    prevDate: $('prevDate'), prevDigits: $('prevDigits'),
+    todayDate: $('todayDate'), currentInput: $('currentMeterInput'), inputHint: $('inputHint'),
 
-    /* Toast */
-    toast:            $('successToast'),
-    toastMsg:         $('toastMsg'),
+    unitsUsed: $('unitsUsed'), waterCost: $('waterCost'), totalAmount: $('totalAmount'),
+    errorBox: $('errorBox'), errorText: $('errorText'),
+    saveBtn: $('saveBtn'), saveBtnLabel: $('saveBtnLabel'),
 
-    /* Sheets */
-    sheetOverlay:     $('sheetOverlay'),
-    receiptSheet:     $('receiptSheet'),
-    lastSaveWarning:  $('lastSaveWarning'),
-    lastSavedDate:    $('lastSavedDate'),
-    payOptPaid:       $('payOptPaid'),
-    payOptUnpaid:     $('payOptUnpaid'),
+    toast: $('successToast'), toastMsg: $('toastMsg'),
+    sheetOverlay: $('sheetOverlay'), receiptSheet: $('receiptSheet'),
+    lastSaveWarning: $('lastSaveWarning'), lastSavedDate: $('lastSavedDate'),
+    payOptPaid: $('payOptPaid'), payOptUnpaid: $('payOptUnpaid'),
 
-    historyOverlay:     $('historyOverlay'),
-    historySheet:       $('historySheet'),
+    historyOverlay: $('historyOverlay'), historySheet: $('historySheet'),
     historySearchInput: $('historySearchInput'),
-    historyList:        $('historyList'),
-    historySummary:     $('historySummary'),
+    historyList: $('historyList'), historySummary: $('historySummary'),
 
-    logoutOverlay:    $('logoutOverlay'),
-    logoutConfirm:    $('logoutConfirm'),
+    logoutOverlay: $('logoutOverlay'), logoutConfirm: $('logoutConfirm'),
+
+    /* Edit payment */
+    editPayOverlay: $('editPayOverlay'), editPaySheet: $('editPaySheet'),
+    editPaySub: $('editPaySub'), editPayError: $('editPayError'),
+    editPayErrorText: $('editPayErrorText'),
+    editOptPaid: $('editOptPaid'), editOptUnpaid: $('editOptUnpaid'),
   };
+}
+
+/* ════════════════════════════════
+   MONTH DROPDOWN  (new)
+════════════════════════════════ */
+function buildMonthOptions() {
+  const sel  = dom.monthSelect;
+  const now  = new Date();
+  const opts = [];
+
+  for (let i = 0; i < 12; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const val   = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    const label = d.toLocaleDateString('th-TH', { month: 'long', year: 'numeric' });
+    opts.push(`<option value="${val}">${label}</option>`);
+  }
+  sel.innerHTML = opts.join('');
+  state.selectedMonth = sel.value;
+  refreshStatBar();
+}
+
+function onMonthChange() {
+  state.selectedMonth = dom.monthSelect.value;
+  refreshStatBar();
+  // If history is open, re-render
+  if (dom.historySheet.classList.contains('open')) {
+    renderHistoryList(dom.historySearchInput.value);
+  }
+}
+
+/* ════════════════════════════════
+   STAT BAR  (new)
+════════════════════════════════ */
+function refreshStatBar() {
+  const ym = state.selectedMonth; // 'YYYY-MM'
+  if (!ym || state.historyItems.length === 0) {
+    dom.statTotal.textContent  = HOUSES.length || '—';
+    dom.statPaid.textContent   = '—';
+    dom.statUnpaid.textContent = '—';
+    return;
+  }
+
+  // Filter historyItems to selected month
+  const monthItems = state.historyItems.filter(item => {
+    if (!item.read_date) return false;
+    const d = new Date(item.read_date);
+    if (isNaN(d)) return false;
+    const itemYM = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    return itemYM === ym;
+  });
+
+  // Deduplicate by house_id (latest record per house)
+  const houseMap = new Map();
+  monthItems.forEach(item => {
+    const key = item.house_id || item.house_no;
+    if (!houseMap.has(key)) houseMap.set(key, item);
+  });
+
+  const total  = HOUSES.length;
+  const paid   = [...houseMap.values()].filter(i => i.payment_status !== 'unpaid').length;
+  const unpaid = [...houseMap.values()].filter(i => i.payment_status === 'unpaid').length;
+  const notYet = total - houseMap.size; // ยังไม่ได้จด
+
+  dom.statTotal.textContent  = total;
+  dom.statPaid.textContent   = paid;
+  dom.statUnpaid.textContent = unpaid + notYet;
 }
 
 /* ════════════════════════════════
    LOGIN / LOGOUT
 ════════════════════════════════ */
-let rememberMe = false;
-
 function toggleRemember() {
   rememberMe = !rememberMe;
   dom.rememberToggle.classList.toggle('on', rememberMe);
 }
 
 function togglePassword() {
-  const input = dom.loginPassword;
+  const input  = dom.loginPassword;
   const isPass = input.type === 'password';
   input.type = isPass ? 'text' : 'password';
   dom.eyeIconShow.style.display = isPass ? 'none' : '';
@@ -139,32 +182,19 @@ function togglePassword() {
 function handleLogin() {
   const username = dom.loginUsername.value.trim();
   const password = dom.loginPassword.value;
-
-  if (!username || !password) {
-    showLoginError('กรุณากรอกชื่อผู้ใช้และรหัสผ่าน');
-    return;
-  }
+  if (!username || !password) { showLoginError('กรุณากรอกชื่อผู้ใช้และรหัสผ่าน'); return; }
 
   const user = VALID_USERS.find(u => u.username === username && u.password === password);
-
   if (!user) {
     showLoginError('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง');
-    // Shake animation
     dom.loginBtnLabel.textContent = 'ไม่ถูกต้อง';
     setTimeout(() => { dom.loginBtnLabel.textContent = 'เข้าสู่ระบบ'; }, 1500);
     return;
   }
 
-  // Success
   dom.loginError.style.display = 'none';
   state.currentUser = { username: user.username, displayName: user.displayName };
-
-  if (rememberMe) {
-    try {
-      localStorage.setItem(SESSION_KEY, JSON.stringify(state.currentUser));
-    } catch (e) {}
-  }
-
+  if (rememberMe) { try { localStorage.setItem(SESSION_KEY, JSON.stringify(state.currentUser)); } catch (e) {} }
   enterApp(user.displayName);
 }
 
@@ -174,34 +204,23 @@ function showLoginError(msg) {
 }
 
 function applyNavAvatarRole() {
-  const username = state.currentUser?.username || '';
-
+  const u = state.currentUser?.username || '';
   dom.navAvatar.classList.remove('role-admin', 'role-staff', 'role-default');
-
-  if (username === 'admin') {
-    dom.navAvatar.textContent = 'A';
-    dom.navAvatar.classList.add('role-admin');
-  } else if (username === 'staff') {
-    dom.navAvatar.textContent = 'S';
-    dom.navAvatar.classList.add('role-staff');
-  } else {
-    dom.navAvatar.textContent = 'U';
-    dom.navAvatar.classList.add('role-default');
-  }
+  if (u === 'admin') { dom.navAvatar.textContent = 'A'; dom.navAvatar.classList.add('role-admin'); }
+  else if (u === 'staff') { dom.navAvatar.textContent = 'S'; dom.navAvatar.classList.add('role-staff'); }
+  else { dom.navAvatar.textContent = 'U'; dom.navAvatar.classList.add('role-default'); }
 }
 
 function enterApp(displayName) {
   dom.loginScreen.style.transition = 'opacity 0.4s';
   dom.loginScreen.style.opacity    = '0';
-
   setTimeout(() => {
     dom.loginScreen.style.display = 'none';
     dom.appScreen.style.display   = 'block';
-
-    dom.navInfoDate.textContent = formatDateTH(new Date());
-    dom.navInfoUser.textContent = displayName;
-
+    dom.navInfoDate.textContent   = formatDateTH(new Date());
+    dom.navInfoUser.textContent   = displayName;
     applyNavAvatarRole();
+    buildMonthOptions();
   }, 400);
 }
 
@@ -210,32 +229,26 @@ function handleLogout() {
   dom.logoutConfirm.classList.add('open');
   document.body.style.overflow = 'hidden';
 }
-
 function cancelLogout() {
   dom.logoutOverlay.classList.remove('show');
   dom.logoutConfirm.classList.remove('open');
   document.body.style.overflow = '';
 }
-
 function confirmLogout() {
-  // Clear session
   try { localStorage.removeItem(SESSION_KEY); } catch (e) {}
   try { sessionStorage.removeItem(BOOTSTRAP_CACHE_KEY); } catch (e) {}
   state.currentUser = null;
   cancelLogout();
 
-  // Fade back to login
-  dom.appScreen.style.display = 'none';
-  dom.loginScreen.style.opacity    = '0';
-  dom.loginScreen.style.display    = 'flex';
+  dom.appScreen.style.display  = 'none';
+  dom.loginScreen.style.opacity = '0';
+  dom.loginScreen.style.display = 'flex';
   requestAnimationFrame(() => {
     dom.loginScreen.style.transition = 'opacity 0.35s';
     dom.loginScreen.style.opacity    = '1';
   });
-
-  // Clear login form
-  dom.loginUsername.value  = '';
-  dom.loginPassword.value  = '';
+  dom.loginUsername.value = '';
+  dom.loginPassword.value = '';
   dom.loginError.style.display = 'none';
   rememberMe = false;
   dom.rememberToggle.classList.remove('on');
@@ -250,11 +263,9 @@ function checkSavedSession() {
       const user = JSON.parse(saved);
       if (user && user.displayName) {
         state.currentUser = user;
-        // Pre-fill username
         dom.loginUsername.value = user.username || '';
         rememberMe = true;
         dom.rememberToggle.classList.add('on');
-        // Auto-login silently
         enterApp(user.displayName);
         return true;
       }
@@ -264,66 +275,23 @@ function checkSavedSession() {
 }
 
 function saveBootstrapCache(data) {
-  try {
-    const payload = {
-      ts: Date.now(),
-      houses: data
-    };
-    sessionStorage.setItem(BOOTSTRAP_CACHE_KEY, JSON.stringify(payload));
-  } catch (e) {}
+  try { sessionStorage.setItem(BOOTSTRAP_CACHE_KEY, JSON.stringify({ ts: Date.now(), houses: data })); } catch (e) {}
 }
-
 function loadBootstrapCache() {
   try {
     const raw = sessionStorage.getItem(BOOTSTRAP_CACHE_KEY);
     if (!raw) return null;
-
-    const parsed = JSON.parse(raw);
-    if (!parsed || !Array.isArray(parsed.houses)) return null;
-
-    const expired = (Date.now() - Number(parsed.ts || 0)) > BOOTSTRAP_CACHE_TTL;
-    if (expired) return null;
-
-    return parsed.houses;
-  } catch (e) {
-    return null;
-  }
-}
-
-function saveBootstrapCache(data) {
-  try {
-    const payload = {
-      ts: Date.now(),
-      houses: data
-    };
-    sessionStorage.setItem(BOOTSTRAP_CACHE_KEY, JSON.stringify(payload));
-  } catch (e) {}
-}
-
-function loadBootstrapCache() {
-  try {
-    const raw = sessionStorage.getItem(BOOTSTRAP_CACHE_KEY);
-    if (!raw) return null;
-
-    const parsed = JSON.parse(raw);
-    if (!parsed || !Array.isArray(parsed.houses)) return null;
-
-    const isExpired = (Date.now() - Number(parsed.ts || 0)) > BOOTSTRAP_CACHE_TTL;
-    if (isExpired) return null;
-
-    return parsed.houses;
-  } catch (e) {
-    return null;
-  }
+    const p = JSON.parse(raw);
+    if (!p || !Array.isArray(p.houses)) return null;
+    if ((Date.now() - Number(p.ts || 0)) > BOOTSTRAP_CACHE_TTL) return null;
+    return p.houses;
+  } catch (e) { return null; }
 }
 
 /* ════════════════════════════════
-   HISTORY — open helper for HTML onclick
+   HISTORY helpers
 ════════════════════════════════ */
-function openHistorySheetAndLoad() {
-  openHistorySheet();
-  loadHistory();
-}
+function openHistorySheetAndLoad() { openHistorySheet(); loadHistory(); }
 
 /* ════════════════════════════════
    DROPDOWN
@@ -331,28 +299,18 @@ function openHistorySheetAndLoad() {
 function renderList(query = '') {
   const q = query.trim().toLowerCase();
   const filtered = HOUSES.filter(h =>
-    (h.num  || '').toLowerCase().includes(q) ||
-    (h.name || '').toLowerCase().includes(q)
+    (h.num || '').toLowerCase().includes(q) || (h.name || '').toLowerCase().includes(q)
   );
-
   if (filtered.length === 0) {
     dom.dropdownList.innerHTML = `<li class="dropdown-empty">ไม่พบข้อมูล</li>`;
     return;
   }
-
   dom.dropdownList.innerHTML = filtered.map(h => `
-    <li
-      data-id="${h.id}"
-      class="${state.selectedHouse?.id === h.id ? 'selected' : ''}"
-      onclick="pickHouse('${h.id}')"
-    >
+    <li data-id="${h.id}" class="${state.selectedHouse?.id === h.id ? 'selected' : ''}" onclick="pickHouse('${h.id}')">
       <span class="li-num">${h.num}</span>
       <span class="li-name">${h.name}</span>
-      <svg class="li-check" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round">
-        <polyline points="20 6 9 17 4 12"/>
-      </svg>
-    </li>
-  `).join('');
+      <svg class="li-check" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+    </li>`).join('');
 }
 
 function openDropdown() {
@@ -361,7 +319,6 @@ function openDropdown() {
   renderList();
   setTimeout(() => dom.dropdownSearch.focus(), 50);
 }
-
 function closeDropdown() {
   dom.dropdownPanel.classList.remove('open');
   dom.dropdownChevron.classList.remove('open');
@@ -374,11 +331,10 @@ function pickHouse(id) {
 
   if (!Array.isArray(house.meters) || house.meters.length === 0) {
     house.meters = [{
-      id:       'm1',
-      label:    'มิเตอร์ 1',
-      desc:     `หมายเลข ${house.meter_no || house.meterNo || 'M-???'}`,
+      id: 'm1', label: 'มิเตอร์ 1',
+      desc: `หมายเลข ${house.meter_no || house.meterNo || 'M-???'}`,
       meterKey: house.meter_key || house.meterKey || 'meter1',
-      prev:     Number(house.prev_reading ?? house.prevReading ?? 0),
+      prev: Number(house.prev_reading ?? house.prevReading ?? 0),
       prevDate: house.prev_date || house.prevDate || null,
     }];
   }
@@ -390,8 +346,8 @@ function pickHouse(id) {
 
   dom.dropdownDisplay.textContent = `${house.num} · ${house.name}`;
   dom.dropdownDisplay.classList.add('selected');
-  dom.houseInfoName.textContent = `${house.num} — ${house.name}`;
-  dom.houseInfoRow.style.display = 'flex';
+  dom.houseInfoName.textContent   = `${house.num} — ${house.name}`;
+  dom.houseInfoRow.style.display  = 'flex';
   closeDropdown();
 
   showSection(dom.sectionMeter);
@@ -417,29 +373,19 @@ function bindMainEvents() {
   });
   dom.dropdownSearch.addEventListener('input', e => renderList(e.target.value));
   dom.dropdownSearch.addEventListener('click', e => e.stopPropagation());
-  document.addEventListener('click', e => {
-    if (!dom.dropdownWrapper.contains(e.target)) closeDropdown();
-  });
+  document.addEventListener('click', e => { if (!dom.dropdownWrapper.contains(e.target)) closeDropdown(); });
 
   dom.changeHouseBtn.addEventListener('click', () => {
     dom.dropdownDisplay.textContent = 'เลือกเลขที่บ้าน...';
     dom.dropdownDisplay.classList.remove('selected');
     dom.houseInfoRow.style.display = 'none';
-    state.selectedHouse = null;
-    state.currentReading = null;
-
-    hideSection(dom.sectionMeter);
-    hideSection(dom.sectionReadings);
-    hideSection(dom.sectionCost);
+    state.selectedHouse = null; state.currentReading = null;
+    hideSection(dom.sectionMeter); hideSection(dom.sectionReadings); hideSection(dom.sectionCost);
     if (dom.lastSavedDate) dom.lastSavedDate.textContent = '—';
     if (dom.lastSaveWarning) dom.lastSaveWarning.style.display = 'none';
-
-    dom.currentInput.value        = '';
-    dom.segThumb.style.transform  = 'translateX(0)';
+    dom.currentInput.value = ''; dom.segThumb.style.transform = 'translateX(0)';
     document.querySelectorAll('.seg-btn').forEach((btn, i) => {
-      btn.classList.toggle('active', i === 0);
-      btn.disabled = false;
-      btn.classList.remove('disabled');
+      btn.classList.toggle('active', i === 0); btn.disabled = false; btn.classList.remove('disabled');
     });
     openDropdown();
   });
@@ -447,31 +393,20 @@ function bindMainEvents() {
   if (dom.historySearchInput) {
     dom.historySearchInput.addEventListener('input', () => renderHistoryList(dom.historySearchInput.value));
   }
-
-  // Login: Enter key
-  dom.loginPassword.addEventListener('keydown', e => {
-    if (e.key === 'Enter') handleLogin();
-  });
-  dom.loginUsername.addEventListener('keydown', e => {
-    if (e.key === 'Enter') dom.loginPassword.focus();
-  });
+  dom.loginPassword.addEventListener('keydown', e => { if (e.key === 'Enter') handleLogin(); });
+  dom.loginUsername.addEventListener('keydown', e => { if (e.key === 'Enter') dom.loginPassword.focus(); });
 }
 
 /* ── Meter helpers ── */
 function hasSecondMeter() {
   return !!(state.selectedHouse && Array.isArray(state.selectedHouse.meters) && state.selectedHouse.meters.length > 1);
 }
-
 function updateMeterSelectorUI() {
   const segBtns = document.querySelectorAll('.seg-btn');
   const canUse2 = hasSecondMeter();
-  if (segBtns[1]) {
-    segBtns[1].disabled = !canUse2;
-    segBtns[1].classList.toggle('disabled', !canUse2);
-  }
+  if (segBtns[1]) { segBtns[1].disabled = !canUse2; segBtns[1].classList.toggle('disabled', !canUse2); }
   if (!canUse2) {
-    state.selectedMeter = 0;
-    dom.segThumb.style.transform = 'translateX(0)';
+    state.selectedMeter = 0; dom.segThumb.style.transform = 'translateX(0)';
     segBtns.forEach((btn, i) => btn.classList.toggle('active', i === 0));
   }
 }
@@ -483,73 +418,51 @@ function selectMeter(num) {
   const idx = num - 1;
   if (!state.selectedHouse) return;
   if (idx === 1 && !hasSecondMeter()) return;
-
-  state.selectedMeter  = idx;
-  state.currentReading = null;
-
+  state.selectedMeter = idx; state.currentReading = null;
   dom.segThumb.style.transform = idx === 0 ? 'translateX(0)' : 'translateX(100%)';
   document.querySelectorAll('.seg-btn').forEach((btn, i) => btn.classList.toggle('active', i === idx));
-
-  dom.currentInput.value      = '';
-  dom.inputHint.style.display = 'none';
-  dom.saveBtn.disabled        = true;
-  dom.errorBox.style.display  = 'none';
-
-  refreshMeterView();
-  resetCostDisplay();
+  dom.currentInput.value = ''; dom.inputHint.style.display = 'none';
+  dom.saveBtn.disabled = true; dom.errorBox.style.display = 'none';
+  refreshMeterView(); resetCostDisplay();
 }
 
 function refreshMeterView() {
   if (!state.selectedHouse) return;
   const meter = state.selectedHouse.meters[state.selectedMeter];
   if (!meter) return;
-
-  const displayDate = formatDisplayDate(meter.prevDate);
+  const dd = formatDisplayDate(meter.prevDate);
   dom.prevDigits.textContent = formatMeterDigits(meter.prev);
-  dom.prevDate.textContent   = displayDate;
+  dom.prevDate.textContent   = dd;
   dom.meterDesc.textContent  = meter.desc || '';
-
-  if (meter.prevDate) {
-    dom.lastSavedDate.textContent     = displayDate;
-    dom.lastSaveWarning.style.display = 'block';
-  } else {
-    dom.lastSavedDate.textContent     = '—';
-    dom.lastSaveWarning.style.display = 'none';
-  }
+  if (meter.prevDate) { dom.lastSavedDate.textContent = dd; dom.lastSaveWarning.style.display = 'block'; }
+  else { dom.lastSavedDate.textContent = '—'; dom.lastSaveWarning.style.display = 'none'; }
 }
 
 /* ════════════════════════════════
    METER INPUT
 ════════════════════════════════ */
 function onMeterInput() {
-  const raw = dom.currentInput.value.replace(/\D/g, '');
+  const raw   = dom.currentInput.value.replace(/\D/g, '');
   dom.currentInput.value = raw;
-
   const val   = raw === '' ? NaN : Number(raw);
   const meter = state.selectedHouse?.meters?.[state.selectedMeter];
   if (!meter) return;
-
   dom.errorBox.style.display = 'none';
-
   if (raw === '' || isNaN(val)) {
     state.isValid = false; state.currentReading = null;
-    dom.inputHint.style.display = 'none'; dom.saveBtn.disabled = true;
-    resetCostDisplay(); return;
+    dom.inputHint.style.display = 'none'; dom.saveBtn.disabled = true; resetCostDisplay(); return;
   }
   if (val < meter.prev) {
     state.isValid = false; state.currentReading = null;
     dom.inputHint.className   = 'input-hint err';
     dom.inputHint.textContent = `⚠️ ต้องมากกว่ายอดก่อนหน้า (${Number(meter.prev).toLocaleString()})`;
-    dom.inputHint.style.display = 'block'; dom.saveBtn.disabled = true;
-    resetCostDisplay(); return;
+    dom.inputHint.style.display = 'block'; dom.saveBtn.disabled = true; resetCostDisplay(); return;
   }
-
   state.isValid = true; state.currentReading = val;
   const units = val - meter.prev;
   dom.inputHint.className   = 'input-hint ok';
   dom.inputHint.textContent = units === 0 ? `✓ ไม่มีการใช้น้ำ (0 หน่วย)` : `✓ ใช้ไป ${units.toLocaleString()} หน่วย`;
-  dom.inputHint.style.display = 'block';
-  dom.saveBtn.disabled = false;
+  dom.inputHint.style.display = 'block'; dom.saveBtn.disabled = false;
   updateCostDisplay(meter.prev, val);
 }
 
@@ -557,17 +470,13 @@ function onMeterInput() {
    COST
 ════════════════════════════════ */
 function updateCostDisplay(prev, curr) {
-  const units = curr - prev;
-  const water = units * RATE_PER_UNIT;
-  const total = water + SERVICE_FEE;
+  const units = curr - prev, water = units * RATE_PER_UNIT, total = water + SERVICE_FEE;
   dom.unitsUsed.textContent   = `${units.toLocaleString()} หน่วย`;
   dom.waterCost.textContent   = `${water.toLocaleString('th-TH', { minimumFractionDigits: 2 })} บาท`;
   dom.totalAmount.textContent = `${total.toLocaleString('th-TH', { minimumFractionDigits: 2 })} บาท`;
 }
 function resetCostDisplay() {
-  dom.unitsUsed.textContent = '— หน่วย';
-  dom.waterCost.textContent = '— บาท';
-  dom.totalAmount.textContent = '—';
+  dom.unitsUsed.textContent = '— หน่วย'; dom.waterCost.textContent = '— บาท'; dom.totalAmount.textContent = '—';
 }
 
 /* ════════════════════════════════
@@ -577,13 +486,8 @@ function selectPayment(status) {
   state.paymentStatus = status;
   dom.payOptPaid.classList.toggle('active',   status === 'paid');
   dom.payOptUnpaid.classList.toggle('active', status === 'unpaid');
-  if (status === 'paid') {
-    dom.saveBtnLabel.textContent = 'บันทึก + ออกใบเสร็จ';
-    dom.saveBtn.classList.remove('unpaid-mode');
-  } else {
-    dom.saveBtnLabel.textContent = 'บันทึกยอดมิเตอร์';
-    dom.saveBtn.classList.add('unpaid-mode');
-  }
+  if (status === 'paid') { dom.saveBtnLabel.textContent = 'บันทึก + ออกใบเสร็จ'; dom.saveBtn.classList.remove('unpaid-mode'); }
+  else { dom.saveBtnLabel.textContent = 'บันทึกยอดมิเตอร์'; dom.saveBtn.classList.add('unpaid-mode'); }
 }
 
 /* ════════════════════════════════
@@ -591,62 +495,44 @@ function selectPayment(status) {
 ════════════════════════════════ */
 async function handleSave() {
   if (!state.isValid || !state.selectedHouse) return;
-
   const house = state.selectedHouse;
   const meter = house.meters?.[state.selectedMeter];
-  if (!meter) {
-    dom.errorText.textContent  = 'ไม่พบข้อมูลมิเตอร์ กรุณาเลือกบ้านใหม่';
-    dom.errorBox.style.display = 'flex';
-    return;
-  }
+  if (!meter) { dom.errorText.textContent = 'ไม่พบข้อมูลมิเตอร์'; dom.errorBox.style.display = 'flex'; return; }
 
-  const curr   = state.currentReading;
-  const isPaid = state.paymentStatus === 'paid';
-
-  dom.saveBtn.disabled       = true;
-  dom.errorBox.style.display = 'none';
+  const curr = state.currentReading, isPaid = state.paymentStatus === 'paid';
+  dom.saveBtn.disabled = true; dom.errorBox.style.display = 'none';
 
   try {
-    const res = await fetch(API_URL, {
-      method:  'POST',
+    const res  = await fetch(API_URL, {
+      method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify({
-        action:          'saveReading',
-        house_id:        house.id,
-        meter_key:       meter.meterKey || meter.id || 'meter1',
+        action: 'saveReading',
+        house_id: house.id,
+        meter_key: meter.meterKey || meter.id || 'meter1',
         current_reading: curr,
-        payment_status:  state.paymentStatus,
-        reader_name:     state.currentUser?.displayName || 'เจ้าหน้าที่',
+        payment_status: state.paymentStatus,
+        reader_name: state.currentUser?.displayName || 'เจ้าหน้าที่',
       })
     });
-
     const json = await res.json();
     if (!json.ok) throw new Error(json.error || 'บันทึกไม่สำเร็จ');
 
     const saved = json.data;
-    meter.prev     = saved.current_reading;
-    meter.prevDate = saved.read_date;
+    meter.prev = saved.current_reading; meter.prevDate = saved.read_date;
+    state.currentReading = null; state.isValid = false;
+    dom.currentInput.value = ''; dom.inputHint.style.display = 'none';
+    refreshMeterView(); resetCostDisplay();
 
-    state.currentReading        = null;
-    state.isValid               = false;
-    dom.currentInput.value      = '';
-    dom.inputHint.style.display = 'none';
-    refreshMeterView();
-    resetCostDisplay();
+    // Add to history and refresh stat
+    historyLoaded = false;
+    refreshStatBar();
 
-    if (isPaid) {
-      populateReceipt(house, meter, saved);
-      showToast('บันทึก + ออกใบเสร็จสำเร็จ!');
-      setTimeout(() => openSheet(), 600);
-    } else {
-      showToast('บันทึกสำเร็จ (ยังไม่ชำระ)');
-    }
+    if (isPaid) { populateReceipt(house, meter, saved); showToast('บันทึก + ออกใบเสร็จสำเร็จ!'); setTimeout(() => openSheet(), 600); }
+    else { showToast('บันทึกสำเร็จ (ยังไม่ชำระ)'); }
   } catch (err) {
-    dom.errorText.textContent  = err.message || 'เกิดข้อผิดพลาด';
-    dom.errorBox.style.display = 'flex';
-  } finally {
-    dom.saveBtn.disabled = false;
-  }
+    dom.errorText.textContent = err.message || 'เกิดข้อผิดพลาด'; dom.errorBox.style.display = 'flex';
+  } finally { dom.saveBtn.disabled = false; }
 }
 
 /* ════════════════════════════════
@@ -666,7 +552,7 @@ function populateReceipt(house, meter, saved) {
   document.getElementById('rTotal').textContent = `${Number(saved.total_amount).toLocaleString('th-TH', { minimumFractionDigits: 2 })} บาท`;
 }
 
-function openSheet()  { dom.sheetOverlay.classList.add('show'); dom.receiptSheet.classList.add('open'); document.body.style.overflow = 'hidden'; }
+function openSheet()  { dom.sheetOverlay.classList.add('show');    dom.receiptSheet.classList.add('open');    document.body.style.overflow = 'hidden'; }
 function closeSheet() { dom.sheetOverlay.classList.remove('show'); dom.receiptSheet.classList.remove('open'); document.body.style.overflow = ''; }
 function printReceipt() { window.print(); }
 
@@ -680,18 +566,18 @@ function showToast(msg = 'บันทึกสำเร็จ!') {
 }
 
 /* ════════════════════════════════
-   HISTORY
+   HISTORY  (updated)
 ════════════════════════════════ */
 async function loadHistory(force = false) {
   if (historyLoaded && !force) { renderHistoryList(dom.historySearchInput.value); return; }
   try {
     dom.historySummary.textContent = 'กำลังโหลดข้อมูล...';
-    const res  = await fetch(`${API_URL}?action=history&limit=100`);
+    const res  = await fetch(`${API_URL}?action=history&limit=200`);
     const json = await res.json();
     if (!json.ok) throw new Error(json.error || 'โหลดประวัติไม่สำเร็จ');
     state.historyItems = Array.isArray(json.items) ? json.items : [];
     historyLoaded = true;
-    dom.historySummary.textContent = `ทั้งหมด ${state.historyItems.length.toLocaleString()} รายการล่าสุด`;
+    refreshStatBar();
     renderHistoryList(dom.historySearchInput.value);
   } catch (err) {
     dom.historySummary.textContent = 'โหลดข้อมูลไม่สำเร็จ';
@@ -699,62 +585,237 @@ async function loadHistory(force = false) {
   }
 }
 
-function refreshHistory() { loadHistory(true); }
+function refreshHistory() { historyLoaded = false; loadHistory(true); }
+
+/* Filter chip handler */
+function setHistoryFilter(f) {
+  state.historyFilter = f;
+  document.querySelectorAll('.hfilter-chip').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.filter === f);
+  });
+  renderHistoryList(dom.historySearchInput.value);
+}
 
 function renderHistoryList(query = '') {
-  const q = String(query || '').trim().toLowerCase();
-  const items = state.historyItems.filter(item => {
-    const h = String(item.house_no  || '').toLowerCase();
-    const n = String(item.owner_name || '').toLowerCase();
-    return !q || h.includes(q) || n.includes(q);
+  const q  = String(query || '').trim().toLowerCase();
+  const ym = state.selectedMonth;
+  const f  = state.historyFilter;
+
+  let items = state.historyItems.filter(item => {
+    // Text search
+    const matchQ = !q ||
+      String(item.house_no   || '').toLowerCase().includes(q) ||
+      String(item.owner_name || '').toLowerCase().includes(q);
+    // Payment filter
+    const matchF = f === 'all' ? true :
+      f === 'paid'   ? item.payment_status !== 'unpaid' :
+      f === 'unpaid' ? item.payment_status === 'unpaid' : true;
+    // Month filter (from month dropdown)
+    let matchM = true;
+    if (ym && item.read_date) {
+      const d = new Date(item.read_date);
+      if (!isNaN(d)) {
+        const iym = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+        matchM = iym === ym;
+      }
+    }
+    return matchQ && matchF && matchM;
   });
+
+  dom.historySummary.textContent = `แสดง ${items.length.toLocaleString()} รายการ`;
+
   if (items.length === 0) {
     dom.historyList.innerHTML = `<div class="history-empty">ไม่พบข้อมูลย้อนหลัง</div>`;
     return;
   }
-  dom.historyList.innerHTML = items.map(item => {
+
+  dom.historyList.innerHTML = items.map((item, idx) => {
     const paidClass = item.payment_status === 'unpaid' ? 'unpaid' : 'paid';
-    const paidLabel = item.payment_status === 'unpaid' ? 'ยังไม่ชำระ' : 'ชำระแล้ว';
+    const paidLabel = item.payment_status === 'unpaid' ? 'ค้างชำระ' : 'ชำระแล้ว';
     return `
-      <div class="history-item">
-        <div class="history-top">
-          <div>
-            <div class="history-house">${item.house_no || '-'} · ${item.meter_label || '-'}</div>
-            <div class="history-name">${item.owner_name || '-'}</div>
+      <div class="history-item-outer" id="hio-${idx}">
+        <!-- Swipe action (edit button) revealed behind -->
+        <div class="history-item-action" onclick="openEditPaySheet(${idx})">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+            <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+            <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+          </svg>
+          แก้ไข
+        </div>
+        <!-- Slideable card -->
+        <div class="history-item" id="hi-${idx}" data-idx="${idx}"
+          ontouchstart="swipeStart(event,${idx})"
+          ontouchmove="swipeMove(event,${idx})"
+          ontouchend="swipeEnd(event,${idx})"
+        >
+          <div class="history-top">
+            <div>
+              <div class="history-house">${item.house_no || '-'} · ${item.meter_label || '-'}</div>
+              <div class="history-name">${item.owner_name || '-'}</div>
+            </div>
+            <span class="history-badge ${paidClass}">${paidLabel}</span>
           </div>
-          <span class="history-badge ${paidClass}">${paidLabel}</span>
-        </div>
-        <div class="history-meta">
-          <div>วันที่จด: <strong>${formatDisplayDate(item.read_date)}</strong></div>
-          <div>เลขมิเตอร์: <strong>${item.meter_code || '-'}</strong></div>
-          <div>ยอดก่อน: <strong>${Number(item.prev_reading || 0).toLocaleString()}</strong></div>
-          <div>ยอดใหม่: <strong>${Number(item.current_reading || 0).toLocaleString()}</strong></div>
-          <div>ใช้ไป: <strong>${Number(item.units_used || 0).toLocaleString()} หน่วย</strong></div>
-          <div>ผู้จด: <strong>${item.reader_name || '-'}</strong></div>
-        </div>
-        <div class="history-total">
-          <span class="history-total-label">ยอดรวม</span>
-          <span class="history-total-value">${Number(item.total_amount || 0).toLocaleString('th-TH', { minimumFractionDigits: 2 })} บาท</span>
+          <div class="history-meta">
+            <div>วันที่จด: <strong>${formatDisplayDate(item.read_date)}</strong></div>
+            <div>เลขมิเตอร์: <strong>${item.meter_code || '-'}</strong></div>
+            <div>ยอดก่อน: <strong>${Number(item.prev_reading || 0).toLocaleString()}</strong></div>
+            <div>ยอดใหม่: <strong>${Number(item.current_reading || 0).toLocaleString()}</strong></div>
+            <div>ใช้ไป: <strong>${Number(item.units_used || 0).toLocaleString()} หน่วย</strong></div>
+            <div>ผู้จด: <strong>${item.reader_name || '-'}</strong></div>
+          </div>
+          <div class="history-total">
+            <span class="history-total-label">ยอดรวม</span>
+            <span class="history-total-value">${Number(item.total_amount || 0).toLocaleString('th-TH', { minimumFractionDigits: 2 })} บาท</span>
+          </div>
         </div>
       </div>`;
   }).join('');
+
+  // Close any open swipe when tapping elsewhere
+  dom.historyList.addEventListener('click', collapseAllSwipes, { once: true });
 }
 
-function openHistorySheet()  { dom.historyOverlay.classList.add('show'); dom.historySheet.classList.add('open'); document.body.style.overflow = 'hidden'; }
+/* ════════════════════════════════
+   SWIPE TO EDIT  (new)
+════════════════════════════════ */
+let swipeData = { idx: null, startX: 0, startY: 0, dx: 0, tracking: false };
+const SWIPE_THRESHOLD = 40; // px
+
+function swipeStart(e, idx) {
+  const t = e.touches[0];
+  swipeData = { idx, startX: t.clientX, startY: t.clientY, dx: 0, tracking: true };
+}
+
+function swipeMove(e, idx) {
+  if (!swipeData.tracking || swipeData.idx !== idx) return;
+  const t  = e.touches[0];
+  const dx = t.clientX - swipeData.startX;
+  const dy = t.clientY - swipeData.startY;
+
+  // Cancel if vertical scroll
+  if (Math.abs(dy) > Math.abs(dx) + 8) { swipeData.tracking = false; return; }
+
+  swipeData.dx = dx;
+  const el = document.getElementById(`hi-${idx}`);
+  if (!el) return;
+
+  const isSwiped = el.classList.contains('swiped');
+  let offset = isSwiped ? -72 + dx : dx;
+  offset = Math.max(-72, Math.min(0, offset));
+  el.style.transition = 'none';
+  el.style.transform  = `translateX(${offset}px)`;
+  e.preventDefault();
+}
+
+function swipeEnd(e, idx) {
+  if (!swipeData.tracking || swipeData.idx !== idx) return;
+  swipeData.tracking = false;
+  const el = document.getElementById(`hi-${idx}`);
+  if (!el) return;
+  el.style.transition = '';
+
+  const isSwiped = el.classList.contains('swiped');
+  if (!isSwiped && swipeData.dx < -SWIPE_THRESHOLD) {
+    el.classList.add('swiped');
+    el.style.transform = '';
+  } else if (isSwiped && swipeData.dx > SWIPE_THRESHOLD) {
+    el.classList.remove('swiped');
+    el.style.transform = '';
+  } else {
+    el.style.transform = isSwiped ? 'translateX(-72px)' : '';
+  }
+}
+
+function collapseAllSwipes() {
+  document.querySelectorAll('.history-item.swiped').forEach(el => {
+    el.classList.remove('swiped');
+    el.style.transform = '';
+  });
+}
+
+/* ════════════════════════════════
+   EDIT PAYMENT SHEET  (new)
+════════════════════════════════ */
+function openEditPaySheet(idx) {
+  const item = state.historyItems[idx] ||
+    // find by rendered index in filtered list
+    (() => {
+      const cards = dom.historyList.querySelectorAll('.history-item');
+      const card  = cards[idx];
+      const realIdx = card ? parseInt(card.dataset.idx, 10) : -1;
+      return realIdx >= 0 ? state.historyItems[realIdx] : null;
+    })();
+
+  if (!item) return;
+
+  state.editingItem = item;
+  const isPaid = item.payment_status !== 'unpaid';
+
+  dom.editPaySub.textContent = `${item.house_no || '-'} · ${item.owner_name || '-'}`;
+  dom.editPayError.style.display = 'none';
+
+  dom.editOptPaid.classList.toggle('active-paid', isPaid);
+  dom.editOptUnpaid.classList.toggle('active-unpaid', !isPaid);
+
+  dom.editPayOverlay.classList.add('show');
+  dom.editPaySheet.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeEditPaySheet() {
+  dom.editPayOverlay.classList.remove('show');
+  dom.editPaySheet.classList.remove('open');
+  document.body.style.overflow = '';
+  state.editingItem = null;
+  collapseAllSwipes();
+}
+
+async function submitEditPayment(newStatus) {
+  const item = state.editingItem;
+  if (!item) return;
+
+  dom.editOptPaid.classList.toggle('active-paid',     newStatus === 'paid');
+  dom.editOptUnpaid.classList.toggle('active-unpaid', newStatus === 'unpaid');
+  dom.editPayError.style.display = 'none';
+
+  try {
+    const res  = await fetch(API_URL, {
+      method:  'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({
+        action:         'updatePaymentStatus',
+        record_id:      item.record_id || item.id,
+        payment_status: newStatus,
+        editor_name:    state.currentUser?.displayName || 'เจ้าหน้าที่',
+      })
+    });
+    const json = await res.json();
+    if (!json.ok) throw new Error(json.error || 'อัปเดตไม่สำเร็จ');
+
+    // Update local state
+    item.payment_status = newStatus;
+    historyLoaded = false;
+    refreshStatBar();
+    renderHistoryList(dom.historySearchInput.value);
+    closeEditPaySheet();
+
+    const msg = newStatus === 'paid' ? '✅ อัปเดตเป็นชำระแล้ว' : '🕐 อัปเดตเป็นยังไม่ชำระ';
+    showToast(msg);
+  } catch (err) {
+    dom.editPayErrorText.textContent = err.message || 'เกิดข้อผิดพลาด';
+    dom.editPayError.style.display   = 'flex';
+  }
+}
+
+function openHistorySheet()  { dom.historyOverlay.classList.add('show');    dom.historySheet.classList.add('open');    document.body.style.overflow = 'hidden'; }
 function closeHistorySheet() { dom.historyOverlay.classList.remove('show'); dom.historySheet.classList.remove('open'); document.body.style.overflow = ''; }
 
 /* ════════════════════════════════
    UI HELPERS
 ════════════════════════════════ */
-function showSection(el) {
-  if (!el) return;
-  el.style.display   = 'block';
-  el.style.animation = 'cardIn 0.35s cubic-bezier(0.22,1,0.36,1) both';
-}
+function showSection(el) { if (!el) return; el.style.display = 'block'; el.style.animation = 'cardIn 0.35s cubic-bezier(0.22,1,0.36,1) both'; }
 function hideSection(el) { if (el) el.style.display = 'none'; }
-
 function formatMeterDigits(n) { return String(Number(n)).split('').join(' '); }
-
 function formatDateTH(d) {
   if (!(d instanceof Date) || isNaN(d)) return '—';
   return d.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' });
@@ -775,32 +836,20 @@ function formatMonthTH(d) {
 (async function init() {
   buildDomRefs();
   bindMainEvents();
-
   dom.todayDate.textContent = formatDateTH(new Date());
 
   document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') { closeSheet(); closeHistorySheet(); cancelLogout(); }
+    if (e.key === 'Escape') { closeSheet(); closeHistorySheet(); cancelLogout(); closeEditPaySheet(); }
   });
 
-  // Check saved session → auto-login if found
   const autoLogged = checkSavedSession();
-
-  if (autoLogged) {
-    // Load bootstrap in background
-    loadBootstrap().catch(err => console.error('[bootstrap]', err));
-  } else {
-    // Wait until user logs in, bootstrap is called after enterApp
-    // Trigger bootstrap after login (patched in enterApp below)
-  }
+  if (autoLogged) loadBootstrap().catch(err => console.error('[bootstrap]', err));
 })();
 
-/* Override enterApp to also load bootstrap */
 const _enterApp = enterApp;
 window.enterApp = function(displayName) {
   _enterApp(displayName);
-  loadBootstrap().catch(err => {
-    console.error('[bootstrap]', err);
-  });
+  loadBootstrap().catch(err => console.error('[bootstrap]', err));
 };
 
 async function loadBootstrap(force = false) {
@@ -810,20 +859,16 @@ async function loadBootstrap(force = false) {
       HOUSES = cached;
       HOUSE_MAP = new Map(HOUSES.map(h => [String(h.id), h]));
       renderList();
+      refreshStatBar();
       return;
     }
   }
-
-  const res = await fetch(`${API_URL}?action=bootstrap`);
+  const res  = await fetch(`${API_URL}?action=bootstrap`);
   const json = await res.json();
-
-  if (!json.ok) {
-    throw new Error(json.error || 'โหลดข้อมูลไม่สำเร็จ');
-  }
-
+  if (!json.ok) throw new Error(json.error || 'โหลดข้อมูลไม่สำเร็จ');
   HOUSES = Array.isArray(json.houses) ? json.houses : [];
   HOUSE_MAP = new Map(HOUSES.map(h => [String(h.id), h]));
-
   saveBootstrapCache(HOUSES);
   renderList();
+  refreshStatBar();
 }
