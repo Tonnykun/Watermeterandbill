@@ -151,7 +151,6 @@
               <div class="stat-num" id="statPending">—</div>
               <div class="stat-label">ยังไม่บันทึก<br><span class="stat-unit">ครัวเรือน</span></div>
             </div>
-          </div>
         </div>
 
         <!-- Dropdown เลือกลูกบ้าน -->
@@ -304,58 +303,112 @@
       <span id="toastMsg">บันทึกสำเร็จ!</span>
     </div>
 
-    <!-- RECEIPT BOTTOM SHEET -->
-    <div class="sheet-overlay" id="sheetOverlay" onclick="closeSheet()"></div>
-    <div class="bottom-sheet" id="receiptSheet">
+    <!-- Receipt Bottom Sheet -->
+    <div id="sheetOverlay" class="sheet-overlay" onclick="closeSheet()"></div>
+    <div id="receiptSheet" class="bottom-sheet receipt-sheet">
       <div class="sheet-handle"></div>
       <div class="sheet-scroll">
-        <div class="receipt-header">
-          <div class="receipt-logo">💧🚰</div>
-          <div class="receipt-org">การประปาหมู่แสนสุข</div>
-          <div class="receipt-sub">บ้านแสนสุข หมู่ 4</div>
-          <div class="receipt-no-badge" id="rNo">ใบเสร็จ #—</div>
-        </div>
-        <div class="receipt-block">
-          <div class="receipt-row"><span class="rl">ชื่อลูกค้า</span><span class="rv" id="rName">—</span></div>
-          <div class="receipt-row"><span class="rl">บ้านเลขที่</span><span class="rv" id="rAddr">—</span></div>
-          <div class="receipt-row"><span class="rl">มิเตอร์</span><span class="rv" id="rMeter">—</span></div>
-          <div class="receipt-row"><span class="rl">ประจำเดือน</span><span class="rv" id="rMonth">—</span></div>
-          <div class="receipt-row"><span class="rl">วันที่จด</span><span class="rv" id="rDate">—</span></div>
-        </div>
-        <div class="receipt-meter-grid">
-          <div class="meter-cell"><div class="mc-label">มิเตอร์ก่อน</div><div class="mc-val" id="rPrev">—</div></div>
-          <div class="meter-arrow-cell">→</div>
-          <div class="meter-cell"><div class="mc-label">มิเตอร์ใหม่</div><div class="mc-val" id="rCurr">—</div></div>
-          <div class="meter-arrow-cell">=</div>
-          <div class="meter-cell accent-cell">
-            <div class="mc-label" style="color:var(--ios-blue)">หน่วยที่ใช้</div>
-            <div class="mc-val" style="color:var(--ios-blue)" id="rUnits">—</div>
+        
+        <!-- Receipt Content -->
+        <div id="receiptContent" class="receipt-content">
+          
+          <!-- Header -->
+          <div class="receipt-content">
+            <div class="receipt-header">
+              <div class="receipt-logo">💧🚰</div>
+              <div class="receipt-org">การประปาหมู่บ้านแสนสุข</div>
+              <div class="receipt-sub">บ้านแสนสุข หมู่ 4</div>
+              <div class="receipt-no" id="rNo">ใบเสร็จ #---</div>
+              <div class="receipt-date" id="rDate">วันที่: ---</div>
+            </div>
+
+            <div class="receipt-block">
+              <div class="receipt-row">
+                <span class="rl">ชื่อลูกค้า</span>
+                <span class="rv" id="rName">---</span>
+              </div>
+              <div class="receipt-row">
+                <span class="rl">บ้านเลขที่</span>
+                <span class="rv" id="rAddr">---</span>
+              </div>
+              <div class="receipt-row">
+                <span class="rl">มิเตอร์</span>
+                <span class="rv" id="rMeter">---</span>
+              </div>
+              <div class="receipt-row">
+                <span class="rl">ประจำเดือน</span>
+                <span class="rv" id="rMonth">---</span>
+              </div>
+            </div>
+
+            <div class="receipt-meter-grid">
+              <div class="meter-cell">
+                <div class="mc-label">ยอดก่อนหน้า</div>
+                <div class="mc-val" id="rPrev">0</div>
+              </div>
+              <div class="meter-arrow-cell">➜</div>
+              <div class="meter-cell accent-cell">
+                <div class="mc-label">ยอดปัจจุบัน</div>
+                <div class="mc-val" id="rCurr">0</div>
+              </div>
+            </div>
+
+            <div class="receipt-row highlight">
+              <span class="rl">หน่วยที่ใช้</span>
+              <span class="rv mono" id="rUnits">0</span>
+            </div>
+
+            <div class="receipt-block">
+              <div class="receipt-row">
+                <span class="rl">ค่าน้ำประปา</span>
+                <span class="rv mono" id="rWater">0.00 ฿</span>
+              </div>
+              <div class="receipt-row">
+                <span class="rl">ค่าบริการรายเดือน</span>
+                <span class="rv mono">20.00 ฿</span>
+              </div>
+            </div>
+
+            <div class="receipt-divider-thick"></div>
+
+            <div class="receipt-total">
+              <div class="rt-label">จำนวนเงินทั้งสิ้น</div>
+              <div class="rt-amount" id="rTotal">0.00 ฿</div>
+            </div>
+
+            <div class="receipt-status paid" id="rStatus">
+              ✅ ชำระแล้ว
+            </div>
+
+            <div class="qr-section">
+              <div class="qr-placeholder" id="rQrCode">
+                <div class="qr-icon">📱</div>
+                <div class="qr-text">สแกนเพื่อชำระเงิน</div>
+                <div class="qr-sub">พร้อมเพย์ (PromptPay)</div>
+              </div>
+            </div>
+
+            <div class="receipt-footer">
+              <div class="footer-thanks">ขอบคุณที่ใช้บริการ</div>
+              <div class="footer-contact">สอบถาม: 0XX-XXX-XXXX</div>
+              <div class="footer-note">ใบเสร็จนี้ใช้เป็นหลักฐานการชำระเงิน</div>
+            </div>
           </div>
-        </div>
-        <div class="receipt-block">
-          <div class="receipt-row"><span class="rl">ค่าน้ำ</span><span class="rv" id="rWater">—</span></div>
-          <div class="receipt-row"><span class="rl">ค่าบริการ</span><span class="rv">20.00 บาท</span></div>
-        </div>
-        <div class="receipt-total">
-          <div class="rt-label">ชำระแล้ว</div>
-          <div class="rt-amount" id="rTotal">—</div>
-        </div>
-        <div class="receipt-sign">ลงชื่อผู้รับเงิน ................................</div>
-        <div class="receipt-note">ใบเสร็จนี้ใช้เป็นหลักฐานการชำระเงิน</div>
+
+        <!-- Print Buttons (Hidden in Print) -->
         <div class="sheet-btn-group">
           <button class="sheet-btn primary" onclick="printReceipt()">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-              <polyline points="6 9 6 2 18 2 18 9"/>
-              <path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/>
-              <rect x="6" y="14" width="12" height="8"/>
-            </svg>
-            พิมพ์ใบเสร็จ
+            🖨️ พิมพ์ใบเสร็จ
           </button>
-          <button class="sheet-btn secondary" onclick="closeSheet()">ปิด</button>
+          <button class="sheet-btn secondary" onclick="closeSheet()">
+            ปิด
+          </button>
         </div>
+
       </div>
     </div>
-
+  </div>
+  
     <!-- HISTORY SHEET -->
     <div class="sheet-overlay" id="historyOverlay" onclick="closeHistorySheet()"></div>
     <div class="bottom-sheet history-sheet" id="historySheet">

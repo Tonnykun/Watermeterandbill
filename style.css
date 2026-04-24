@@ -439,6 +439,29 @@ input[type="password"]::-ms-clear {
 .change-btn { font-size: 14px; font-weight: 500; color: var(--ios-blue); padding: 5px 0; transition: opacity 0.15s; }
 .change-btn:active { opacity: 0.5; }
 
+.li-pending-badge {
+  flex-shrink: 0;
+  background: rgba(255, 59, 48, 0.12);
+  color: #FF3B30;
+  border: 1px solid rgba(255, 59, 48, 0.22);
+  border-radius: 999px;
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.dropdown-list li {
+  align-items: center;
+}
+
+.dropdown-list .li-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* ── Segmented Control ── */
 .segmented-control {
   position: relative; display: flex;
@@ -1047,4 +1070,239 @@ input[type="password"]::-ms-clear {
 .edit-pay-save {
   background: var(--ios-blue);
   color: #fff;
+}
+
+/* ════════════════════════════════
+THERMAL RECEIPT 58mm
+════════════════════════════════ */
+.receipt-content {
+  width: 48mm;
+  margin: 0 auto;
+  font-family: 'SF Mono', 'Menlo', 'Noto Sans Thai', monospace;
+  font-size: 10px;
+  line-height: 1.35;
+  color: #000;
+  background: #fff;
+  padding: 2mm 0;
+}
+
+/* Dividers */
+.receipt-divider {
+  border-top: 1px dashed #000;
+  margin: 6px 0;
+}
+.receipt-divider-dotted {
+  border-top: 1px dotted #ccc;
+  margin: 5px 0;
+}
+.receipt-divider-thick {
+  border-top: 2px solid #000;
+  margin: 6px 0;
+}
+
+/* Header */
+.receipt-header { text-align: center; margin-bottom: 8px; }
+.receipt-logo { font-size: 18px; margin-bottom: 3px; }
+.receipt-org { font-size: 12px; font-weight: 800; letter-spacing: 0.3px; }
+.receipt-sub { font-size: 9px; color: #555; margin-top: 2px; }
+.receipt-no { font-weight: 700; font-size: 11px; margin-top: 6px; }
+.receipt-date { font-size: 9px; color: #666; }
+
+/* Blocks & Rows */
+.receipt-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline; /* Aligns text along the bottom line */
+  padding: 5px 0;
+  font-size: 11px;
+  gap: 4px; /* Space between label and number */
+}
+
+.receipt-row.highlight {
+  font-weight: 700;
+  background: #f5f5f5;
+  padding: 6px 4px;
+  margin: 4px 0;
+  border-radius: 2px;
+}
+
+.receipt-row .rv.long-text {
+  max-width: 60%;      /* จำกัดความกว้างไม่ให้เกิน 60% ของบรรทัด */
+  word-wrap: break-word; /* ตัดคำเมื่อเกิน */
+  overflow-wrap: break-word;
+  text-align: right;
+  line-height: 1.2;      /* เว้นระยะห่างบรรทัดถ้าข้อความยาว */
+}
+
+.rl {
+  color: #333;
+  flex: 0 0 45%;          /* ปรับจาก flex: 1 */
+  text-align: left;
+  word-wrap: break-word;  /* เพิ่ม */
+  overflow-wrap: break-word; /* เพิ่ม */
+  white-space: normal;    /* เปลี่ยนจาก nowrap */
+}
+
+/* Value (Right side) */
+.rv {
+  text-align: right;
+  font-weight: 600;
+  min-width: 60px;
+  max-width: 50%;         /* เพิ่ม */
+  word-wrap: break-word;  /* เพิ่ม */
+  overflow-wrap: break-word; /* เพิ่ม */
+  white-space: normal;    /* เปลี่ยนจาก nowrap */
+  line-height: 1.3;       /* เพิ่ม */
+  padding-left: 4px;
+}
+
+/* สำหรับข้อความยาวพิเศษ (บ้านเลขที่) */
+.receipt-row .rv.long-text {
+  max-width: 55%;         /* ปรับจาก 60% */
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  text-align: right;
+  line-height: 1.3;
+  font-size: 10px;        /* ลดขนาดเล็กน้อย */
+  hyphens: auto;          /* เพิ่ม */
+}
+
+.rv.mono { 
+  font-family: 'SF Mono', monospace; 
+  letter-spacing: 0.5px; 
+}
+
+.receipt-total {
+  background: #000;
+  color: #fff;
+  padding: 12px 4px;
+  text-align: center;
+  margin: 8px 0;
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.rt-label { 
+  font-size: 10px; 
+  opacity: 0.9; 
+  letter-spacing: 1px;
+}
+
+.rt-amount {
+  font-size: 18px;
+  font-weight: 900;
+  font-family: 'SF Mono', monospace;
+  letter-spacing: 1px;
+}
+
+/* Status Badge */
+.receipt-status {
+  text-align: center;
+  padding: 6px;
+  font-weight: 700;
+  font-size: 11px;
+  margin: 5px 0;
+  border-radius: 3px;
+}
+.receipt-status.paid {
+  background: #e8f5e9;
+  color: #2e7d32;
+  border: 1px solid #4caf50;
+}
+.receipt-status.unpaid {
+  background: #fff3e0;
+  color: #e65100;
+  border: 1px solid #ff9800;
+}
+
+/* QR Code Section */
+.qr-section { text-align: center; margin: 8px 0; padding: 6px 0; }
+.qr-placeholder {
+  width: 36mm;
+  height: 36mm;
+  margin: 0 auto;
+  border: 1px dashed #999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #fafafa;
+  border-radius: 4px;
+  page-break-inside: avoid;
+}
+.qr-icon { font-size: 18px; margin-bottom: 3px; }
+.qr-text { font-size: 9px; font-weight: 700; }
+.qr-sub { font-size: 8px; color: #666; margin-top: 2px; }
+
+/* Footer */
+.receipt-footer { text-align: center; margin-top: 8px; font-size: 9px; }
+.footer-thanks { font-weight: 600; margin-bottom: 2px; }
+.footer-contact { color: #555; margin: 2px 0; }
+.footer-note { font-size: 7px; color: #888; margin-top: 3px; }
+
+/* ════════════════════════════════
+PRINT MEDIA — 58mm THERMAL
+════════════════════════════════ */
+@media print {
+  @page {
+    size: 58mm auto;
+    margin: 0;
+  }
+
+  /* Reset everything */
+  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+  
+  body {
+    background: #fff !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+
+  /* Hide all UI except receipt */
+  .status-bar-spacer, .nav-bar, .nav-info-bar, .main-scroll, 
+  .toast, .sheet-btn-group, .sheet-handle, .login-screen, 
+  .app-screen, .bottom-sheet > .sheet-scroll { 
+    display: none !important; 
+  }
+
+  /* Show only receipt sheet */
+  .bottom-sheet {
+    position: static !important;
+    width: 58mm !important;
+    max-width: 58mm !important;
+    transform: none !important;
+    margin: 0 auto !important;
+    background: #fff !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    display: block !important;
+    z-index: 1 !important;
+  }
+
+  .sheet-scroll {
+    display: block !important;
+    max-height: none !important;
+    overflow: visible !important;
+    padding: 3mm 2mm !important;
+  }
+
+  .receipt-content {
+    width: 48mm !important;
+    margin: 0 auto !important;
+    page-break-inside: avoid;
+  }
+
+  /* QR code print optimization */
+  .qr-placeholder {
+    width: 34mm !important;
+    height: 34mm !important;
+    border: 1px solid #666 !important;
+  }
+
+  /* Ensure text prints dark */
+  .receipt-org, .rt-amount, .receipt-status { color: #000 !important; }
+  .receipt-total { background: #000 !important; color: #fff !important; }
 }
