@@ -18,7 +18,7 @@ const BOOTSTRAP_CACHE_TTL = 5 * 60 * 1000; // 5 นาที
    สำหรับ Production ควรตรวจสอบฝั่ง server แทน */
 const VALID_USERS = [
   { username: 'admin',  password: 'water1234', displayName: 'ผู้ดูแลระบบ' },
-  { username: 'staff',  password: '0000', displayName: 'เจ้าหน้าที่' },
+  { username: 'staff',  password: 'staff1234', displayName: 'เจ้าหน้าที่' },
 ];
 const SESSION_KEY  = 'wm_session';   // localStorage key
 
