@@ -1505,3 +1505,30 @@ PRINT MEDIA — 58mm THERMAL
   color: var(--label-secondary);
   line-height: 1.35;
 }
+
+.history-reprint-btn {
+  border: none;
+  outline: none;
+  background: rgba(0, 122, 255, 0.10);
+  color: var(--ios-blue);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 10px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.history-reprint-btn:active {
+  transform: scale(0.98);
+}
+
+@media (max-width: 640px) {
+  .history-reprint-btn {
+    padding: 5px 9px;
+    font-size: 11px;
+  }
+}

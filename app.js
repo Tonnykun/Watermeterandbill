@@ -10,7 +10,7 @@ let HOUSES   = [];
 let HOUSE_MAP = new Map();
 const API_URL             = 'https://script.google.com/macros/s/AKfycbwDYBiYgoew9Cq1o6J0tSjO5Or8oWgUPqcswr6h0n3HDj76SVRKwRx8tlaxMw8k-a-b/exec';
 const RATE_PER_UNIT       = 3;
-const SERVICE_FEE         = 20;
+const SERVICE_FEE         = 0;
 const BOOTSTRAP_CACHE_KEY = 'wm_bootstrap_cache_v1';
 const BOOTSTRAP_CACHE_TTL = 5 * 60 * 1000;
 const PROMPTPAY_ID = '0830053242'; // เปลี่ยนเป็นเบอร์ PromptPay จริง
@@ -800,15 +800,13 @@ function renderHistoryList(query = '') {
             <div class="history-top-right">
               <span class="history-badge ${paidClass}">${paidLabel}</span>
 
-              ${item.payment_status === 'unpaid' ? `
-                <button
-                  type="button"
-                  class="history-notice-btn"
-                  onclick="event.stopPropagation(); printUnpaidNoticeById('${item.reading_id || ''}')"
-                >
-                  🧾 พิมพ์ใบแจ้ง
-                </button>
-              ` : ''}
+              <button
+                type="button"
+                class="history-reprint-btn"
+                onclick="event.stopPropagation(); reprintHistoryReceiptById('${item.reading_id || ''}')"
+              >
+                🖨️ พิมพ์ซ้ำ
+              </button>
 
               <button
                 type="button"
@@ -1105,6 +1103,51 @@ function printUnpaidNoticeById(readingId) {
     units_used: item.units_used,
     water_cost: item.water_cost,
     total_amount: item.total_amount,
+  };
+
+  closeHistorySheet();
+  populateReceipt(receiptHouse, receiptMeter, receiptSaved);
+
+  setTimeout(() => {
+    openSheet();
+  }, 180);
+}
+
+function reprintHistoryReceiptById(readingId) {
+  const item = state.historyItems.find(
+    x => String(x.reading_id || '') === String(readingId || '')
+  );
+
+  if (!item) {
+    showToast('ไม่พบรายการสำหรับพิมพ์ซ้ำ');
+    return;
+  }
+
+  const receiptHouse = {
+    name: item.owner_name || item.name || '-',
+    num: item.house_no || '-',
+    addr: item.house_no || item.addr || '-',
+    address: item.house_no || item.address || '-',
+  };
+
+  const receiptMeter = {
+    label: item.meter_label || item.meter_key || 'มิเตอร์ 1',
+  };
+
+  const isUnpaid = item.payment_status === 'unpaid';
+
+  const receiptSaved = {
+    reading_id: item.reading_id || '',
+    receipt_no: item.receipt_no || item.reading_id || '---',
+    read_date: item.read_date || item.created_at || new Date().toISOString(),
+    payment_status: isUnpaid ? 'unpaid' : 'paid',
+    prev_reading: Number(item.prev_reading || 0),
+    current_reading: Number(item.current_reading || 0),
+    units_used: Number(item.units_used || 0),
+    rate_per_unit: Number(item.rate_per_unit || RATE_PER_UNIT),
+    water_cost: Number(item.water_cost || 0),
+    service_fee: Number(item.service_fee || SERVICE_FEE),
+    total_amount: Number(item.total_amount || 0),
   };
 
   closeHistorySheet();

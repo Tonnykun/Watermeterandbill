@@ -114,7 +114,7 @@
 
       <!-- SECTION 1: เลือกบ้าน (รวม dropdown เดือน + stat bar) -->
       <section class="card" id="sectionHouse">
-        <div class="section-label">เลือกบ้าน</div>
+        <div class="section-label">เลือกเดือน</div>
 
         <!-- 1.1 Dropdown เดือน -->
         <div class="month-select-wrap">
@@ -248,7 +248,7 @@
           </div>
           <div class="cost-row">
             <span class="cost-label">ค่าบริการรายเดือน</span>
-            <span class="cost-value">20.00 บาท</span>
+            <span class="cost-value" id="serviceFeeDisplay">— บาท</span>
           </div>
         </div>
         <p class="last-save-warning" id="lastSaveWarning" style="display:none">
@@ -362,7 +362,7 @@
               </div>
               <div class="receipt-row">
                 <span class="rl">ค่าบริการรายเดือน</span>
-                <span class="rv mono">20.00 ฿</span>
+                <span class="rv mono" id="rServiceFee">— ฿</span>
               </div>
             </div>
 
