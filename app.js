@@ -12,7 +12,7 @@ const API_URL             = 'https://script.google.com/macros/s/AKfycbwDYBiYgoew
 const RATE_PER_UNIT       = 3;
 const SERVICE_FEE         = 20;
 const BOOTSTRAP_CACHE_KEY = 'wm_bootstrap_cache_v1';
-const BOOTSTRAP_CACHE_TTL = 10 * 1000;
+const BOOTSTRAP_CACHE_TTL = 5 * 60 * 1000;
 
 const VALID_USERS = [
   { username: 'admin', password: 'water1234', displayName: 'ผู้ดูแลระบบ' },
@@ -651,7 +651,7 @@ async function loadHistory(force = false) {
 
   try {
     dom.historySummary.textContent = 'กำลังโหลดข้อมูล...';
-    const res = await fetch(`${API_URL}?action=history&limit=200`);
+    const res = await fetch(`${API_URL}?action=history&month=${state.selectedMonth}&limit=100`);
     const json = await res.json();
     if (!json.ok) throw new Error(json.error || 'โหลดประวัติไม่สำเร็จ');
 
@@ -1064,16 +1064,16 @@ function formatMonthTH(d) {
 const _enterApp = enterApp;
 window.enterApp = function(displayName) {
   _enterApp(displayName);
-  loadBootstrap(true)
-    .then(() => loadHistory(true))
-    .then(() => refreshStatBar())
-    .catch(err => console.error('[bootstrap]', err));
+  buildMonthOptions();
+  loadBootstrap(false)
+  .then(() => loadHistory(false))
+  .then(() => refreshStatBar())
+  .catch(() => refreshStatBar());
 };
 
 async function loadBootstrap(force = false) {
   if (!force) {
     try {
-      sessionStorage.removeItem(BOOTSTRAP_CACHE_KEY);
     } catch (e) {}
 
     const cached = loadBootstrapCache();
