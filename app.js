@@ -615,59 +615,6 @@ async function handleSave() {
   } finally { dom.saveBtn.disabled = false; }
 }
 
-/* ════════════════════════════════
-   RECEIPT
-════════════════════════════════ */
-function populateReceipt(house, meter, saved) {
-  document.getElementById('rNo').textContent    = `ใบเสร็จ #${saved.receipt_no}`;
-  document.getElementById('rName').textContent  = house.name;
-  document.getElementById('rAddr').textContent  = house.addr || house.address || house.num;
-    const addrEl = document.getElementById('rAddr');
-    addrEl.textContent = house.addr || house.address || house.num || '---';
-    addrEl.classList.add('long-text');
-  document.getElementById('rMeter').textContent = meter.label || 'มิเตอร์ 1';
-  document.getElementById('rMonth').textContent = formatMonthTH(new Date(saved.read_date));
-  document.getElementById('rDate').textContent  = formatDateTH(new Date(saved.read_date));
-  document.getElementById('rPrev').textContent  = Number(saved.prev_reading).toLocaleString();
-  document.getElementById('rCurr').textContent  = Number(saved.current_reading).toLocaleString();
-  document.getElementById('rUnits').textContent = Number(saved.units_used).toLocaleString();
-  document.getElementById('rWater').textContent = `${Number(saved.water_cost).toLocaleString('th-TH', { minimumFractionDigits: 2 })} บาท`;
-  document.getElementById('rTotal').textContent = `${Number(saved.total_amount).toLocaleString('th-TH', { minimumFractionDigits: 2 })} บาท`;
-
-  const titleEl =
-  document.getElementById('receiptTitle') ||
-  document.querySelector('.receipt-title') ||
-  document.querySelector('.thermal-copy-label');
-
-  if (titleEl) {
-    titleEl.textContent = isUnpaid
-      ? 'ใบแจ้งยอดค้างชำระค่าน้ำประปา'
-      : 'ใบเสร็จรับเงินค่าน้ำประปา';
-  }
-
-  const noteEl =
-    document.getElementById('receiptNote') ||
-    document.querySelector('.receipt-note') ||
-    document.querySelector('.footer-note');
-
-  if (noteEl) {
-    noteEl.textContent = isUnpaid
-      ? 'เอกสารนี้เป็นใบแจ้งยอด ยังไม่ใช่หลักฐานการชำระเงิน'
-      : 'ใบเสร็จนี้ใช้เป็นหลักฐานการชำระเงิน';
-  }
-
-  const statusEl = document.getElementById('rStatus');
-  if (statusEl) {
-    statusEl.className = isUnpaid ? 'receipt-status unpaid' : 'receipt-status paid';
-    statusEl.textContent = isUnpaid ? '🕐 ยังไม่ชำระ' : '✅ ชำระแล้ว';
-  }
-
-  const printBtn = document.querySelector('#receiptSheet .sheet-btn.primary');
-  if (printBtn) {
-    printBtn.textContent = isUnpaid ? '🖨️ พิมพ์ใบแจ้ง' : '🖨️ พิมพ์ใบเสร็จ';
-  }
-}
-
 function openSheet()  { dom.sheetOverlay.classList.add('show');    dom.receiptSheet.classList.add('open');    document.body.style.overflow = 'hidden'; }
 function closeSheet() { dom.sheetOverlay.classList.remove('show'); dom.receiptSheet.classList.remove('open'); document.body.style.overflow = ''; }
 function printReceipt() { window.print(); }
@@ -875,12 +822,18 @@ function openEditPaySheet(idx) {
 }
 
 function closeEditPaySheet() {
-  dom.editPayOverlay.classList.remove('show');
-  dom.editPaySheet.classList.remove('open');
+  if (dom.editPayOverlay) {
+    dom.editPayOverlay.classList.remove('show');
+  }
+
+  if (dom.editPaySheet) {
+    dom.editPaySheet.classList.remove('open');
+  }
+
   document.body.style.overflow = '';
+
   state.editingItem = null;
   state.editingStatus = null;
-  collapseAllSwipes();
 }
 
 function selectEditPaymentStatus(status) {
@@ -901,9 +854,8 @@ async function submitEditPayment(newStatus) {
   const item = state.editingItem;
   if (!item) return;
 
-  // เช็คว่าสถานะเดิมเป็นค้างชำระ แล้วเปลี่ยนเป็นชำระแล้วหรือไม่
   const oldStatus = item.payment_status === 'unpaid' ? 'unpaid' : 'paid';
-  const shouldShowReceipt = oldStatus === 'unpaid' && newStatus === 'paid';
+  const shouldOpenReceipt = true;
 
   dom.editOptPaid.classList.toggle('active-paid', newStatus === 'paid');
   dom.editOptUnpaid.classList.toggle('active-unpaid', newStatus === 'unpaid');
@@ -928,12 +880,11 @@ async function submitEditPayment(newStatus) {
     const json = await res.json();
     if (!json.ok) throw new Error(json.error || 'อัปเดตไม่สำเร็จ');
 
-    // ถ้า Apps Script ส่งข้อมูลกลับมา ให้รวมข้อมูลกลับเข้ารายการเดิม
-    const updatedData = json.data || json.item || {};
+    const updatedData = json.data || {};
     Object.assign(item, updatedData);
 
-    // อัปเดตสถานะในหน้าจอ
     item.payment_status = newStatus;
+
     historyLoaded = false;
     refreshStatBar();
     renderHistoryList(dom.historySearchInput.value);
@@ -944,11 +895,10 @@ async function submitEditPayment(newStatus) {
 
     showToast(msg);
 
-    // ถ้าเปลี่ยนจากค้างชำระ → ชำระแล้ว ให้เด้งใบเสร็จ
-    if (shouldShowReceipt) {
+    if (shouldOpenReceipt) {
       const receiptHouse = {
         name: item.owner_name || item.name || '-',
-        num: item.house_no || item.addr || '-',
+        num: item.house_no || '-',
         addr: item.house_no || item.addr || '-',
         address: item.house_no || item.address || '-',
       };
@@ -958,14 +908,16 @@ async function submitEditPayment(newStatus) {
       };
 
       const receiptSaved = {
-        receipt_no: item.receipt_no || updatedData.receipt_no || item.reading_id || '---',
-        read_date: item.read_date || new Date().toISOString(),
-        payment_status: 'paid',
-        prev_reading: item.prev_reading,
-        current_reading: item.current_reading,
-        units_used: item.units_used,
-        water_cost: item.water_cost,
-        total_amount: item.total_amount,
+        reading_id: item.reading_id || '',
+        receipt_no: item.receipt_no || item.reading_id || '---',
+        read_date: item.read_date || item.created_at || new Date().toISOString(),
+        payment_status: newStatus,
+        prev_reading: Number(item.prev_reading || 0),
+        current_reading: Number(item.current_reading || 0),
+        units_used: Number(item.units_used || 0),
+        water_cost: Number(item.water_cost || 0),
+        service_fee: Number(item.service_fee || SERVICE_FEE),
+        total_amount: Number(item.total_amount || 0),
       };
 
       closeEditPaySheet();
@@ -1286,9 +1238,28 @@ RECEIPT & QR CODE HELPERS
 function populateReceipt(house, meter, saved) {
   const isUnpaid = saved.payment_status === 'unpaid';
 
+  const receiptContent = document.getElementById('receiptContent');
+  const titleEl = document.getElementById('receiptTitle');
+  const warningEl = document.getElementById('receiptWarning');
+
+  if (receiptContent) {
+    receiptContent.classList.toggle('receipt-is-unpaid', isUnpaid);
+    receiptContent.classList.toggle('receipt-is-paid', !isUnpaid);
+  }
+
+  if (titleEl) {
+    titleEl.textContent = isUnpaid
+      ? 'ใบแจ้งยอดค้างชำระค่าน้ำประปา'
+      : 'ใบเสร็จรับเงินค่าน้ำประปา';
+  }
+
+  if (warningEl) {
+    warningEl.style.display = 'none';
+  }
+
   document.getElementById('rNo').textContent = isUnpaid
-  ? `ใบแจ้ง #${saved.receipt_no || saved.reading_id || '---'}`
-  : `ใบเสร็จ #${saved.receipt_no || '---'}`;
+    ? `ใบแจ้ง #${saved.receipt_no || saved.reading_id || '---'}`
+    : `ใบเสร็จ #${saved.receipt_no || '---'}`;
   document.getElementById('rDate').textContent  = `วันที่: ${formatDateTH(new Date(saved.read_date))}`;
   document.getElementById('rName').textContent  = house.name || '---';
   document.getElementById('rAddr').textContent  = house.addr || house.address || house.num || '---';
@@ -1302,15 +1273,17 @@ function populateReceipt(house, meter, saved) {
   
   // สถานะ
   const statusEl = document.getElementById('rStatus');
-  if (isUnpaid) {
-    statusEl.className = 'receipt-status unpaid';
-    statusEl.textContent = '🕐 ยังไม่ชำระ';
-  } else {
-    statusEl.className = 'receipt-status paid';
-    statusEl.textContent = '✅ ชำระแล้ว';
-  }
 
-  // ซ่อน QR ถ้ายังไม่ได้ตั้งค่า (หรือแสดงเมื่อพร้อม)
+  if (statusEl) {
+    if (isUnpaid) {
+      statusEl.className = 'receipt-status unpaid';
+      statusEl.textContent = '⚠️ ยังไม่ชำระ';
+    } else {
+      statusEl.className = 'receipt-status paid';
+      statusEl.textContent = '✅ ชำระแล้ว';
+    }
+  }
+    // แสดง QR PromptPay ทั้งใบเสร็จและใบแจ้งค้างชำระ
   updateQrDisplay(true, saved.total_amount);
 }
 

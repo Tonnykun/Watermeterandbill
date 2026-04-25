@@ -1532,3 +1532,116 @@ PRINT MEDIA — 58mm THERMAL
     font-size: 11px;
   }
 }
+
+.receipt-doc-title {
+  margin: 10px auto 6px;
+  padding: 7px 10px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 800;
+  text-align: center;
+  background: rgba(52, 199, 89, 0.12);
+  color: var(--ios-green);
+  border: 1px solid rgba(52, 199, 89, 0.28);
+}
+
+.receipt-doc-warning {
+  margin: 6px 0 8px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+  color: #B45309;
+  background: rgba(255, 149, 0, 0.14);
+  border: 1px dashed rgba(255, 149, 0, 0.45);
+}
+
+.receipt-is-unpaid .receipt-doc-title {
+  background: rgba(255, 149, 0, 0.16);
+  color: var(--ios-orange);
+  border-color: rgba(255, 149, 0, 0.45);
+}
+
+.receipt-is-unpaid .receipt-no {
+  color: var(--ios-orange);
+  font-weight: 800;
+}
+
+.receipt-is-unpaid .receipt-header {
+  border-bottom-color: rgba(255, 149, 0, 0.35);
+}
+
+/* หัวเอกสารใบเสร็จ / ใบแจ้ง ให้เป็นตัวหนังสือธรรมดาสีดำ */
+.receipt-doc-title {
+  margin: 8px 0 4px !important;
+  padding: 0 !important;
+  border: none !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: #000 !important;
+  font-size: 15px !important;
+  font-weight: 800 !important;
+  text-align: center !important;
+  line-height: 1.35 !important;
+}
+
+.receipt-doc-warning {
+  margin: 4px 0 8px !important;
+  padding: 0 !important;
+  border: none !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: #000 !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  text-align: center !important;
+  line-height: 1.35 !important;
+}
+
+.receipt-is-unpaid .receipt-doc-title,
+.receipt-is-unpaid .receipt-doc-warning,
+.receipt-is-unpaid .receipt-no {
+  color: #000 !important;
+  background: transparent !important;
+  border: none !important;
+}
+
+.receipt-qr-section {
+  text-align: center;
+  margin: 10px 0;
+}
+
+.receipt-qr-title {
+  color: #000 !important;
+  font-size: 13px !important;
+  font-weight: 800 !important;
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.receipt-qr-box {
+  width: 128px !important;
+  height: 128px !important;
+  margin: 0 auto 6px !important;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.receipt-qr-box canvas {
+  display: block !important;
+  width: 128px !important;
+  height: 128px !important;
+}
+
+.receipt-qr-box img {
+  display: none !important;
+}
+
+.receipt-qr-note {
+  color: #000 !important;
+  font-size: 10px !important;
+  text-align: center;
+}
