@@ -377,12 +377,10 @@
               ✅ ชำระแล้ว
             </div>
 
-            <div class="qr-section">
-              <div class="qr-placeholder" id="rQrCode">
-                <div class="qr-icon">📱</div>
-                <div class="qr-text">สแกนเพื่อชำระเงิน</div>
-                <div class="qr-sub">พร้อมเพย์ (PromptPay)</div>
-              </div>
+            <div class="receipt-qr-section" id="qrSection">
+              <div class="receipt-qr-title">สแกนชำระผ่าน PromptPay</div>
+              <div class="receipt-qr-box" id="qrCode"></div>
+              <div class="receipt-qr-note" id="qrNote">QR สำหรับชำระค่าน้ำประปา</div>
             </div>
 
             <div class="receipt-footer">
@@ -498,6 +496,8 @@
 
   </div><!-- end app-screen -->
 
+  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
   <script src="app.js"></script>
+
 </body>
 </html>

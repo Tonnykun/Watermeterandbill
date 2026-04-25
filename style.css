@@ -1389,3 +1389,119 @@ PRINT MEDIA — 58mm THERMAL
     font-size: 10px;
   }
 }
+
+/* Disable swipe-to-edit history item */
+.history-item-action {
+  display: none !important;
+}
+
+.history-item,
+.history-item.swiped {
+  transform: none !important;
+  cursor: default !important;
+  will-change: auto !important;
+  touch-action: pan-y !important;
+}
+
+.history-notice-btn {
+  border: none;
+  outline: none;
+  background: rgba(255, 149, 0, 0.12);
+  color: var(--ios-orange);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 10px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.history-notice-btn:active {
+  transform: scale(0.98);
+}
+
+@media (max-width: 640px) {
+  .history-notice-btn {
+    padding: 5px 9px;
+    font-size: 11px;
+  }
+}
+
+/* เอากรอบ/พื้นหลังออก แต่คงขนาดตัวหนังสือและ layout เดิม */
+.receipt-meter-grid {
+  background: transparent !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+}
+
+.meter-cell,
+.accent-cell {
+  background: transparent !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+.accent-cell .mc-label,
+.accent-cell .mc-val {
+  color: inherit !important;
+}
+
+/* เอาพื้นหลังดำ/สีออกจากยอดรวม แต่คงขนาดตัวหนังสือเดิม */
+.receipt-total {
+  background: transparent !important;
+  color: var(--label-primary) !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  padding: 8px 0 !important;
+}
+
+.rt-label {
+  color: var(--label-secondary) !important;
+  opacity: 1 !important;
+}
+
+.rt-amount {
+  color: var(--label-primary) !important;
+}
+
+.receipt-total {
+  border-top: 1px dashed var(--separator) !important;
+  border-bottom: 1px dashed var(--separator) !important;
+}
+
+.receipt-qr-section {
+  text-align: center;
+  margin: 12px 0 10px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--separator);
+}
+
+.receipt-qr-title {
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.receipt-qr-box {
+  width: 128px;
+  height: 128px;
+  margin: 0 auto 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.receipt-qr-box img,
+.receipt-qr-box canvas {
+  width: 128px !important;
+  height: 128px !important;
+}
+
+.receipt-qr-note {
+  font-size: 10px;
+  color: var(--label-secondary);
+  line-height: 1.35;
+}

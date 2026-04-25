@@ -13,6 +13,8 @@ const RATE_PER_UNIT       = 3;
 const SERVICE_FEE         = 20;
 const BOOTSTRAP_CACHE_KEY = 'wm_bootstrap_cache_v1';
 const BOOTSTRAP_CACHE_TTL = 5 * 60 * 1000;
+const PROMPTPAY_ID = '0830053242'; // เปลี่ยนเป็นเบอร์ PromptPay จริง
+const PROMPTPAY_NAME = 'วัชรพงษ์ กุณามี';
 
 const VALID_USERS = [
   { username: 'admin', password: 'water1234', displayName: 'ผู้ดูแลระบบ' },
@@ -559,7 +561,7 @@ function selectPayment(status) {
   dom.payOptPaid.classList.toggle('active',   status === 'paid');
   dom.payOptUnpaid.classList.toggle('active', status === 'unpaid');
   if (status === 'paid') { dom.saveBtnLabel.textContent = 'บันทึก + ออกใบเสร็จ'; dom.saveBtn.classList.remove('unpaid-mode'); }
-  else { dom.saveBtnLabel.textContent = 'บันทึกยอดมิเตอร์'; dom.saveBtn.classList.add('unpaid-mode'); }
+  else { dom.saveBtnLabel.textContent = 'บันทึกยอดมิเตอร์+พิมพ์ใบค้างชำระ'; dom.saveBtn.classList.add('unpaid-mode'); }
 }
 
 /* ════════════════════════════════
@@ -600,8 +602,14 @@ async function handleSave() {
     await loadHistory(true);
     refreshStatBar();
 
-    if (isPaid) { populateReceipt(house, meter, saved); showToast('บันทึก + ออกใบเสร็จสำเร็จ!'); setTimeout(() => openSheet(), 600); }
-    else { showToast('บันทึกสำเร็จ (ยังไม่ชำระ)'); }
+    populateReceipt(house, meter, saved);
+
+    if (isPaid) {
+      showToast('บันทึก + ออกใบเสร็จสำเร็จ!');
+    } else {
+      showToast('บันทึก + ออกใบแจ้งค้างชำระสำเร็จ!');
+    }
+    setTimeout(() => openSheet(), 600);
   } catch (err) {
     dom.errorText.textContent = err.message || 'เกิดข้อผิดพลาด'; dom.errorBox.style.display = 'flex';
   } finally { dom.saveBtn.disabled = false; }
@@ -625,6 +633,39 @@ function populateReceipt(house, meter, saved) {
   document.getElementById('rUnits').textContent = Number(saved.units_used).toLocaleString();
   document.getElementById('rWater').textContent = `${Number(saved.water_cost).toLocaleString('th-TH', { minimumFractionDigits: 2 })} บาท`;
   document.getElementById('rTotal').textContent = `${Number(saved.total_amount).toLocaleString('th-TH', { minimumFractionDigits: 2 })} บาท`;
+
+  const titleEl =
+  document.getElementById('receiptTitle') ||
+  document.querySelector('.receipt-title') ||
+  document.querySelector('.thermal-copy-label');
+
+  if (titleEl) {
+    titleEl.textContent = isUnpaid
+      ? 'ใบแจ้งยอดค้างชำระค่าน้ำประปา'
+      : 'ใบเสร็จรับเงินค่าน้ำประปา';
+  }
+
+  const noteEl =
+    document.getElementById('receiptNote') ||
+    document.querySelector('.receipt-note') ||
+    document.querySelector('.footer-note');
+
+  if (noteEl) {
+    noteEl.textContent = isUnpaid
+      ? 'เอกสารนี้เป็นใบแจ้งยอด ยังไม่ใช่หลักฐานการชำระเงิน'
+      : 'ใบเสร็จนี้ใช้เป็นหลักฐานการชำระเงิน';
+  }
+
+  const statusEl = document.getElementById('rStatus');
+  if (statusEl) {
+    statusEl.className = isUnpaid ? 'receipt-status unpaid' : 'receipt-status paid';
+    statusEl.textContent = isUnpaid ? '🕐 ยังไม่ชำระ' : '✅ ชำระแล้ว';
+  }
+
+  const printBtn = document.querySelector('#receiptSheet .sheet-btn.primary');
+  if (printBtn) {
+    printBtn.textContent = isUnpaid ? '🖨️ พิมพ์ใบแจ้ง' : '🖨️ พิมพ์ใบเสร็จ';
+  }
 }
 
 function openSheet()  { dom.sheetOverlay.classList.add('show');    dom.receiptSheet.classList.add('open');    document.body.style.overflow = 'hidden'; }
@@ -749,54 +790,50 @@ function renderHistoryList(query = '') {
     const paidClass = item.payment_status === 'unpaid' ? 'unpaid' : 'paid';
     const paidLabel = item.payment_status === 'unpaid' ? 'ค้างชำระ' : 'ชำระแล้ว';
     return `
-        <div class="history-item-outer" id="hio-${idx}">
-          <div class="history-item-action" onclick="openEditPaySheetById('${item.reading_id || ''}')">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-              <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
-              <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
-            </svg>
-            แก้ไข
-          </div>
+        <div class="history-item" id="hi-${idx}" data-idx="${realIdx}">
+          <div class="history-top">
+            <div>
+              <div class="history-house">${item.house_no || '-'} · ${item.meter_label || '-'}</div>
+              <div class="history-name">${item.owner_name || '-'}</div>
+            </div>
 
-          <div class="history-item" id="hi-${idx}" data-idx="${realIdx}"
-            ontouchstart="swipeStart(event,${idx})"
-            ontouchmove="swipeMove(event,${idx})"
-            ontouchend="swipeEnd(event,${idx})">
-            <div class="history-top">
-              <div>
-                <div class="history-house">${item.house_no || '-'} · ${item.meter_label || '-'}</div>
-                <div class="history-name">${item.owner_name || '-'}</div>
-              </div>
+            <div class="history-top-right">
+              <span class="history-badge ${paidClass}">${paidLabel}</span>
 
-              <div class="history-top-right">
-                <span class="history-badge ${paidClass}">${paidLabel}</span>
+              ${item.payment_status === 'unpaid' ? `
                 <button
                   type="button"
-                  class="history-edit-btn"
-                  onclick="event.stopPropagation(); openEditPaySheetById('${item.reading_id || ''}')"
+                  class="history-notice-btn"
+                  onclick="event.stopPropagation(); printUnpaidNoticeById('${item.reading_id || ''}')"
                 >
-                  ✏️ แก้ไข
+                  🧾 พิมพ์ใบแจ้ง
                 </button>
-              </div>
+              ` : ''}
+
+              <button
+                type="button"
+                class="history-edit-btn"
+                onclick="event.stopPropagation(); openEditPaySheetById('${item.reading_id || ''}')"
+              >
+                ✏️ แก้ไข
+              </button>
             </div>
-          <div class="history-meta">
-            <div>วันที่จด: <strong>${formatDisplayDate(item.read_date)}</strong></div>
-            <div>เลขมิเตอร์: <strong>${item.meter_code || '-'}</strong></div>
-            <div>ยอดก่อน: <strong>${Number(item.prev_reading || 0).toLocaleString()}</strong></div>
-            <div>ยอดใหม่: <strong>${Number(item.current_reading || 0).toLocaleString()}</strong></div>
-            <div>ใช้ไป: <strong>${Number(item.units_used || 0).toLocaleString()} หน่วย</strong></div>
-            <div>ผู้จด: <strong>${item.reader_name || '-'}</strong></div>
           </div>
-          <div class="history-total">
-            <span class="history-total-label">ยอดรวม</span>
-            <span class="history-total-value">${Number(item.total_amount || 0).toLocaleString('th-TH', { minimumFractionDigits: 2 })} บาท</span>
-          </div>
+        <div class="history-meta">
+          <div>วันที่จด: <strong>${formatDisplayDate(item.read_date)}</strong></div>
+          <div>เลขมิเตอร์: <strong>${item.meter_code || '-'}</strong></div>
+          <div>ยอดก่อน: <strong>${Number(item.prev_reading || 0).toLocaleString()}</strong></div>
+          <div>ยอดใหม่: <strong>${Number(item.current_reading || 0).toLocaleString()}</strong></div>
+          <div>ใช้ไป: <strong>${Number(item.units_used || 0).toLocaleString()} หน่วย</strong></div>
+          <div>ผู้จด: <strong>${item.reader_name || '-'}</strong></div>
         </div>
-      </div>`;
+        <div class="history-total">
+          <span class="history-total-label">ยอดรวม</span>
+          <span class="history-total-value">${Number(item.total_amount || 0).toLocaleString('th-TH', { minimumFractionDigits: 2 })} บาท</span>
+        </div>
+    </div>`;
   }).join('');
 
-  // Close any open swipe when tapping elsewhere
-  dom.historyList.addEventListener('click', collapseAllSwipes, { once: true });
 }
 
 function editHistoryItem(readingId) {
@@ -811,64 +848,6 @@ function editHistoryItem(readingId) {
 
   showToast(`เลือกแก้ไขรายการ ${item.house_no || '-'} ${item.meter_label || ''}`);
   console.log('edit item =', item);
-}
-
-/* ════════════════════════════════
-   SWIPE TO EDIT  (new)
-════════════════════════════════ */
-let swipeData = { idx: null, startX: 0, startY: 0, dx: 0, tracking: false };
-const SWIPE_THRESHOLD = 40; // px
-
-function swipeStart(e, idx) {
-  const t = e.touches[0];
-  swipeData = { idx, startX: t.clientX, startY: t.clientY, dx: 0, tracking: true };
-}
-
-function swipeMove(e, idx) {
-  if (!swipeData.tracking || swipeData.idx !== idx) return;
-  const t  = e.touches[0];
-  const dx = t.clientX - swipeData.startX;
-  const dy = t.clientY - swipeData.startY;
-
-  // Cancel if vertical scroll
-  if (Math.abs(dy) > Math.abs(dx) + 8) { swipeData.tracking = false; return; }
-
-  swipeData.dx = dx;
-  const el = document.getElementById(`hi-${idx}`);
-  if (!el) return;
-
-  const isSwiped = el.classList.contains('swiped');
-  let offset = isSwiped ? -72 + dx : dx;
-  offset = Math.max(-72, Math.min(0, offset));
-  el.style.transition = 'none';
-  el.style.transform  = `translateX(${offset}px)`;
-  e.preventDefault();
-}
-
-function swipeEnd(e, idx) {
-  if (!swipeData.tracking || swipeData.idx !== idx) return;
-  swipeData.tracking = false;
-  const el = document.getElementById(`hi-${idx}`);
-  if (!el) return;
-  el.style.transition = '';
-
-  const isSwiped = el.classList.contains('swiped');
-  if (!isSwiped && swipeData.dx < -SWIPE_THRESHOLD) {
-    el.classList.add('swiped');
-    el.style.transform = '';
-  } else if (isSwiped && swipeData.dx > SWIPE_THRESHOLD) {
-    el.classList.remove('swiped');
-    el.style.transform = '';
-  } else {
-    el.style.transform = isSwiped ? 'translateX(-72px)' : '';
-  }
-}
-
-function collapseAllSwipes() {
-  document.querySelectorAll('.history-item.swiped').forEach(el => {
-    el.classList.remove('swiped');
-    el.style.transform = '';
-  });
 }
 
 /* ════════════════════════════════
@@ -1095,6 +1074,47 @@ async function loadBootstrap(force = false) {
   refreshStatBar();
 }
 
+function printUnpaidNoticeById(readingId) {
+  const item = state.historyItems.find(
+    x => String(x.reading_id || '') === String(readingId || '')
+  );
+
+  if (!item) {
+    showToast('ไม่พบรายการค้างชำระ');
+    return;
+  }
+
+  const receiptHouse = {
+    name: item.owner_name || item.name || '-',
+    num: item.house_no || '-',
+    addr: item.house_no || item.addr || '-',
+    address: item.house_no || item.address || '-',
+  };
+
+  const receiptMeter = {
+    label: item.meter_label || item.meter_key || 'มิเตอร์ 1',
+  };
+
+  const receiptSaved = {
+    receipt_no: item.receipt_no || item.reading_id || '---',
+    reading_id: item.reading_id || '',
+    read_date: item.read_date || new Date().toISOString(),
+    payment_status: 'unpaid',
+    prev_reading: item.prev_reading,
+    current_reading: item.current_reading,
+    units_used: item.units_used,
+    water_cost: item.water_cost,
+    total_amount: item.total_amount,
+  };
+
+  closeHistorySheet();
+  populateReceipt(receiptHouse, receiptMeter, receiptSaved);
+
+  setTimeout(() => {
+    openSheet();
+  }, 180);
+}
+
 function openEditPaySheetById(readingId) {
   const item = state.historyItems.find(
     x => String(x.reading_id || '') === String(readingId || '')
@@ -1117,13 +1137,115 @@ function openEditPaySheetById(readingId) {
   document.body.style.overflow = 'hidden';
 }
 
+function crc16ccitt(str) {
+  let crc = 0xFFFF;
+
+  for (let i = 0; i < str.length; i++) {
+    crc ^= str.charCodeAt(i) << 8;
+
+    for (let j = 0; j < 8; j++) {
+      if ((crc & 0x8000) !== 0) {
+        crc = (crc << 1) ^ 0x1021;
+      } else {
+        crc <<= 1;
+      }
+
+      crc &= 0xFFFF;
+    }
+  }
+
+  return crc.toString(16).toUpperCase().padStart(4, '0');
+}
+
+function emvField(id, value) {
+  const len = String(value.length).padStart(2, '0');
+  return `${id}${len}${value}`;
+}
+
+function formatPromptPayId(id) {
+  const clean = String(id).replace(/\D/g, '');
+
+  // เบอร์มือถือไทย 10 หลัก เช่น 0812345678
+  if (clean.length === 10 && clean.startsWith('0')) {
+    return `0066${clean.substring(1)}`;
+  }
+
+  // เลขบัตรประชาชน / เลขผู้เสียภาษี 13 หลัก
+  return clean;
+}
+
+function buildPromptPayPayload(promptPayId, amount) {
+  const formattedId = formatPromptPayId(promptPayId);
+  const amountNumber = Number(amount || 0);
+  const amountText = amountNumber.toFixed(2);
+
+  const merchantAccountInfo =
+    emvField('00', 'A000000677010111') +
+    emvField('01', formattedId);
+
+  let payload =
+    emvField('00', '01') +
+    emvField('01', '12') +
+    emvField('29', merchantAccountInfo) +
+    emvField('53', '764') +
+    emvField('54', amountText) +
+    emvField('58', 'TH');
+
+  payload += '6304';
+  payload += crc16ccitt(payload);
+
+  return payload;
+}
+
+function updateQrDisplay(showQr, amount) {
+  const qrBox = document.getElementById('qrCode');
+  const qrSection = document.getElementById('qrSection');
+  const qrNote = document.getElementById('qrNote');
+
+  // ถ้ายังไม่มีพื้นที่ QR ใน HTML ให้หยุดทันที ไม่ให้เว็บ error
+  if (!qrBox) {
+    console.warn('ไม่พบ element id="qrCode" ใน index.html');
+    return;
+  }
+
+  qrBox.innerHTML = '';
+
+  if (qrSection) {
+    qrSection.style.display = showQr ? 'block' : 'none';
+  }
+
+  if (!showQr || !PROMPTPAY_ID) {
+    return;
+  }
+
+  const payload = buildPromptPayPayload(PROMPTPAY_ID, amount);
+
+  new QRCode(qrBox, {
+    text: payload,
+    width: 128,
+    height: 128,
+    correctLevel: QRCode.CorrectLevel.M
+  });
+
+  if (qrNote) {
+    qrNote.textContent = `ยอดชำระ ${Number(amount || 0).toLocaleString('th-TH', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    })} บาท`;
+  }
+}
+
 /* ════════════════════════════════
 RECEIPT & QR CODE HELPERS
 ════════════════════════════════ */
 
 // อัปเดตข้อมูลใบเสร็จ (แทนที่ populateReceipt เดิม)
 function populateReceipt(house, meter, saved) {
-  document.getElementById('rNo').textContent    = `ใบเสร็จ #${saved.receipt_no || '---'}`;
+  const isUnpaid = saved.payment_status === 'unpaid';
+
+  document.getElementById('rNo').textContent = isUnpaid
+  ? `ใบแจ้ง #${saved.receipt_no || saved.reading_id || '---'}`
+  : `ใบเสร็จ #${saved.receipt_no || '---'}`;
   document.getElementById('rDate').textContent  = `วันที่: ${formatDateTH(new Date(saved.read_date))}`;
   document.getElementById('rName').textContent  = house.name || '---';
   document.getElementById('rAddr').textContent  = house.addr || house.address || house.num || '---';
@@ -1137,7 +1259,7 @@ function populateReceipt(house, meter, saved) {
   
   // สถานะ
   const statusEl = document.getElementById('rStatus');
-  if (saved.payment_status === 'unpaid') {
+  if (isUnpaid) {
     statusEl.className = 'receipt-status unpaid';
     statusEl.textContent = '🕐 ยังไม่ชำระ';
   } else {
@@ -1146,29 +1268,55 @@ function populateReceipt(house, meter, saved) {
   }
 
   // ซ่อน QR ถ้ายังไม่ได้ตั้งค่า (หรือแสดงเมื่อพร้อม)
-  updateQrDisplay(saved.payment_status === 'paid', saved.total_amount);
+  updateQrDisplay(true, saved.total_amount);
 }
 
 // จัดการแสดงผล QR Code
-function updateQrDisplay(isPaid, amount) {
-  const qrEl = document.getElementById('rQrCode');
-  if (!isPaid) {
-    qrEl.innerHTML = `
-      <div class="qr-icon">💳</div>
-      <div class="qr-text">ชำระเงินที่สำนักงาน</div>
-      <div class="qr-sub">หรือสแกนพร้อมเพย์</div>
-    `;
+function updateQrDisplay(showQr, amount) {
+  const qrBox = document.getElementById('qrCode');
+  const qrSection = document.getElementById('qrSection');
+  const qrNote = document.getElementById('qrNote');
+
+  if (!qrBox) {
+    console.warn('ไม่พบ element id="qrCode"');
     return;
   }
-  
-  // Placeholder สำหรับ PromptPay ในอนาคต
-  // เมื่อมี API หรือเลขพร้อมเพย์ ให้แทนที่ตรงนี้
-  qrEl.innerHTML = `
-    <div class="qr-icon">📱</div>
-    <div class="qr-text">สแกนเพื่อชำระเงิน</div>
-    <div class="qr-sub">พร้อมเพย์ (PromptPay)</div>
-    ${amount ? `<div class="qr-amount" style="font-size:10px;font-weight:700;margin-top:4px">${Number(amount).toLocaleString()} ฿</div>` : ''}
-  `;
+
+  qrBox.innerHTML = '';
+
+  if (qrSection) {
+    qrSection.style.display = showQr ? 'block' : 'none';
+  }
+
+  if (!showQr) {
+    return;
+  }
+
+  if (typeof QRCode === 'undefined') {
+    qrBox.innerHTML = '<div style="font-size:11px;text-align:center;">โหลด QR library ไม่สำเร็จ</div>';
+    return;
+  }
+
+  if (typeof PROMPTPAY_ID === 'undefined' || !PROMPTPAY_ID) {
+    qrBox.innerHTML = '<div style="font-size:11px;text-align:center;">ยังไม่ได้ตั้งค่า PromptPay</div>';
+    return;
+  }
+
+  const payload = buildPromptPayPayload(PROMPTPAY_ID, amount);
+
+  new QRCode(qrBox, {
+    text: payload,
+    width: 128,
+    height: 128,
+    correctLevel: QRCode.CorrectLevel.M
+  });
+
+  if (qrNote) {
+    qrNote.textContent = `ยอดชำระ ${Number(amount || 0).toLocaleString('th-TH', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    })} บาท`;
+  }
 }
 
 // ฟังก์ชันเตรียมสร้าง QR PromptPay (สำหรับใช้ในอนาคต)
