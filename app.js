@@ -19,6 +19,8 @@ const SESSION_KEY = 'wm_session';
 const IDLE_TIMEOUT_MS = 10 * 60 * 1000; // 30 นาที
 let idleTimer = null;
 let idleEventsBound = false;
+let receiptImageBlob = null;
+let receiptImageUrl = '';
 
 const VALID_USERS = [
   { username: 'admin', password: 'water12345', displayName: 'ผู้ดูแลระบบ' },
@@ -769,7 +771,17 @@ async function handleSave() {
   } finally { dom.saveBtn.disabled = false; }
 }
 
-function openSheet()  { dom.sheetOverlay.classList.add('show');    dom.receiptSheet.classList.add('open');    document.body.style.overflow = 'hidden'; }
+function openSheet() {
+  dom.sheetOverlay.classList.add('show');
+  dom.receiptSheet.classList.add('open');
+  document.body.style.overflow = 'hidden';
+
+  // สร้างรูปใบเสร็จอัตโนมัติหลังใบเสร็จเด้ง
+  setTimeout(() => {
+    generateReceiptImage();
+  }, 450);
+}
+
 function closeSheet() { dom.sheetOverlay.classList.remove('show'); dom.receiptSheet.classList.remove('open'); document.body.style.overflow = ''; }
 function printReceipt() { window.print(); }
 
@@ -1648,5 +1660,139 @@ function renderAdminSummary(summary) {
 
   if (dom.sumTransferMeters) {
     dom.sumTransferMeters.textContent = Number(summary.transfer_meters || 0).toLocaleString();
+  }
+}
+
+async function generateReceiptImage() {
+  const receiptEl = document.getElementById('receiptContent');
+  const btn = document.getElementById('saveReceiptImageBtn');
+
+  if (!receiptEl) {
+    showToast('ไม่พบใบเสร็จสำหรับสร้างรูป');
+    return;
+  }
+
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = '🖼️ กำลังสร้างรูป...';
+  }
+
+  try {
+    if (receiptImageUrl) {
+      URL.revokeObjectURL(receiptImageUrl);
+      receiptImageUrl = '';
+    }
+
+    receiptImageBlob = null;
+
+    if (typeof html2canvas === 'undefined') {
+      throw new Error('โหลดตัวสร้างรูปไม่สำเร็จ');
+    }
+
+    // รอให้ QR render เสร็จก่อน
+    await new Promise(resolve => setTimeout(resolve, 300));
+
+    const canvas = await html2canvas(receiptEl, {
+      backgroundColor: '#ffffff',
+      scale: 3,
+      useCORS: true,
+      logging: false
+    });
+
+    // ขนาดเหมาะกับเครื่อง thermal 58mm ส่วนมาก = 384px
+    const targetWidth = 384;
+    const ratio = targetWidth / canvas.width;
+    const targetHeight = Math.ceil(canvas.height * ratio);
+
+    const outputCanvas = document.createElement('canvas');
+    outputCanvas.width = targetWidth;
+    outputCanvas.height = targetHeight;
+
+    const ctx = outputCanvas.getContext('2d');
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, targetWidth, targetHeight);
+    ctx.drawImage(canvas, 0, 0, targetWidth, targetHeight);
+
+    receiptImageBlob = await new Promise(resolve => {
+      outputCanvas.toBlob(resolve, 'image/png', 1);
+    });
+
+    if (!receiptImageBlob) {
+      throw new Error('สร้างรูปไม่สำเร็จ');
+    }
+
+    receiptImageUrl = URL.createObjectURL(receiptImageBlob);
+
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = '🖼️ บันทึก/แชร์รูปใบเสร็จ';
+    }
+
+  } catch (err) {
+    console.error('[generateReceiptImage]', err);
+
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = '🖼️ สร้างรูปอีกครั้ง';
+    }
+
+    showToast(err.message || 'สร้างรูปใบเสร็จไม่สำเร็จ');
+  }
+}
+
+function buildReceiptImageFileName() {
+  const noText = document.getElementById('rNo')?.textContent || 'receipt';
+  const cleanNo = noText
+    .replace(/[^\wก-๙-]+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
+
+  const dateText = new Date().toISOString().slice(0, 10);
+
+  return `${cleanNo || 'receipt'}-${dateText}.png`;
+}
+
+async function saveReceiptImage() {
+  try {
+    if (!receiptImageBlob) {
+      await generateReceiptImage();
+    }
+
+    if (!receiptImageBlob) {
+      showToast('ยังไม่มีรูปใบเสร็จ');
+      return;
+    }
+
+    const fileName = buildReceiptImageFileName();
+    const file = new File([receiptImageBlob], fileName, { type: 'image/png' });
+
+    // iPhone / Safari / WebView ถ้ารองรับ Share Sheet ให้เปิดแชร์
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({
+        files: [file],
+        title: 'ใบเสร็จค่าน้ำประปา',
+        text: 'รูปใบเสร็จค่าน้ำประปา'
+      });
+      return;
+    }
+
+    // fallback สำหรับ browser ที่ดาวน์โหลดได้
+    const a = document.createElement('a');
+    a.href = receiptImageUrl;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+
+  } catch (err) {
+    console.error('[saveReceiptImage]', err);
+
+    // fallback สุดท้าย: เปิดรูปในแท็บใหม่ ให้กดค้างเพื่อ Save Image
+    if (receiptImageUrl) {
+      window.open(receiptImageUrl, '_blank');
+      return;
+    }
+
+    showToast('บันทึกรูปไม่สำเร็จ');
   }
 }

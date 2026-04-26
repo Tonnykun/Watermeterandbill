@@ -643,57 +643,40 @@ input[type="password"]::-ms-clear {
   overflow-y: auto; max-height: calc(92dvh - 25px);
 }
 
-/* Receipt */
-.receipt-header { text-align: center; padding-bottom: 16px; border-bottom: 0.5px solid var(--separator); margin-bottom: 14px; }
-.receipt-logo  { font-size: 36px; margin-bottom: 6px; }
-.receipt-org   { font-size: 16px; font-weight: 700; }
-.receipt-sub   { font-size: 12px; color: var(--label-secondary); margin-top: 2px; }
-.receipt-no-badge {
-  display: inline-block; margin-top: 10px;
-  background: var(--ios-blue-light); color: var(--ios-blue);
-  font-size: 12px; font-weight: 700; padding: 4px 12px; border-radius: 100px; font-family: var(--mono);
+/* ── Sheet Buttons ── */
+.sheet-btn-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 12px;
 }
-.receipt-block { margin-bottom: 14px; }
-.receipt-row { display: flex; justify-content: space-between; padding: 8px 0; font-size: 14px; border-bottom: 0.5px solid var(--separator); }
-.receipt-row:last-child { border-bottom: none; }
-.rl { color: var(--label-secondary); }
-.rv { font-weight: 600; text-align: right; max-width: 60%; }
 
-.receipt-meter-grid {
-  display: flex; align-items: center; gap: 6px;
-  margin-bottom: 14px; background: var(--bg);
-  border-radius: var(--radius-inner); padding: 12px 10px;
-}
-.meter-cell { flex: 1; background: white; border-radius: 10px; padding: 10px 6px; text-align: center; }
-.accent-cell { background: var(--ios-blue-light); }
-.mc-label { font-size: 10px; font-weight: 600; color: var(--label-secondary); margin-bottom: 4px; }
-.mc-val   { font-family: var(--mono); font-size: 17px; font-weight: 700; }
-.meter-arrow-cell { color: var(--label-tertiary); font-size: 16px; font-weight: 300; }
-
-.receipt-total {
-  background: linear-gradient(135deg, #34C759 0%, #16A34A 100%);
-  color: white;
-  border-radius: var(--radius-inner);
-  padding: 16px;
-  text-align: center;
-  margin-bottom: 16px;
-}
-.rt-label  { font-size: 12px; opacity: 0.8; margin-bottom: 4px; }
-.rt-amount { font-size: 30px; font-weight: 700; font-family: var(--mono); }
-
-.receipt-sign { text-align: center; font-size: 13px; color: var(--label-secondary); padding: 10px 0 4px; }
-.receipt-note { text-align: center; font-size: 11px; color: var(--label-tertiary); padding-bottom: 16px; }
-
-.sheet-btn-group { display: flex; flex-direction: column; gap: 10px; }
 .sheet-btn {
-  width: 100%; padding: 15px; border-radius: var(--radius-inner);
-  font-size: 16px; font-weight: 700;
-  display: flex; align-items: center; justify-content: center; gap: 8px;
+  width: 100%;
+  padding: 15px;
+  border-radius: var(--radius-inner);
+  font-size: 16px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   transition: opacity 0.15s;
+  line-height: 1.25;
+  text-align: center;
 }
+
 .sheet-btn:active { opacity: 0.7; }
-.sheet-btn.primary   { background: var(--ios-blue); color: white; box-shadow: var(--shadow-btn); }
+.sheet-btn.primary { background: var(--ios-blue); color: white; box-shadow: var(--shadow-btn); }
 .sheet-btn.secondary { background: var(--fill-secondary); color: var(--label-primary); }
+
+.sheet-btn.image-save { background: #111; color: #fff; }
+.sheet-btn.image-save:disabled {
+  background: var(--fill-primary);
+  color: var(--label-secondary);
+  box-shadow: none;
+  cursor: not-allowed;
+}
 
 /* History Sheet */
 .history-sheet { z-index: 410; }
@@ -945,64 +928,6 @@ input[type="password"]::-ms-clear {
 .hchip-dot.unpaid { background: var(--ios-orange); }
 
 /* ════════════════════════════════
-   SWIPE-TO-EDIT HISTORY ITEM  (new)
-════════════════════════════════ */
-.history-item-outer {
-  position: relative;
-  border-radius: var(--radius-inner);
-  overflow: hidden;
-  margin-bottom: 0; /* gap handled by parent flex */
-}
-
-/* Edit action revealed behind the card */
-.history-item-action {
-  position: absolute;
-  top: 0; right: 0; bottom: 0;
-  width: 72px;
-  background: var(--ios-blue);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  border-radius: 0 var(--radius-inner) var(--radius-inner) 0;
-  cursor: pointer;
-  color: white;
-  font-size: 11px;
-  font-weight: 600;
-  user-select: none;
-}
-.history-item-action svg { flex-shrink: 0; }
-
-/* The slideable card */
-.history-item {
-  position: relative;
-  background: var(--bg);
-  border-radius: var(--radius-inner);
-  padding: 14px;
-  transition: transform 0.28s cubic-bezier(0.22,1,0.36,1);
-  touch-action: pan-y;
-  will-change: transform;
-  cursor: grab;
-}
-.history-item.swiped { transform: translateX(-72px); }
-
-/* existing sub-elements (unchanged) */
-.history-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
-.history-house { font-size: 15px; font-weight: 700; }
-.history-name  { font-size: 13px; color: var(--label-secondary); margin-top: 2px; }
-.history-badge { flex-shrink: 0; font-size: 11px; font-weight: 700; padding: 5px 10px; border-radius: 100px; }
-.history-badge.paid   { color: var(--ios-green); background: rgba(52,199,89,0.10); }
-.history-badge.unpaid { color: var(--ios-orange); background: rgba(255,149,0,0.10); }
-.history-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 12px; font-size: 12px; margin-bottom: 10px; }
-.history-meta div { color: var(--label-secondary); }
-.history-meta strong { color: var(--label-primary); font-weight: 600; }
-.history-total { display: flex; justify-content: space-between; align-items: center; padding-top: 10px; border-top: 0.5px solid var(--separator); font-size: 13px; }
-.history-total-label { color: var(--label-secondary); }
-.history-total-value { color: var(--ios-blue); font-weight: 700; }
-.history-empty { text-align: center; color: var(--label-secondary); font-size: 14px; padding: 22px 12px; }
-
-/* ════════════════════════════════
    EDIT PAYMENT SHEET  (new)
 ════════════════════════════════ */
 .edit-pay-sheet { z-index: 420; }
@@ -1058,7 +983,9 @@ input[type="password"]::-ms-clear {
 }
 
 /* ════════════════════════════════
-THERMAL RECEIPT 58mm
+   RECEIPT 58mm — THERMAL / PNG FRIENDLY
+   ใช้ทั้งตอนพิมพ์และตอนแปลงใบเสร็จเป็นรูป
+   เน้นพื้นขาว ตัวหนังสือดำ ไม่มีพื้นหลังทึบ
 ════════════════════════════════ */
 .receipt-paper {
   width: 58mm;
@@ -1067,183 +994,221 @@ THERMAL RECEIPT 58mm
   background: #fff;
 }
 
+#receiptContent,
 .receipt-content {
   width: 52mm;
+  max-width: 52mm;
   margin: 0 auto;
+  padding: 2mm 0 3mm;
+  background: #fff !important;
+  color: #000 !important;
   font-family: Arial, "Noto Sans Thai", sans-serif;
   font-size: 10px;
   line-height: 1.35;
-  color: #000;
-  background: #fff;
-  padding: 2mm 0 3mm;
+  box-shadow: none !important;
+  border-radius: 0 !important;
 }
 
-/* Dividers */
-.receipt-divider {
-  border-top: 1px dashed #000;
-  margin: 6px 0;
-}
-.receipt-divider-dotted {
-  border-top: 1px dotted #ccc;
-  margin: 5px 0;
-}
-.receipt-divider-thick {
-  border-top: 2px solid #000;
-  margin: 6px 0;
+.receipt-header {
+  text-align: center;
+  margin-bottom: 7px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #000;
+  background: transparent !important;
 }
 
-/* Header */
-.receipt-header { text-align: center; margin-bottom: 8px; }
-.receipt-logo { font-size: 18px; margin-bottom: 3px; }
-.receipt-org { font-size: 12px; font-weight: 800; letter-spacing: 0.3px; }
-.receipt-sub { font-size: 9px; color: #555; margin-top: 2px; }
-.receipt-no { font-weight: 700; font-size: 11px; margin-top: 6px; }
-.receipt-date { font-size: 9px; color: #666; }
+.receipt-logo { font-size: 16px; line-height: 1; margin-bottom: 3px; }
+.receipt-org { font-size: 12px; font-weight: 800; color: #000 !important; letter-spacing: 0; }
+.receipt-sub { font-size: 9px; color: #000 !important; margin-top: 2px; }
 
-/* Blocks & Rows */
+.receipt-doc-title {
+  margin: 6px 0 2px;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent !important;
+  color: #000 !important;
+  font-size: 12px;
+  font-weight: 800;
+  text-align: center;
+  line-height: 1.3;
+}
+
+.receipt-doc-warning { display: none !important; }
+.receipt-no { margin-top: 5px; font-size: 10px; font-weight: 700; color: #000 !important; }
+.receipt-date { font-size: 9px; color: #000 !important; }
+.receipt-block { margin-bottom: 7px; }
+
 .receipt-row {
   display: flex;
   justify-content: space-between;
-  align-items: baseline; /* Aligns text along the bottom line */
-  padding: 5px 0;
-  font-size: 11px;
-  gap: 4px; /* Space between label and number */
+  align-items: flex-start;
+  gap: 8px;
+  padding: 4px 0;
+  font-size: 10px;
+  border-bottom: 1px dashed #999;
+  background: transparent !important;
+  color: #000 !important;
 }
+
+.receipt-row:last-child { border-bottom: none; }
+.rl { flex: 0 0 auto; color: #000 !important; font-weight: 400; text-align: left; white-space: nowrap; }
+.rv {
+  flex: 1 1 auto;
+  max-width: 32mm;
+  color: #000 !important;
+  font-weight: 700;
+  text-align: right;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  white-space: normal;
+}
+
+.rv.mono,
+.mono {
+  font-family: Arial, "Noto Sans Thai", sans-serif;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+}
+
+.receipt-meter-grid {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 5px;
+  align-items: center;
+  margin: 7px 0;
+  padding: 0;
+  background: transparent !important;
+  border-radius: 0;
+  box-shadow: none !important;
+}
+
+.meter-cell,
+.accent-cell {
+  background: transparent !important;
+  border: 1px solid #000;
+  border-radius: 0;
+  padding: 5px 3px;
+  text-align: center;
+  box-shadow: none !important;
+}
+
+.meter-arrow-cell { color: #000 !important; font-size: 12px; font-weight: 700; }
+.mc-label { font-size: 8px; color: #000 !important; margin-bottom: 2px; }
+.mc-val { font-size: 11px; font-weight: 800; color: #000 !important; }
 
 .receipt-row.highlight {
-  font-weight: 700;
-  background: #f5f5f5;
-  padding: 6px 4px;
-  margin: 4px 0;
-  border-radius: 2px;
+  margin: 7px 0;
+  padding: 5px 6px;
+  border: 1px solid #000;
+  border-radius: 0;
+  background: transparent !important;
 }
 
-.receipt-row .rv.long-text {
-  max-width: 60%;      /* จำกัดความกว้างไม่ให้เกิน 60% ของบรรทัด */
-  word-wrap: break-word; /* ตัดคำเมื่อเกิน */
-  overflow-wrap: break-word;
-  text-align: right;
-  line-height: 1.2;      /* เว้นระยะห่างบรรทัดถ้าข้อความยาว */
+.receipt-divider,
+.receipt-divider-dotted,
+.receipt-divider-thick {
+  height: 0;
+  background: none !important;
+  margin: 6px 0;
 }
-
-.rl {
-  color: #333;
-  flex: 0 0 45%;          /* ปรับจาก flex: 1 */
-  text-align: left;
-  word-wrap: break-word;  /* เพิ่ม */
-  overflow-wrap: break-word; /* เพิ่ม */
-  white-space: normal;    /* เปลี่ยนจาก nowrap */
-}
-
-/* Value (Right side) */
-.rv {
-  text-align: right;
-  font-weight: 600;
-  min-width: 60px;
-  max-width: 50%;         /* เพิ่ม */
-  word-wrap: break-word;  /* เพิ่ม */
-  overflow-wrap: break-word; /* เพิ่ม */
-  white-space: normal;    /* เปลี่ยนจาก nowrap */
-  line-height: 1.3;       /* เพิ่ม */
-  padding-left: 4px;
-}
-
-/* สำหรับข้อความยาวพิเศษ (บ้านเลขที่) */
-.receipt-row .rv.long-text {
-  max-width: 55%;         /* ปรับจาก 60% */
-  word-wrap: break-word;
-  overflow-wrap: break-word;
-  text-align: right;
-  line-height: 1.3;
-  font-size: 10px;        /* ลดขนาดเล็กน้อย */
-  hyphens: auto;          /* เพิ่ม */
-}
-
-.rv.mono { 
-  font-family: 'SF Mono', monospace; 
-  letter-spacing: 0.5px; 
-}
+.receipt-divider { border-top: 1px solid #000; }
+.receipt-divider-dotted { border-top: 1px dashed #000; }
+.receipt-divider-thick { border-top: 2px solid #000; }
 
 .receipt-total {
-  background: #000;
-  color: #fff;
-  padding: 12px 4px;
-  text-align: center;
   margin: 8px 0;
-  border-radius: 4px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.rt-label { 
-  font-size: 10px; 
-  opacity: 0.9; 
-  letter-spacing: 1px;
-}
-
-.rt-amount {
-  font-size: 18px;
-  font-weight: 900;
-  font-family: 'SF Mono', monospace;
-  letter-spacing: 1px;
-}
-
-/* Status Badge */
-.receipt-status {
+  padding: 6px 0;
   text-align: center;
-  padding: 6px;
-  font-weight: 700;
-  font-size: 11px;
-  margin: 5px 0;
-  border-radius: 3px;
-}
-.receipt-status.paid {
-  background: #e8f5e9;
-  color: #2e7d32;
-  border: 1px solid #4caf50;
-}
-.receipt-status.unpaid {
-  background: #fff3e0;
-  color: #e65100;
-  border: 1px solid #ff9800;
+  background: transparent !important;
+  color: #000 !important;
+  border-top: 2px solid #000;
+  border-bottom: 2px solid #000;
+  border-radius: 0;
+  box-shadow: none !important;
 }
 
-/* QR Code Section */
-.qr-section { text-align: center; margin: 8px 0; padding: 6px 0; }
-.qr-placeholder {
-  width: 36mm;
-  height: 36mm;
-  margin: 0 auto;
-  border: 1px dashed #999;
+.rt-label { font-size: 9px; color: #000 !important; opacity: 1; margin-bottom: 2px; }
+.rt-amount { font-size: 16px; font-weight: 800; color: #000 !important; line-height: 1.25; }
+
+.receipt-status {
+  margin: 7px 0;
+  padding: 4px 6px;
+  text-align: center;
+  font-size: 10px;
+  font-weight: 700;
+  color: #000 !important;
+  background: transparent !important;
+  border: 1px solid #000;
+  border-radius: 0;
+  box-shadow: none !important;
+}
+
+.receipt-status.paid,
+.receipt-status.unpaid { color: #000 !important; background: transparent !important; border-color: #000 !important; }
+
+.receipt-qr-section {
+  margin: 9px 0 6px;
+  padding: 0;
+  text-align: center;
+  background: transparent !important;
+  border: none;
+}
+
+.receipt-qr-title { margin-bottom: 5px; color: #000 !important; font-size: 10px; font-weight: 700; }
+
+.receipt-qr-box {
+  width: 26mm;
+  height: 26mm;
+  margin: 0 auto 4px;
+  padding: 0;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: #fafafa;
-  border-radius: 4px;
-  page-break-inside: avoid;
+  background: transparent !important;
+  border: none;
+  border-radius: 0;
+  box-shadow: none !important;
+  overflow: hidden;
 }
-.qr-icon { font-size: 18px; margin-bottom: 3px; }
-.qr-text { font-size: 9px; font-weight: 700; }
-.qr-sub { font-size: 8px; color: #666; margin-top: 2px; }
 
-/* Footer */
-.receipt-footer { text-align: center; margin-top: 8px; font-size: 9px; }
-.footer-thanks { font-weight: 600; margin-bottom: 2px; }
-.footer-contact { color: #555; margin: 2px 0; }
-.footer-note { font-size: 7px; color: #888; margin-top: 3px; }
+.receipt-qr-box canvas {
+  display: block !important;
+  width: 26mm !important;
+  height: 26mm !important;
+  margin: 0 auto !important;
+}
 
-/* ════════════════════════════════
-PRINT MEDIA — 58mm THERMAL
-════════════════════════════════ */
+.receipt-qr-box img { display: none !important; }
+.receipt-qr-note { color: #000 !important; font-size: 8px; text-align: center; }
+
+.receipt-footer {
+  margin-top: 7px;
+  text-align: center;
+  font-size: 9px;
+  color: #000 !important;
+  background: transparent !important;
+}
+
+.footer-thanks,
+.footer-contact,
+.footer-note { color: #000 !important; margin-top: 2px; }
+
+.receipt-is-unpaid .receipt-doc-title,
+.receipt-is-unpaid .receipt-no,
+.receipt-is-unpaid .receipt-date,
+.receipt-is-unpaid .receipt-status {
+  color: #000 !important;
+  background: transparent !important;
+  border-color: #000 !important;
+}
+
+/* Print mode for NokoPrint / browser print */
 @media print {
-  @page {
-    size: 58mm auto;
-    margin: 0;
-  }
+  @page { size: 58mm auto; margin: 0; }
 
-  html, body {
+  html,
+  body {
     width: 58mm !important;
     margin: 0 !important;
     padding: 0 !important;
@@ -1253,16 +1218,10 @@ PRINT MEDIA — 58mm THERMAL
     print-color-adjust: exact !important;
   }
 
-  /* ซ่อนทุกอย่างก่อน */
-  body.printing-receipt * {
-    visibility: hidden !important;
-  }
+  body.printing-receipt * { visibility: hidden !important; }
 
-  /* แสดงเฉพาะใบเสร็จ */
   body.printing-receipt #receiptSheet,
-  body.printing-receipt #receiptSheet * {
-    visibility: visible !important;
-  }
+  body.printing-receipt #receiptSheet * { visibility: visible !important; }
 
   body.printing-receipt #receiptSheet {
     position: absolute !important;
@@ -1274,13 +1233,12 @@ PRINT MEDIA — 58mm THERMAL
     max-width: 58mm !important;
     margin: 0 !important;
     padding: 0 !important;
+    background: #fff !important;
     transform: none !important;
     border-radius: 0 !important;
     box-shadow: none !important;
-    background: #fff !important;
-    z-index: 9999 !important;
-    display: block !important;
     max-height: none !important;
+    z-index: 9999 !important;
   }
 
   body.printing-receipt #receiptSheet .sheet-scroll {
@@ -1291,80 +1249,20 @@ PRINT MEDIA — 58mm THERMAL
     overflow: visible !important;
   }
 
-  body.printing-receipt .sheet-btn-group,
+  body.printing-receipt .sheet-overlay,
   body.printing-receipt .sheet-handle,
-  body.printing-receipt .sheet-overlay {
-    display: none !important;
-  }
+  body.printing-receipt .sheet-btn-group { display: none !important; }
 
-  .receipt-paper {
-    width: 58mm !important;
-    max-width: 58mm !important;
-    margin: 0 auto !important;
-  }
+  body.printing-receipt .receipt-paper { width: 58mm !important; max-width: 58mm !important; margin: 0 auto !important; }
 
-  .receipt-content {
+  body.printing-receipt #receiptContent,
+  body.printing-receipt .receipt-content {
     width: 52mm !important;
-    margin: 0 auto !important;
-    page-break-inside: avoid;
-    break-inside: avoid;
-    color: #000 !important;
-  }
-
-  /* พื้นที่ทึบเยอะเกินไปไม่เหมาะกับ thermal */
-  .receipt-total {
-    background: transparent !important;
-    color: #000 !important;
-    border-top: 1px solid #000 !important;
-    border-bottom: 1px solid #000 !important;
-    border-radius: 0 !important;
-    padding: 6px 0 !important;
-    margin: 6px 0 !important;
-  }
-
-  .rt-label,
-  .rt-amount,
-  .receipt-org,
-  .receipt-doc-title,
-  .receipt-status,
-  .receipt-footer,
-  .receipt-row,
-  .mc-val,
-  .mc-label {
-    color: #000 !important;
-  }
-
-  .receipt-status {
-    background: transparent !important;
-    border: 1px solid #000 !important;
-    border-radius: 0 !important;
-    padding: 4px 6px !important;
-  }
-
-  .accent-cell,
-  .meter-cell,
-  .receipt-row.highlight {
-    background: transparent !important;
-    border: 1px solid #ddd !important;
-    border-radius: 0 !important;
-  }
-
-  /* QR สำหรับ 58mm */
-  .receipt-qr-box {
-    width: 26mm !important;
-    height: 26mm !important;
+    max-width: 52mm !important;
     margin: 0 auto !important;
     padding: 0 !important;
-    border: none !important;
-    background: transparent !important;
-  }
-
-  .receipt-qr-box canvas,
-  .receipt-qr-box img {
-    width: 26mm !important;
-    height: 26mm !important;
-    display: block !important;
-    margin: 0 auto !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
   }
 }
 
@@ -1491,82 +1389,7 @@ PRINT MEDIA — 58mm THERMAL
   }
 }
 
-/* เอากรอบ/พื้นหลังออก แต่คงขนาดตัวหนังสือและ layout เดิม */
-.receipt-meter-grid {
-  background: transparent !important;
-  padding: 0 !important;
-  border-radius: 0 !important;
-}
-
-.meter-cell,
-.accent-cell {
-  background: transparent !important;
-  border-radius: 0 !important;
-  box-shadow: none !important;
-}
-
-.accent-cell .mc-label,
-.accent-cell .mc-val {
-  color: inherit !important;
-}
-
-/* เอาพื้นหลังดำ/สีออกจากยอดรวม แต่คงขนาดตัวหนังสือเดิม */
-.receipt-total {
-  background: transparent !important;
-  color: var(--label-primary) !important;
-  border-radius: 0 !important;
-  box-shadow: none !important;
-  padding: 8px 0 !important;
-}
-
-.rt-label {
-  color: var(--label-secondary) !important;
-  opacity: 1 !important;
-}
-
-.rt-amount {
-  color: var(--label-primary) !important;
-}
-
-.receipt-total {
-  border-top: 1px dashed var(--separator) !important;
-  border-bottom: 1px dashed var(--separator) !important;
-}
-
-.receipt-qr-section {
-  text-align: center;
-  margin: 12px 0 10px;
-  padding-top: 10px;
-  border-top: 1px dashed var(--separator);
-}
-
-.receipt-qr-title {
-  font-size: 12px;
-  font-weight: 700;
-  margin-bottom: 8px;
-}
-
-.receipt-qr-box {
-  width: 128px;
-  height: 128px;
-  margin: 0 auto 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.receipt-qr-box img,
-.receipt-qr-box canvas {
-  width: 128px !important;
-  height: 128px !important;
-}
-
-.receipt-qr-note {
-  font-size: 10px;
-  color: var(--label-secondary);
-  line-height: 1.35;
-}
-
+/* History action buttons */
 .history-reprint-btn {
   border: none;
   outline: none;
@@ -1583,128 +1406,13 @@ PRINT MEDIA — 58mm THERMAL
   white-space: nowrap;
 }
 
-.history-reprint-btn:active {
-  transform: scale(0.98);
-}
+.history-reprint-btn:active { transform: scale(0.98); }
 
 @media (max-width: 640px) {
   .history-reprint-btn {
     padding: 5px 9px;
     font-size: 11px;
   }
-}
-
-.receipt-doc-title {
-  margin: 10px auto 6px;
-  padding: 7px 10px;
-  border-radius: 999px;
-  font-size: 14px;
-  font-weight: 800;
-  text-align: center;
-  background: rgba(52, 199, 89, 0.12);
-  color: var(--ios-green);
-  border: 1px solid rgba(52, 199, 89, 0.28);
-}
-
-.receipt-doc-warning {
-  margin: 6px 0 8px;
-  padding: 8px 10px;
-  border-radius: 10px;
-  font-size: 12px;
-  font-weight: 700;
-  text-align: center;
-  color: #B45309;
-  background: rgba(255, 149, 0, 0.14);
-  border: 1px dashed rgba(255, 149, 0, 0.45);
-}
-
-.receipt-is-unpaid .receipt-doc-title {
-  background: rgba(255, 149, 0, 0.16);
-  color: var(--ios-orange);
-  border-color: rgba(255, 149, 0, 0.45);
-}
-
-.receipt-is-unpaid .receipt-no {
-  color: var(--ios-orange);
-  font-weight: 800;
-}
-
-.receipt-is-unpaid .receipt-header {
-  border-bottom-color: rgba(255, 149, 0, 0.35);
-}
-
-/* หัวเอกสารใบเสร็จ / ใบแจ้ง ให้เป็นตัวหนังสือธรรมดาสีดำ */
-.receipt-doc-title {
-  margin: 8px 0 4px !important;
-  padding: 0 !important;
-  border: none !important;
-  border-radius: 0 !important;
-  background: transparent !important;
-  color: #000 !important;
-  font-size: 15px !important;
-  font-weight: 800 !important;
-  text-align: center !important;
-  line-height: 1.35 !important;
-}
-
-.receipt-doc-warning {
-  margin: 4px 0 8px !important;
-  padding: 0 !important;
-  border: none !important;
-  border-radius: 0 !important;
-  background: transparent !important;
-  color: #000 !important;
-  font-size: 12px !important;
-  font-weight: 700 !important;
-  text-align: center !important;
-  line-height: 1.35 !important;
-}
-
-.receipt-is-unpaid .receipt-doc-title,
-.receipt-is-unpaid .receipt-doc-warning,
-.receipt-is-unpaid .receipt-no {
-  color: #000 !important;
-  background: transparent !important;
-  border: none !important;
-}
-
-.receipt-qr-section {
-  text-align: center;
-  margin: 10px 0;
-}
-
-.receipt-qr-title {
-  color: #000 !important;
-  font-size: 13px !important;
-  font-weight: 800 !important;
-  text-align: center;
-  margin-bottom: 8px;
-}
-
-.receipt-qr-box {
-  width: 128px !important;
-  height: 128px !important;
-  margin: 0 auto 6px !important;
-  display: flex !important;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-}
-
-.receipt-qr-box canvas {
-  display: block !important;
-  width: 128px !important;
-  height: 128px !important;
-}
-
-.receipt-qr-box img {
-  display: none !important;
-}
-
-.receipt-qr-note {
-  color: #000 !important;
-  font-size: 10px !important;
-  text-align: center;
 }
 
 .maintenance-overlay {
