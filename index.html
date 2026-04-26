@@ -8,7 +8,7 @@
   <title>ระบบประปา</title>
   <link rel="stylesheet" href="style.css">
 </head>
-<body class="maintenance">
+<body>
     <div class="maintenance-overlay">
     <div class="maintenance-box">
       <div class="maintenance-icon">🛠️</div>
@@ -106,6 +106,10 @@
             <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
           </svg>
           <span>ประวัติ</span>
+        </button>
+        <button class="nav-action-btn admin-only" id="summaryBtn" onclick="openSummarySheetAndLoad()" style="display:none">
+          📊
+          <span>สรุปยอด</span>
         </button>
         <div class="nav-user-wrap" id="navUserWrap">
           <div class="nav-avatar" id="navAvatar">A</div>
@@ -288,6 +292,17 @@
             </div>
           </button>
         </div>
+        <div class="payment-method-wrap" id="payMethodWrap">
+          <div class="payment-label">วิธีรับชำระเงิน</div>
+          <div class="payment-method-selector">
+            <button class="payment-method-opt active" id="payMethodCash" onclick="selectPaymentMethod('cash')" type="button">
+              💵 เงินสด
+            </button>
+            <button class="payment-method-opt" id="payMethodTransfer" onclick="selectPaymentMethod('transfer')" type="button">
+              🏦 เงินโอน
+            </button>
+          </div>
+        </div>
         <div class="error-box" id="errorBox" style="display:none">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
           <span id="errorText">เลขมิเตอร์ไม่ถูกต้อง</span>
@@ -320,10 +335,9 @@
       <div class="sheet-scroll">
         
         <!-- Receipt Content -->
-        <div id="receiptContent" class="receipt-content">
-          
-          <!-- Header -->
-          <div class="receipt-content">
+        <div class="receipt-paper">
+          <div id="receiptContent" class="receipt-content">
+            
             <div class="receipt-header">
               <div class="receipt-logo">💧🚰</div>
               <div class="receipt-org">การประปาหมู่บ้านแสนสุข</div>
@@ -406,7 +420,9 @@
               <div class="footer-contact">สอบถาม: 0XX-XXX-XXXX</div>
               <div class="footer-note">ใบเสร็จนี้ใช้เป็นหลักฐานการชำระเงิน</div>
             </div>
+
           </div>
+        </div>
 
         <!-- Print Buttons (Hidden in Print) -->
         <div class="sheet-btn-group">
@@ -421,7 +437,52 @@
       </div>
     </div>
   </div>
-  
+
+    <!-- SUMMARY SHEET -->
+    <div class="sheet-overlay" id="summaryOverlay" onclick="closeSummarySheet()"></div>
+    <div class="bottom-sheet summary-sheet" id="summarySheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-scroll">
+        <div class="history-header">
+          <div>
+            <div class="history-title">สรุปยอด</div>
+            <div class="history-subtitle" id="summaryMonthLabel">—</div>
+          </div>
+          <button class="history-close-btn" onclick="closeSummarySheet()">ปิด</button>
+        </div>
+
+        <div class="summary-grid">
+          <div class="summary-card full">
+            <div class="summary-label">จำนวนมิเตอร์ที่บันทึกสำเร็จ</div>
+            <div class="summary-value" id="sumRecordedMeters">—</div>
+            <div class="summary-unit">มิเตอร์</div>
+          </div>
+
+          <div class="summary-card cash">
+            <div class="summary-label">เงินสด</div>
+            <div class="summary-value" id="sumCashAmount">—</div>
+            <div class="summary-sub">
+              <span id="sumCashHouses">—</span> หลัง ·
+              <span id="sumCashMeters">—</span> มิเตอร์
+            </div>
+          </div>
+
+          <div class="summary-card transfer">
+            <div class="summary-label">เงินโอน</div>
+            <div class="summary-value" id="sumTransferAmount">—</div>
+            <div class="summary-sub">
+              <span id="sumTransferHouses">—</span> หลัง ·
+              <span id="sumTransferMeters">—</span> มิเตอร์
+            </div>
+          </div>
+        </div>
+
+        <button class="sheet-btn secondary" onclick="loadAdminSummary(true)">
+          รีเฟรชสรุปยอด
+        </button>
+      </div>
+    </div>
+
     <!-- HISTORY SHEET -->
     <div class="sheet-overlay" id="historyOverlay" onclick="closeHistorySheet()"></div>
     <div class="bottom-sheet history-sheet" id="historySheet">
@@ -500,6 +561,17 @@
               <span class="epo-sub">บันทึกว่ายังไม่ชำระ</span>
             </div>
           </button>
+        </div>
+        <div class="edit-method-wrap" id="editPayMethodWrap">
+          <div class="payment-label">วิธีรับชำระเงิน</div>
+          <div class="payment-method-selector">
+            <button class="payment-method-opt active" id="editPayMethodCash" onclick="selectEditPaymentMethod('cash')" type="button">
+              💵 เงินสด
+            </button>
+            <button class="payment-method-opt" id="editPayMethodTransfer" onclick="selectEditPaymentMethod('transfer')" type="button">
+              🏦 เงินโอน
+            </button>
+          </div>
         </div>
         <div class="error-box" id="editPayError" style="display:none">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>

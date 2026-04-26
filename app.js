@@ -16,15 +16,14 @@ const BOOTSTRAP_CACHE_TTL = 5 * 60 * 1000;
 const PROMPTPAY_ID = '0830053242'; // เปลี่ยนเป็นเบอร์ PromptPay จริง
 const PROMPTPAY_NAME = 'วัชรพงษ์ กุณามี';
 const SESSION_KEY = 'wm_session';
+const IDLE_TIMEOUT_MS = 10 * 60 * 1000; // 30 นาที
+let idleTimer = null;
+let idleEventsBound = false;
 
 const VALID_USERS = [
   { username: 'admin', password: 'water12345', displayName: 'ผู้ดูแลระบบ' },
   { username: 'staff', password: 'staff12345',      displayName: 'เจ้าหน้าที่' },
 ];
-const SESSION_KEY = 'wm_session';
-const IDLE_TIMEOUT_MS = 10 * 60 * 1000; // 30 นาที
-let idleTimer = null;
-let idleEventsBound = false;
 
 /* ── State ── */
 let state = {
@@ -33,12 +32,14 @@ let state = {
   currentReading: null,
   isValid:        false,
   paymentStatus:  'paid',
+  paymentMethod:  'cash',
   historyItems:   [],
   historyFilter:  'all',      // 'all' | 'paid' | 'unpaid'  ← NEW
   selectedMonth:  '',         // 'YYYY-MM'  ← NEW
   currentUser:    null,
   editingItem:    null,       // history item being edited  ← NEW
   editingStatus: null,
+  editingPaymentMethod: 'cash',
 };
 
 let historyLoaded = false;
@@ -67,6 +68,9 @@ function buildDomRefs() {
     statPaid:     $('statPaid'),
     statUnpaid:   $('statUnpaid'),
     statPending:  $('statPending'),
+    payMethodWrap: $('payMethodWrap'),
+    payMethodCash: $('payMethodCash'),
+    payMethodTransfer: $('payMethodTransfer'),
 
     dropdownTrigger: $('dropdownTrigger'), dropdownChevron: $('dropdownChevron'),
     dropdownPanel: $('dropdownPanel'), dropdownSearch: $('dropdownSearch'),
@@ -103,6 +107,21 @@ function buildDomRefs() {
     editPayErrorText: $('editPayErrorText'),
     editOptPaid: $('editOptPaid'), editOptUnpaid: $('editOptUnpaid'),
     editPaySaveBtn: $('editPaySaveBtn'),
+    editPayMethodWrap: $('editPayMethodWrap'),
+    editPayMethodCash: $('editPayMethodCash'),
+    editPayMethodTransfer: $('editPayMethodTransfer'),
+
+    summaryBtn: $('summaryBtn'),
+    summaryOverlay: $('summaryOverlay'),
+    summarySheet: $('summarySheet'),
+    summaryMonthLabel: $('summaryMonthLabel'),
+    sumRecordedMeters: $('sumRecordedMeters'),
+    sumCashAmount: $('sumCashAmount'),
+    sumCashHouses: $('sumCashHouses'),
+    sumCashMeters: $('sumCashMeters'),
+    sumTransferAmount: $('sumTransferAmount'),
+    sumTransferHouses: $('sumTransferHouses'),
+    sumTransferMeters: $('sumTransferMeters'),
   };
 }
 
@@ -202,7 +221,17 @@ function autoLogoutDueToIdle() {
   confirmLogout();
 
   // แจ้งเหตุผลบนหน้า login
-  showLoginError('ออกจากระบบอัตโนมัติ เนื่องจากไม่ได้ใช้งานเกิน 30 นาที');
+  showLoginError('ออกจากระบบอัตโนมัติ เนื่องจากไม่ได้ใช้งานเกิน 10 นาที');
+}
+
+function isAdminUser() {
+  return state.currentUser?.username === 'admin';
+}
+
+function updateAdminVisibility() {
+  if (dom.summaryBtn) {
+    dom.summaryBtn.style.display = isAdminUser() ? 'flex' : 'none';
+  }
 }
 
 /* ════════════════════════════════
@@ -262,12 +291,18 @@ function enterApp(displayName) {
     dom.appScreen.style.display   = 'block';
     dom.navInfoDate.textContent   = formatDateTH(new Date());
     dom.navInfoUser.textContent   = displayName;
-    applyNavAvatarRole();
     buildMonthOptions();
+    updateAdminVisibility();
+    resetIdleTimer();
 
-    loadHistory()
+    loadBootstrap(true)
+      .then(() => loadHistory(true))
       .then(() => refreshStatBar())
-      .catch(() => refreshStatBar());
+      .catch(err => {
+        console.error('[enterApp]', err);
+        refreshStatBar();
+      });
+
   }, 400);
 }
 
@@ -276,11 +311,13 @@ function handleLogout() {
   dom.logoutConfirm.classList.add('open');
   document.body.style.overflow = 'hidden';
 }
+
 function cancelLogout() {
   dom.logoutOverlay.classList.remove('show');
   dom.logoutConfirm.classList.remove('open');
   document.body.style.overflow = '';
 }
+
 function confirmLogout() {
   clearTimeout(idleTimer);
   idleTimer = null;
@@ -304,6 +341,10 @@ function confirmLogout() {
   dom.rememberToggle.classList.remove('on');
   dom.navAvatar.textContent = 'A';
   dom.navAvatar.classList.remove('role-admin', 'role-staff', 'role-default');
+
+  if (dom.summaryBtn) {
+  dom.summaryBtn.style.display = 'none';
+  }
 }
 
 function checkSavedSession() {
@@ -598,15 +639,82 @@ function resetCostDisplay() {
   dom.unitsUsed.textContent = '— หน่วย'; dom.waterCost.textContent = '— บาท'; dom.totalAmount.textContent = '—';
 }
 
+function normalizePaymentMethod(method) {
+  return method === 'transfer' ? 'transfer' : 'cash';
+}
+
+function getPaymentMethodLabel(method) {
+  return method === 'transfer' ? 'เงินโอน' : 'เงินสด';
+}
+
+function selectPaymentMethod(method) {
+  state.paymentMethod = normalizePaymentMethod(method);
+
+  if (dom.payMethodCash) {
+    dom.payMethodCash.classList.toggle('active', state.paymentMethod === 'cash');
+  }
+
+  if (dom.payMethodTransfer) {
+    dom.payMethodTransfer.classList.toggle('active', state.paymentMethod === 'transfer');
+  }
+}
+
+function setPaymentMethodEnabled(enabled) {
+  if (dom.payMethodWrap) {
+    dom.payMethodWrap.classList.toggle('disabled', !enabled);
+  }
+
+  [dom.payMethodCash, dom.payMethodTransfer].forEach(btn => {
+    if (btn) btn.disabled = !enabled;
+  });
+}
+
+function selectEditPaymentMethod(method) {
+  state.editingPaymentMethod = normalizePaymentMethod(method);
+
+  if (dom.editPayMethodCash) {
+    dom.editPayMethodCash.classList.toggle('active', state.editingPaymentMethod === 'cash');
+  }
+
+  if (dom.editPayMethodTransfer) {
+    dom.editPayMethodTransfer.classList.toggle('active', state.editingPaymentMethod === 'transfer');
+  }
+}
+
+function setEditPaymentMethodEnabled(enabled) {
+  if (dom.editPayMethodWrap) {
+    dom.editPayMethodWrap.classList.toggle('disabled', !enabled);
+  }
+
+  [dom.editPayMethodCash, dom.editPayMethodTransfer].forEach(btn => {
+    if (btn) btn.disabled = !enabled;
+  });
+}
+
 /* ════════════════════════════════
    PAYMENT STATUS
 ════════════════════════════════ */
 function selectPayment(status) {
   state.paymentStatus = status;
-  dom.payOptPaid.classList.toggle('active',   status === 'paid');
+
+  dom.payOptPaid.classList.toggle('active', status === 'paid');
   dom.payOptUnpaid.classList.toggle('active', status === 'unpaid');
-  if (status === 'paid') { dom.saveBtnLabel.textContent = 'บันทึก + ออกใบเสร็จ'; dom.saveBtn.classList.remove('unpaid-mode'); }
-  else { dom.saveBtnLabel.textContent = 'บันทึกยอดมิเตอร์+พิมพ์ใบค้างชำระ'; dom.saveBtn.classList.add('unpaid-mode'); }
+
+  if (status === 'paid') {
+    dom.saveBtnLabel.textContent = 'บันทึก + ออกใบเสร็จ';
+    dom.saveBtn.classList.remove('unpaid-mode');
+
+    setPaymentMethodEnabled(true);
+
+    if (!state.paymentMethod) {
+      selectPaymentMethod('cash');
+    }
+  } else {
+    dom.saveBtnLabel.textContent = 'บันทึกยอดมิเตอร์+พิมพ์ใบค้างชำระ';
+    dom.saveBtn.classList.add('unpaid-mode');
+
+    setPaymentMethodEnabled(false);
+  }
 }
 
 /* ════════════════════════════════
@@ -631,6 +739,7 @@ async function handleSave() {
         meter_key: meter.meterKey || meter.id || 'meter1',
         current_reading: curr,
         payment_status: state.paymentStatus,
+        payment_method: isPaid ? state.paymentMethod : '',
         reader_name: state.currentUser?.displayName || 'เจ้าหน้าที่',
       })
     });
@@ -792,6 +901,12 @@ function renderHistoryList(query = '') {
             <div class="history-top-right">
               <span class="history-badge ${paidClass}">${paidLabel}</span>
 
+              ${item.payment_status !== 'unpaid' && item.payment_method ? `
+                <span class="history-paymethod-badge">
+                  ${getPaymentMethodLabel(item.payment_method)}
+                </span>
+              ` : ''}
+
               <button
                 type="button"
                 class="history-reprint-btn"
@@ -887,6 +1002,12 @@ function selectEditPaymentStatus(status) {
   dom.editOptPaid.classList.toggle('active-paid', status === 'paid');
   dom.editOptUnpaid.classList.toggle('active-unpaid', status === 'unpaid');
 
+  setEditPaymentMethodEnabled(status === 'paid');
+
+  if (status === 'paid' && !state.editingPaymentMethod) {
+    selectEditPaymentMethod('cash');
+  }
+
   dom.editPayError.style.display = 'none';
 }
 
@@ -918,6 +1039,7 @@ async function submitEditPayment(newStatus) {
         action: 'updatePaymentStatus',
         reading_id: item.reading_id,
         payment_status: newStatus,
+        payment_method: newStatus === 'paid' ? state.editingPaymentMethod : '',
         editor_name: state.currentUser?.displayName || 'เจ้าหน้าที่',
       })
     });
@@ -1039,7 +1161,6 @@ function formatMonthTH(d) {
 const _enterApp = enterApp;
 window.enterApp = function(displayName) {
   _enterApp(displayName);
-  resetIdleTimer();
 };
 
 async function loadBootstrap(force = false) {
@@ -1162,12 +1283,18 @@ function openEditPaySheetById(readingId) {
   state.editingItem = item;
   const isPaid = item.payment_status !== 'unpaid';
   state.editingStatus = isPaid ? 'paid' : 'unpaid';
+  state.editingPaymentMethod = item.payment_method
+  ? normalizePaymentMethod(item.payment_method)
+  : 'cash';
 
   dom.editPaySub.textContent = `${item.house_no || '-'} · ${item.owner_name || '-'}`;
   dom.editPayError.style.display = 'none';
 
   dom.editOptPaid.classList.toggle('active-paid', isPaid);
   dom.editOptUnpaid.classList.toggle('active-unpaid', !isPaid);
+
+  selectEditPaymentMethod(state.editingPaymentMethod);
+  setEditPaymentMethodEnabled(isPaid);
 
   dom.editPayOverlay.classList.add('show');
   dom.editPaySheet.classList.add('open');
@@ -1388,6 +1515,138 @@ function generatePromptPayQR(phone, amount, callback) {
 
 // พิมพ์ใบเสร็จ
 function printReceipt() {
-  // iOS/Android Bluetooth Printers รองรับการพิมพ์ผ่าน window.print()
-  window.print();
+  document.body.classList.add('printing-receipt');
+
+  setTimeout(() => {
+    window.print();
+  }, 120);
+
+  setTimeout(() => {
+    document.body.classList.remove('printing-receipt');
+  }, 1500);
+}
+
+window.addEventListener('afterprint', () => {
+  document.body.classList.remove('printing-receipt');
+});
+
+function openSummarySheetAndLoad() {
+  if (!isAdminUser()) {
+    showToast('เฉพาะผู้ดูแลระบบเท่านั้นที่ดูสรุปยอดได้');
+    return;
+  }
+
+  openSummarySheet();
+  loadAdminSummary(true);
+}
+
+function openSummarySheet() {
+  if (!dom.summaryOverlay || !dom.summarySheet) return;
+
+  dom.summaryOverlay.classList.add('show');
+  dom.summarySheet.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeSummarySheet() {
+  if (dom.summaryOverlay) dom.summaryOverlay.classList.remove('show');
+  if (dom.summarySheet) dom.summarySheet.classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+async function loadAdminSummary(force = false) {
+  if (!isAdminUser()) {
+    showToast('เฉพาะผู้ดูแลระบบเท่านั้นที่ดูสรุปยอดได้');
+    return;
+  }
+
+  try {
+    const month = state.selectedMonth || '';
+
+    if (dom.summaryMonthLabel) {
+      dom.summaryMonthLabel.textContent = `ประจำเดือน ${getSelectedMonthLabel()}`;
+    }
+
+    setSummaryLoading();
+
+    const res = await fetch(`${API_URL}?action=summary&month=${encodeURIComponent(month)}`);
+    const json = await res.json();
+
+    if (!json.ok) {
+      throw new Error(json.error || 'โหลดสรุปยอดไม่สำเร็จ');
+    }
+
+    renderAdminSummary(json.summary || {});
+
+  } catch (err) {
+    showToast(err.message || 'โหลดสรุปยอดไม่สำเร็จ');
+    setSummaryError();
+  }
+}
+
+function getSelectedMonthLabel() {
+  if (!dom.monthSelect) return state.selectedMonth || '—';
+
+  const opt = dom.monthSelect.options[dom.monthSelect.selectedIndex];
+  return opt ? opt.textContent : state.selectedMonth || '—';
+}
+
+function setSummaryLoading() {
+  [
+    dom.sumRecordedMeters,
+    dom.sumCashAmount,
+    dom.sumCashHouses,
+    dom.sumCashMeters,
+    dom.sumTransferAmount,
+    dom.sumTransferHouses,
+    dom.sumTransferMeters
+  ].forEach(el => {
+    if (el) el.textContent = '...';
+  });
+}
+
+function setSummaryError() {
+  if (dom.sumRecordedMeters) dom.sumRecordedMeters.textContent = '—';
+  if (dom.sumCashAmount) dom.sumCashAmount.textContent = '—';
+  if (dom.sumCashHouses) dom.sumCashHouses.textContent = '—';
+  if (dom.sumCashMeters) dom.sumCashMeters.textContent = '—';
+  if (dom.sumTransferAmount) dom.sumTransferAmount.textContent = '—';
+  if (dom.sumTransferHouses) dom.sumTransferHouses.textContent = '—';
+  if (dom.sumTransferMeters) dom.sumTransferMeters.textContent = '—';
+}
+
+function renderAdminSummary(summary) {
+  if (dom.sumRecordedMeters) {
+    dom.sumRecordedMeters.textContent = Number(summary.recorded_meters || 0).toLocaleString();
+  }
+
+  if (dom.sumCashAmount) {
+    dom.sumCashAmount.textContent = `${Number(summary.cash_amount || 0).toLocaleString('th-TH', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    })} บาท`;
+  }
+
+  if (dom.sumCashHouses) {
+    dom.sumCashHouses.textContent = Number(summary.cash_houses || 0).toLocaleString();
+  }
+
+  if (dom.sumCashMeters) {
+    dom.sumCashMeters.textContent = Number(summary.cash_meters || 0).toLocaleString();
+  }
+
+  if (dom.sumTransferAmount) {
+    dom.sumTransferAmount.textContent = `${Number(summary.transfer_amount || 0).toLocaleString('th-TH', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    })} บาท`;
+  }
+
+  if (dom.sumTransferHouses) {
+    dom.sumTransferHouses.textContent = Number(summary.transfer_houses || 0).toLocaleString();
+  }
+
+  if (dom.sumTransferMeters) {
+    dom.sumTransferMeters.textContent = Number(summary.transfer_meters || 0).toLocaleString();
+  }
 }

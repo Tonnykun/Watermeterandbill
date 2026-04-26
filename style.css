@@ -801,21 +801,6 @@ input[type="password"]::-ms-clear {
 }
 .logout-btn-cancel:active, .logout-btn-confirm:active { opacity: 0.7; }
 
-/* ── Print ── */
-@media print {
-  @page { size: 58mm auto; margin: 0; }
-  .status-bar-spacer, .nav-bar, .nav-info-bar, .main-scroll, .toast,
-  .sheet-overlay, .sheet-btn-group, .sheet-handle { display: none !important; }
-  body { background: white !important; }
-  .bottom-sheet {
-    width: 58mm !important; max-width: 58mm !important; max-height: none !important;
-    position: static !important; left: auto !important; right: auto !important;
-    transform: none !important; transition: none !important;
-    border-radius: 0 !important; box-shadow: none !important; margin: 0 auto !important;
-  }
-  .sheet-scroll { max-height: none !important; overflow: visible !important; padding: 8px !important; }
-}
-
 /* ── Desktop ── */
 @media (min-width: 600px) {
   .main-scroll { padding: 28px 24px 0; }
@@ -1075,15 +1060,22 @@ input[type="password"]::-ms-clear {
 /* ════════════════════════════════
 THERMAL RECEIPT 58mm
 ════════════════════════════════ */
-.receipt-content {
-  width: 48mm;
+.receipt-paper {
+  width: 58mm;
+  max-width: 58mm;
   margin: 0 auto;
-  font-family: 'SF Mono', 'Menlo', 'Noto Sans Thai', monospace;
+  background: #fff;
+}
+
+.receipt-content {
+  width: 52mm;
+  margin: 0 auto;
+  font-family: Arial, "Noto Sans Thai", sans-serif;
   font-size: 10px;
   line-height: 1.35;
   color: #000;
   background: #fff;
-  padding: 2mm 0;
+  padding: 2mm 0 3mm;
 }
 
 /* Dividers */
@@ -1251,60 +1243,129 @@ PRINT MEDIA — 58mm THERMAL
     margin: 0;
   }
 
-  /* Reset everything */
-  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-  
-  body {
-    background: #fff !important;
+  html, body {
+    width: 58mm !important;
     margin: 0 !important;
     padding: 0 !important;
+    background: #fff !important;
     overflow: visible !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
 
-  /* Hide all UI except receipt */
-  .status-bar-spacer, .nav-bar, .nav-info-bar, .main-scroll, 
-  .toast, .sheet-btn-group, .sheet-handle, .login-screen, 
-  .app-screen, .bottom-sheet > .sheet-scroll { 
-    display: none !important; 
+  /* ซ่อนทุกอย่างก่อน */
+  body.printing-receipt * {
+    visibility: hidden !important;
   }
 
-  /* Show only receipt sheet */
-  .bottom-sheet {
-    position: static !important;
+  /* แสดงเฉพาะใบเสร็จ */
+  body.printing-receipt #receiptSheet,
+  body.printing-receipt #receiptSheet * {
+    visibility: visible !important;
+  }
+
+  body.printing-receipt #receiptSheet {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    right: auto !important;
+    bottom: auto !important;
     width: 58mm !important;
     max-width: 58mm !important;
+    margin: 0 !important;
+    padding: 0 !important;
     transform: none !important;
-    margin: 0 auto !important;
-    background: #fff !important;
-    box-shadow: none !important;
     border-radius: 0 !important;
-    display: block !important;
-    z-index: 1 !important;
-  }
-
-  .sheet-scroll {
+    box-shadow: none !important;
+    background: #fff !important;
+    z-index: 9999 !important;
     display: block !important;
     max-height: none !important;
+  }
+
+  body.printing-receipt #receiptSheet .sheet-scroll {
+    display: block !important;
+    padding: 2mm 1.5mm 3mm !important;
+    margin: 0 !important;
+    max-height: none !important;
     overflow: visible !important;
-    padding: 3mm 2mm !important;
+  }
+
+  body.printing-receipt .sheet-btn-group,
+  body.printing-receipt .sheet-handle,
+  body.printing-receipt .sheet-overlay {
+    display: none !important;
+  }
+
+  .receipt-paper {
+    width: 58mm !important;
+    max-width: 58mm !important;
+    margin: 0 auto !important;
   }
 
   .receipt-content {
-    width: 48mm !important;
+    width: 52mm !important;
     margin: 0 auto !important;
     page-break-inside: avoid;
+    break-inside: avoid;
+    color: #000 !important;
   }
 
-  /* QR code print optimization */
-  .qr-placeholder {
-    width: 34mm !important;
-    height: 34mm !important;
-    border: 1px solid #666 !important;
+  /* พื้นที่ทึบเยอะเกินไปไม่เหมาะกับ thermal */
+  .receipt-total {
+    background: transparent !important;
+    color: #000 !important;
+    border-top: 1px solid #000 !important;
+    border-bottom: 1px solid #000 !important;
+    border-radius: 0 !important;
+    padding: 6px 0 !important;
+    margin: 6px 0 !important;
   }
 
-  /* Ensure text prints dark */
-  .receipt-org, .rt-amount, .receipt-status { color: #000 !important; }
-  .receipt-total { background: #000 !important; color: #fff !important; }
+  .rt-label,
+  .rt-amount,
+  .receipt-org,
+  .receipt-doc-title,
+  .receipt-status,
+  .receipt-footer,
+  .receipt-row,
+  .mc-val,
+  .mc-label {
+    color: #000 !important;
+  }
+
+  .receipt-status {
+    background: transparent !important;
+    border: 1px solid #000 !important;
+    border-radius: 0 !important;
+    padding: 4px 6px !important;
+  }
+
+  .accent-cell,
+  .meter-cell,
+  .receipt-row.highlight {
+    background: transparent !important;
+    border: 1px solid #ddd !important;
+    border-radius: 0 !important;
+  }
+
+  /* QR สำหรับ 58mm */
+  .receipt-qr-box {
+    width: 26mm !important;
+    height: 26mm !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+    border: none !important;
+    background: transparent !important;
+  }
+
+  .receipt-qr-box canvas,
+  .receipt-qr-box img {
+    width: 26mm !important;
+    height: 26mm !important;
+    display: block !important;
+    margin: 0 auto !important;
+  }
 }
 
 /* Performance mode */
@@ -1646,9 +1707,9 @@ PRINT MEDIA — 58mm THERMAL
   text-align: center;
 }
 
-/* Maintenance Mode */
 .maintenance-overlay {
   display: none;
+  pointer-events: none;
 }
 
 body.maintenance .maintenance-overlay {
@@ -1657,6 +1718,7 @@ body.maintenance .maintenance-overlay {
   z-index: 99999;
   background: rgba(242, 242, 247, 0.96);
   display: flex;
+  pointer-events: auto;
   align-items: center;
   justify-content: center;
   padding: 24px;
@@ -1699,4 +1761,114 @@ body.maintenance .app-screen {
 .maintenance-note {
   font-size: 12px;
   color: rgba(60,60,67,0.55);
+}
+
+.payment-method-wrap,
+.edit-method-wrap {
+  margin-bottom: 16px;
+}
+
+.payment-method-selector {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.payment-method-opt {
+  padding: 12px 10px;
+  border-radius: var(--radius-inner);
+  background: var(--bg);
+  border: 2px solid var(--separator);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--label-secondary);
+  transition: border-color 0.2s, background 0.2s, transform 0.1s, opacity 0.2s;
+}
+
+.payment-method-opt.active {
+  border-color: var(--ios-blue);
+  background: var(--ios-blue-light);
+  color: var(--ios-blue);
+}
+
+.payment-method-opt:active {
+  transform: scale(0.98);
+}
+
+.payment-method-wrap.disabled,
+.edit-method-wrap.disabled {
+  opacity: 0.42;
+}
+
+.payment-method-wrap.disabled .payment-method-opt,
+.edit-method-wrap.disabled .payment-method-opt {
+  cursor: not-allowed;
+}
+
+.history-paymethod-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(0, 122, 255, 0.10);
+  color: var(--ios-blue);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.summary-sheet {
+  max-width: 520px;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  margin: 16px 0;
+}
+
+.summary-card {
+  background: var(--bg);
+  border-radius: var(--radius-card);
+  padding: 16px;
+  text-align: center;
+  border: 1px solid var(--separator);
+}
+
+.summary-card.full {
+  background: rgba(0, 122, 255, 0.08);
+  border-color: rgba(0, 122, 255, 0.20);
+}
+
+.summary-card.cash {
+  background: rgba(52, 199, 89, 0.08);
+  border-color: rgba(52, 199, 89, 0.20);
+}
+
+.summary-card.transfer {
+  background: rgba(0, 122, 255, 0.08);
+  border-color: rgba(0, 122, 255, 0.20);
+}
+
+.summary-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--label-secondary);
+  margin-bottom: 8px;
+}
+
+.summary-value {
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--label-primary);
+  line-height: 1.2;
+}
+
+.summary-unit,
+.summary-sub {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--label-secondary);
 }
