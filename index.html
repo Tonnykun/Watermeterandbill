@@ -5,10 +5,23 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <title>ระบบบันทึกมิเตอร์ประปา</title>
+  <title>ระบบประปา</title>
   <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body class="maintenance"> // หากจะแก้เว็บเปลี่ยนเป็น maintenance เสร็จแล้วเป็น body
+    <div class="maintenance-overlay">
+    <div class="maintenance-box">
+      <div class="maintenance-icon">🛠️</div>
+      <div class="maintenance-title">กำลังปรับปรุงระบบ</div>
+      <div class="maintenance-text">
+        ขณะนี้ระบบกำลังอยู่ระหว่างการแก้ไขและทดสอบ<br>
+        กรุณากลับมาใช้งานอีกครั้งภายหลัง
+      </div>
+      <div class="maintenance-note">
+        ขออภัยในความไม่สะดวก
+      </div>
+    </div>
+  </div>
 
   <!-- ════════════════════════════════
        LOGIN SCREEN

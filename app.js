@@ -15,12 +15,16 @@ const BOOTSTRAP_CACHE_KEY = 'wm_bootstrap_cache_v1';
 const BOOTSTRAP_CACHE_TTL = 5 * 60 * 1000;
 const PROMPTPAY_ID = '0830053242'; // เปลี่ยนเป็นเบอร์ PromptPay จริง
 const PROMPTPAY_NAME = 'วัชรพงษ์ กุณามี';
+const SESSION_KEY = 'wm_session';
 
 const VALID_USERS = [
-  { username: 'admin', password: 'water1234', displayName: 'ผู้ดูแลระบบ' },
-  { username: 'staff', password: '0000',      displayName: 'เจ้าหน้าที่' },
+  { username: 'admin', password: 'water12345', displayName: 'ผู้ดูแลระบบ' },
+  { username: 'staff', password: 'staff12345',      displayName: 'เจ้าหน้าที่' },
 ];
 const SESSION_KEY = 'wm_session';
+const IDLE_TIMEOUT_MS = 10 * 60 * 1000; // 30 นาที
+let idleTimer = null;
+let idleEventsBound = false;
 
 /* ── State ── */
 let state = {
@@ -163,6 +167,44 @@ function refreshStatBar() {
   dom.statPending.textContent = pending;
 }
 
+function bindIdleEvents() {
+  if (idleEventsBound) return;
+  idleEventsBound = true;
+
+  ['click', 'touchstart', 'keydown', 'scroll', 'mousemove'].forEach(eventName => {
+    document.addEventListener(eventName, resetIdleTimer, { passive: true });
+  });
+}
+
+function resetIdleTimer() {
+  if (!state.currentUser) return;
+
+  clearTimeout(idleTimer);
+
+  idleTimer = setTimeout(() => {
+    autoLogoutDueToIdle();
+  }, IDLE_TIMEOUT_MS);
+}
+
+function autoLogoutDueToIdle() {
+  if (!state.currentUser) return;
+
+  clearTimeout(idleTimer);
+  idleTimer = null;
+
+  // ปิด popup/sheet ที่อาจเปิดค้างอยู่
+  try { closeSheet(); } catch (e) {}
+  try { closeHistorySheet(); } catch (e) {}
+  try { closeEditPaySheet(); } catch (e) {}
+  try { cancelLogout(); } catch (e) {}
+
+  // ใช้ระบบ logout เดิม
+  confirmLogout();
+
+  // แจ้งเหตุผลบนหน้า login
+  showLoginError('ออกจากระบบอัตโนมัติ เนื่องจากไม่ได้ใช้งานเกิน 30 นาที');
+}
+
 /* ════════════════════════════════
    LOGIN / LOGOUT
 ════════════════════════════════ */
@@ -240,6 +282,9 @@ function cancelLogout() {
   document.body.style.overflow = '';
 }
 function confirmLogout() {
+  clearTimeout(idleTimer);
+  idleTimer = null;
+
   try { localStorage.removeItem(SESSION_KEY); } catch (e) {}
   try { sessionStorage.removeItem(BOOTSTRAP_CACHE_KEY); } catch (e) {}
   state.currentUser = null;
@@ -975,6 +1020,7 @@ function formatMonthTH(d) {
 (async function init() {
   buildDomRefs();
   bindMainEvents();
+  bindIdleEvents();
   dom.todayDate.textContent = formatDateTH(new Date());
 
   document.addEventListener('keydown', e => {
@@ -993,11 +1039,7 @@ function formatMonthTH(d) {
 const _enterApp = enterApp;
 window.enterApp = function(displayName) {
   _enterApp(displayName);
-  buildMonthOptions();
-  loadBootstrap(false)
-  .then(() => loadHistory(false))
-  .then(() => refreshStatBar())
-  .catch(() => refreshStatBar());
+  resetIdleTimer();
 };
 
 async function loadBootstrap(force = false) {
