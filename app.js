@@ -326,8 +326,10 @@ function enterApp(displayName) {
     updateAdminVisibility();
     resetIdleTimer();
 
-    loadBootstrap(true)
-      .then(() => loadHistory(true))
+    Promise.all([
+      loadBootstrap(false),
+      loadHistory(true)
+    ])
       .then(() => refreshStatBar())
       .catch(err => {
         console.error('[enterApp]', err);
@@ -1210,13 +1212,8 @@ function applyAppConfig() {
     if (e.key === 'Escape') { closeSheet(); closeHistorySheet(); cancelLogout(); closeEditPaySheet(); }
   });
 
-  const autoLogged = checkSavedSession();
-  if (autoLogged) {
-  loadBootstrap(true)
-    .then(() => loadHistory(true))
-    .then(() => refreshStatBar())
-    .catch(err => console.error('[bootstrap]', err));
-  }
+  checkSavedSession();
+
 })();
 
 const _enterApp = enterApp;
