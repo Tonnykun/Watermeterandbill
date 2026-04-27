@@ -39,6 +39,8 @@ let idleTimer = null;
 let idleEventsBound = false;
 let receiptImageBlob = null;
 let receiptImageUrl = '';
+let summaryImageBlob = null;
+let summaryImageUrl = '';
 let isSharingReceiptImage = false;
 let shareRecoveryTimer = null;
 let currentReceiptReadingId = '';
@@ -146,6 +148,11 @@ function buildDomRefs() {
     sumTransferAmount: $('sumTransferAmount'),
     sumTransferHouses: $('sumTransferHouses'),
     sumTransferMeters: $('sumTransferMeters'),
+    summarySlip: $('summarySlip'),
+    summaryGeneratedAt: $('summaryGeneratedAt'),
+    summaryUserName: $('summaryUserName'),
+    sumGrandTotal: $('sumGrandTotal'),
+    saveSummaryImageBtn: $('saveSummaryImageBtn'),
   };
 }
 
@@ -1752,7 +1759,8 @@ function setSummaryLoading() {
     dom.sumCashMeters,
     dom.sumTransferAmount,
     dom.sumTransferHouses,
-    dom.sumTransferMeters
+    dom.sumTransferMeters,
+    dom.sumGrandTotal
   ].forEach(el => {
     if (el) el.textContent = '...';
   });
@@ -1766,18 +1774,35 @@ function setSummaryError() {
   if (dom.sumTransferAmount) dom.sumTransferAmount.textContent = '—';
   if (dom.sumTransferHouses) dom.sumTransferHouses.textContent = '—';
   if (dom.sumTransferMeters) dom.sumTransferMeters.textContent = '—';
+  if (dom.sumGrandTotal) dom.sumGrandTotal.textContent = '—';
+}
+
+function formatSummaryMoney(value) {
+  return `${Number(value || 0).toLocaleString('th-TH', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  })} บาท`;
 }
 
 function renderAdminSummary(summary) {
+  const cashAmount = Number(summary.cash_amount || 0);
+  const transferAmount = Number(summary.transfer_amount || 0);
+  const grandTotal = cashAmount + transferAmount;
+
+  if (dom.summaryGeneratedAt) {
+    dom.summaryGeneratedAt.textContent = `วันที่สรุป: ${formatDateTH(new Date())}`;
+  }
+
+  if (dom.summaryUserName) {
+    dom.summaryUserName.textContent = state.currentUser?.displayName || 'ผู้ดูแลระบบ';
+  }
+
   if (dom.sumRecordedMeters) {
     dom.sumRecordedMeters.textContent = Number(summary.recorded_meters || 0).toLocaleString();
   }
 
   if (dom.sumCashAmount) {
-    dom.sumCashAmount.textContent = `${Number(summary.cash_amount || 0).toLocaleString('th-TH', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    })} บาท`;
+    dom.sumCashAmount.textContent = formatSummaryMoney(cashAmount);
   }
 
   if (dom.sumCashHouses) {
@@ -1789,10 +1814,7 @@ function renderAdminSummary(summary) {
   }
 
   if (dom.sumTransferAmount) {
-    dom.sumTransferAmount.textContent = `${Number(summary.transfer_amount || 0).toLocaleString('th-TH', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    })} บาท`;
+    dom.sumTransferAmount.textContent = formatSummaryMoney(transferAmount);
   }
 
   if (dom.sumTransferHouses) {
@@ -1802,6 +1824,14 @@ function renderAdminSummary(summary) {
   if (dom.sumTransferMeters) {
     dom.sumTransferMeters.textContent = Number(summary.transfer_meters || 0).toLocaleString();
   }
+
+  if (dom.sumGrandTotal) {
+    dom.sumGrandTotal.textContent = formatSummaryMoney(grandTotal);
+  }
+
+  setTimeout(() => {
+    generateSummaryImage();
+  }, 250);
 }
 
 async function generateReceiptImage() {
@@ -2003,4 +2033,142 @@ document.addEventListener('visibilitychange', () => {
   if (!document.hidden && isSharingReceiptImage) {
     setTimeout(recoverAfterShareImage, 250);
   }
+});
+
+async function generateSummaryImage() {
+  const slipEl = document.getElementById('summarySlip');
+  const btn = document.getElementById('saveSummaryImageBtn');
+
+  if (!slipEl) {
+    showToast('ไม่พบสลิปสรุปยอด');
+    return;
+  }
+
+  try {
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = '🖼️ กำลังสร้างรูป...';
+    }
+
+    if (summaryImageUrl) {
+      URL.revokeObjectURL(summaryImageUrl);
+      summaryImageUrl = '';
+    }
+
+    summaryImageBlob = null;
+
+    if (typeof html2canvas === 'undefined') {
+      throw new Error('โหลดตัวสร้างรูปไม่สำเร็จ');
+    }
+
+    await new Promise(resolve => setTimeout(resolve, 200));
+
+    const canvas = await html2canvas(slipEl, {
+      backgroundColor: '#ffffff',
+      scale: 3,
+      useCORS: true,
+      logging: false
+    });
+
+    const targetWidth = 384;
+    const ratio = targetWidth / canvas.width;
+    const targetHeight = Math.ceil(canvas.height * ratio);
+
+    const outputCanvas = document.createElement('canvas');
+    outputCanvas.width = targetWidth;
+    outputCanvas.height = targetHeight;
+
+    const ctx = outputCanvas.getContext('2d');
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, targetWidth, targetHeight);
+    ctx.drawImage(canvas, 0, 0, targetWidth, targetHeight);
+
+    summaryImageBlob = await new Promise(resolve => {
+      outputCanvas.toBlob(resolve, 'image/png', 1);
+    });
+
+    if (!summaryImageBlob) {
+      throw new Error('สร้างรูปสรุปยอดไม่สำเร็จ');
+    }
+
+    summaryImageUrl = URL.createObjectURL(summaryImageBlob);
+
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = '🖼️ บันทึก/แชร์รูปสรุปยอด';
+    }
+
+  } catch (err) {
+    console.error('[generateSummaryImage]', err);
+
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = '🖼️ สร้างรูปอีกครั้ง';
+    }
+
+    showToast(err.message || 'สร้างรูปสรุปยอดไม่สำเร็จ');
+  }
+}
+
+function buildSummaryImageFileName() {
+  const month = state.selectedMonth || new Date().toISOString().slice(0, 7);
+  return `summary-${month}.png`;
+}
+
+async function saveSummaryImage() {
+  try {
+    if (!summaryImageBlob) {
+      await generateSummaryImage();
+    }
+
+    if (!summaryImageBlob) {
+      showToast('ยังไม่มีรูปสรุปยอด');
+      return;
+    }
+
+    const fileName = buildSummaryImageFileName();
+    const file = new File([summaryImageBlob], fileName, { type: 'image/png' });
+
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({
+        files: [file],
+        title: 'สลิปสรุปยอดรับชำระ',
+        text: 'สลิปสรุปยอดรับชำระค่าน้ำประปา'
+      });
+      return;
+    }
+
+    const a = document.createElement('a');
+    a.href = summaryImageUrl;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+
+  } catch (err) {
+    console.error('[saveSummaryImage]', err);
+
+    if (summaryImageUrl) {
+      window.open(summaryImageUrl, '_blank');
+      return;
+    }
+
+    showToast('บันทึก/แชร์รูปสรุปยอดไม่สำเร็จ');
+  }
+}
+
+function printSummarySlip() {
+  document.body.classList.add('printing-summary');
+
+  setTimeout(() => {
+    window.print();
+  }, 120);
+
+  setTimeout(() => {
+    document.body.classList.remove('printing-summary');
+  }, 1500);
+}
+
+window.addEventListener('afterprint', () => {
+  document.body.classList.remove('printing-summary');
 });

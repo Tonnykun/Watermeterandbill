@@ -450,44 +450,87 @@
     <div class="sheet-overlay" id="summaryOverlay" onclick="closeSummarySheet()"></div>
     <div class="bottom-sheet summary-sheet" id="summarySheet">
       <div class="sheet-handle"></div>
-      <div class="sheet-scroll">
-        <div class="history-header">
-          <div>
-            <div class="history-title">สรุปยอด</div>
-            <div class="history-subtitle" id="summaryMonthLabel">—</div>
-          </div>
-          <button class="history-close-btn" onclick="closeSummarySheet()">ปิด</button>
-        </div>
 
-        <div class="summary-grid">
-          <div class="summary-card full">
-            <div class="summary-label">จำนวนมิเตอร์ที่บันทึกสำเร็จ</div>
-            <div class="summary-value" id="sumRecordedMeters">—</div>
-            <div class="summary-unit">มิเตอร์</div>
+      <div class="sheet-scroll summary-scroll">
+
+        <div class="summary-slip" id="summarySlip">
+          <div class="summary-slip-header">
+            <div class="summary-slip-logo">💧🚰</div>
+            <div class="summary-slip-org">การประปาหมู่บ้านแสนสุข</div>
+            <div class="summary-slip-sub">บ้านแสนสุข หมู่ 4</div>
+            <div class="summary-slip-title">สลิปสรุปยอดรับชำระ</div>
+            <div class="summary-slip-month" id="summaryMonthLabel">ประจำเดือน —</div>
+            <div class="summary-slip-date" id="summaryGeneratedAt">วันที่สรุป: —</div>
           </div>
 
-          <div class="summary-card cash">
-            <div class="summary-label">เงินสด</div>
-            <div class="summary-value" id="sumCashAmount">—</div>
-            <div class="summary-sub">
+          <div class="summary-slip-row">
+            <span>จำนวนมิเตอร์ที่บันทึกสำเร็จ</span>
+            <strong><span id="sumRecordedMeters">—</span> มิเตอร์</strong>
+          </div>
+
+          <div class="summary-slip-divider"></div>
+
+          <div class="summary-slip-section-title">เงินสด</div>
+          <div class="summary-slip-row">
+            <span>ยอดเงินสด</span>
+            <strong id="sumCashAmount">—</strong>
+          </div>
+          <div class="summary-slip-row small">
+            <span>จำนวน</span>
+            <strong>
               <span id="sumCashHouses">—</span> หลัง ·
               <span id="sumCashMeters">—</span> มิเตอร์
-            </div>
+            </strong>
           </div>
 
-          <div class="summary-card transfer">
-            <div class="summary-label">เงินโอน</div>
-            <div class="summary-value" id="sumTransferAmount">—</div>
-            <div class="summary-sub">
+          <div class="summary-slip-divider"></div>
+
+          <div class="summary-slip-section-title">เงินโอน</div>
+          <div class="summary-slip-row">
+            <span>ยอดเงินโอน</span>
+            <strong id="sumTransferAmount">—</strong>
+          </div>
+          <div class="summary-slip-row small">
+            <span>จำนวน</span>
+            <strong>
               <span id="sumTransferHouses">—</span> หลัง ·
               <span id="sumTransferMeters">—</span> มิเตอร์
-            </div>
+            </strong>
+          </div>
+
+          <div class="summary-slip-total">
+            <div class="summary-slip-total-label">ยอดรับชำระรวม</div>
+            <div class="summary-slip-total-amount" id="sumGrandTotal">—</div>
+          </div>
+
+          <div class="summary-slip-footer">
+            <div>ผู้สรุปยอด: <span id="summaryUserName">—</span></div>
+            <div>ใช้สำหรับตรวจสอบยอดรับชำระประจำวัน/เดือน</div>
           </div>
         </div>
 
-        <button class="sheet-btn secondary" onclick="loadAdminSummary(true)">
-          รีเฟรชสรุปยอด
-        </button>
+        <div class="summary-actions">
+          <button
+            class="sheet-btn image-save"
+            id="saveSummaryImageBtn"
+            onclick="saveSummaryImage()"
+          >
+            🖼️ บันทึก/แชร์รูปสรุปยอด
+          </button>
+
+          <button class="sheet-btn primary" onclick="printSummarySlip()">
+            🖨️ ปริ้นท์สรุปยอด
+          </button>
+
+          <button class="sheet-btn secondary" onclick="loadAdminSummary(true)">
+            รีเฟรชสรุปยอด
+          </button>
+
+          <button class="sheet-btn secondary" onclick="closeSummarySheet()">
+            ปิด
+          </button>
+        </div>
+
       </div>
     </div>
 
