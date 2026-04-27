@@ -789,14 +789,24 @@ async function handleSave() {
     await loadHistory(true);
     refreshStatBar();
 
-    populateReceipt(house, meter, saved);
+    // ใช้ข้อมูลเต็มจากประวัติย้อนหลัง ถ้ามี
+    const fullItem = state.historyItems.find(item =>
+      String(item.reading_id || '') === String(saved.reading_id || '')
+    );
+
+    if (fullItem) {
+      openReceiptFromHistoryItem(fullItem, 600);
+    } else {
+      // fallback เผื่อ history ยังโหลดไม่ทัน
+      populateReceipt(house, meter, saved);
+      setTimeout(() => openSheet(), 600);
+    }
 
     if (isPaid) {
       showToast('บันทึก + ออกใบเสร็จสำเร็จ!');
     } else {
       showToast('บันทึก + ออกใบแจ้งค้างชำระสำเร็จ!');
     }
-    setTimeout(() => openSheet(), 600);
   } catch (err) {
     dom.errorText.textContent = err.message || 'เกิดข้อผิดพลาด'; dom.errorBox.style.display = 'flex';
   } finally { dom.saveBtn.disabled = false; }
@@ -1286,13 +1296,9 @@ function printUnpaidNoticeById(readingId) {
   }, 180);
 }
 
-function reprintHistoryReceiptById(readingId) {
-  const item = state.historyItems.find(
-    x => String(x.reading_id || '') === String(readingId || '')
-  );
-
+function openReceiptFromHistoryItem(item, delay = 180) {
   if (!item) {
-    showToast('ไม่พบรายการสำหรับพิมพ์ซ้ำ');
+    showToast('ไม่พบข้อมูลใบเสร็จ');
     return;
   }
 
@@ -1323,12 +1329,65 @@ function reprintHistoryReceiptById(readingId) {
     total_amount: Number(item.total_amount || 0),
   };
 
-  closeHistorySheet();
   populateReceipt(receiptHouse, receiptMeter, receiptSaved);
 
   setTimeout(() => {
     openSheet();
-  }, 180);
+  }, delay);
+}
+
+function reprintHistoryReceiptById(readingId) {
+  const item = state.historyItems.find(
+    x => String(x.reading_id || '') === String(readingId || '')
+  );
+
+  if (!item) {
+    showToast('ไม่พบรายการสำหรับพิมพ์ซ้ำ');
+    return;
+  }
+
+  closeHistorySheet();
+  openReceiptFromHistoryItem(item, 180);
+}
+
+function openReceiptFromHistoryItem(item, delay = 180) {
+  if (!item) {
+    showToast('ไม่พบข้อมูลใบเสร็จ');
+    return;
+  }
+
+  const receiptHouse = {
+    name: item.owner_name || item.name || '-',
+    num: item.house_no || '-',
+    addr: item.house_no || item.addr || '-',
+    address: item.house_no || item.address || '-',
+  };
+
+  const receiptMeter = {
+    label: item.meter_label || item.meter_key || 'มิเตอร์ 1',
+  };
+
+  const isUnpaid = item.payment_status === 'unpaid';
+
+  const receiptSaved = {
+    reading_id: item.reading_id || '',
+    receipt_no: item.receipt_no || item.reading_id || '---',
+    read_date: item.read_date || item.created_at || new Date().toISOString(),
+    payment_status: isUnpaid ? 'unpaid' : 'paid',
+    prev_reading: Number(item.prev_reading || 0),
+    current_reading: Number(item.current_reading || 0),
+    units_used: Number(item.units_used || 0),
+    rate_per_unit: Number(item.rate_per_unit || RATE_PER_UNIT),
+    water_cost: Number(item.water_cost || 0),
+    service_fee: Number(item.service_fee || SERVICE_FEE),
+    total_amount: Number(item.total_amount || 0),
+  };
+
+  populateReceipt(receiptHouse, receiptMeter, receiptSaved);
+
+  setTimeout(() => {
+    openSheet();
+  }, delay);
 }
 
 function openEditPaySheetById(readingId) {
