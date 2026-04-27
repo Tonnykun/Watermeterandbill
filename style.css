@@ -1770,20 +1770,24 @@ body.maintenance .app-screen {
   }
 }
 
-/* แก้ปุ่มประวัติย้อนหลังตกขอบในมือถือ */
+/* แก้ปุ่มประวัติย้อนหลังในมือถือ ให้เล็กเหมือนเดิมแต่ไม่ตกขอบ */
 @media (max-width: 640px) {
   .history-top {
     display: flex;
     flex-direction: column;
     align-items: stretch;
-    gap: 10px;
+    gap: 8px;
   }
 
   .history-top-right {
     width: 100%;
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    max-width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    align-items: center;
     gap: 6px;
+    overflow: visible;
   }
 
   .history-badge,
@@ -1791,12 +1795,13 @@ body.maintenance .app-screen {
   .history-reprint-btn,
   .history-edit-btn,
   .history-notice-btn {
-    width: 100%;
+    width: auto !important;
+    flex: 0 0 auto !important;
+    max-width: 100%;
     justify-content: center;
     text-align: center;
     white-space: nowrap;
-    min-width: 0;
-    font-size: 11px;
-    padding: 6px 7px;
+    font-size: 11px !important;
+    padding: 5px 9px !important;
   }
 }

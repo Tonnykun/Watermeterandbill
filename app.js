@@ -1604,12 +1604,12 @@ function openBrowserPrintFallback() {
   }, 120);
 
   setTimeout(() => {
-    document.body.classList.remove('printing-receipt');
+    recoverAfterExternalPrint();
   }, 1500);
 }
 
 window.addEventListener('afterprint', () => {
-  document.body.classList.remove('printing-receipt');
+  recoverAfterExternalPrint();
 });
 
 function printReceipt() {
@@ -2171,4 +2171,67 @@ function printSummarySlip() {
 
 window.addEventListener('afterprint', () => {
   document.body.classList.remove('printing-summary');
+});
+
+function recoverAfterExternalPrint() {
+  // ล้างโหมด print ที่อาจค้าง
+  document.body.classList.remove('printing-receipt');
+  document.body.classList.remove('printing-summary');
+
+  // คืนค่า touch/click
+  document.documentElement.style.pointerEvents = '';
+  document.body.style.pointerEvents = '';
+
+  // ถ้า popup ใบเสร็จยังเปิดอยู่ ให้คง popup ไว้ แต่คืน overflow ให้ถูก
+  const receiptSheet = document.getElementById('receiptSheet');
+  const summarySheet = document.getElementById('summarySheet');
+
+  const receiptOpen = receiptSheet && receiptSheet.classList.contains('open');
+  const summaryOpen = summarySheet && summarySheet.classList.contains('open');
+
+  if (receiptOpen || summaryOpen) {
+    document.body.style.overflow = 'hidden';
+  } else {
+    document.body.style.overflow = '';
+  }
+
+  // รีเซ็ตปุ่มบันทึกรูปใบเสร็จ
+  const receiptImgBtn = document.getElementById('saveReceiptImageBtn');
+  if (receiptImgBtn) {
+    receiptImgBtn.disabled = !receiptImageBlob;
+    receiptImgBtn.textContent = receiptImageBlob
+      ? '🖼️ บันทึก/แชร์รูปใบเสร็จ'
+      : '🖼️ สร้างรูปอีกครั้ง';
+  }
+
+  // รีเซ็ตปุ่มบันทึกรูปสรุปยอด ถ้ามี
+  const summaryImgBtn = document.getElementById('saveSummaryImageBtn');
+  if (summaryImgBtn) {
+    summaryImgBtn.disabled = !summaryImageBlob;
+    summaryImgBtn.textContent = summaryImageBlob
+      ? '🖼️ บันทึก/แชร์รูปสรุปยอด'
+      : '🖼️ สร้างรูปอีกครั้ง';
+  }
+
+  try {
+    resetIdleTimer();
+  } catch (e) {}
+}
+
+window.addEventListener('pageshow', () => {
+  setTimeout(recoverAfterExternalPrint, 250);
+});
+
+window.addEventListener('focus', () => {
+  setTimeout(recoverAfterExternalPrint, 250);
+});
+
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) {
+    setTimeout(recoverAfterExternalPrint, 250);
+  }
+});
+
+window.addEventListener('afterprint', () => {
+  recoverAfterExternalPrint();
 });
