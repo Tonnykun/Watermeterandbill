@@ -2027,30 +2027,6 @@ function recoverAfterShareImage() {
   } catch (e) {}
 }
 
-let isExternalPrinting = false;
-
-function handleReturnToWebApp() {
-  if (isSharingReceiptImage) {
-    setTimeout(recoverAfterShareImage, 250);
-  }
-
-  if (isExternalPrinting) {
-    setTimeout(() => {
-      closeReceiptPopupAfterExternalPrint();
-      isExternalPrinting = false;
-    }, 250);
-  }
-}
-
-window.addEventListener('pageshow', handleReturnToWebApp);
-window.addEventListener('focus', handleReturnToWebApp);
-
-document.addEventListener('visibilitychange', () => {
-  if (!document.hidden) {
-    handleReturnToWebApp();
-  }
-});
-
 async function generateSummaryImage() {
   const slipEl = document.getElementById('summarySlip');
   const btn = document.getElementById('saveSummaryImageBtn');
@@ -2184,53 +2160,6 @@ function printSummarySlip() {
     document.body.classList.remove('printing-summary');
   }, 1500);
 }
-
-function recoverAfterExternalAction() {
-  document.body.classList.remove('printing-receipt');
-  document.body.classList.remove('printing-summary');
-
-  document.documentElement.style.pointerEvents = '';
-  document.body.style.pointerEvents = '';
-
-  const receiptSheet = document.getElementById('receiptSheet');
-  const sheetOverlay = document.getElementById('sheetOverlay');
-
-  // ปิดเฉพาะใบเสร็จที่ค้างหลังออกไปแอปปริ้นท์
-  if (receiptSheet) receiptSheet.classList.remove('open');
-  if (sheetOverlay) sheetOverlay.classList.remove('show');
-
-  // อย่าไปปิด historySheet เพราะเรายังอยากกลับมาหน้าประวัติ
-  const historySheet = document.getElementById('historySheet');
-  const historyOpen = historySheet && historySheet.classList.contains('open');
-
-  document.body.style.overflow = historyOpen ? 'hidden' : '';
-
-  const receiptImgBtn = document.getElementById('saveReceiptImageBtn');
-  if (receiptImgBtn) {
-    receiptImgBtn.disabled = !receiptImageBlob;
-    receiptImgBtn.textContent = receiptImageBlob
-      ? '🖼️ บันทึก/แชร์รูปใบเสร็จ'
-      : '🖼️ สร้างรูปอีกครั้ง';
-  }
-
-  try {
-    resetIdleTimer();
-  } catch (e) {}
-}
-
-window.addEventListener('pageshow', () => {
-  setTimeout(recoverAfterExternalAction, 250);
-});
-
-window.addEventListener('focus', () => {
-  setTimeout(recoverAfterExternalAction, 250);
-});
-
-document.addEventListener('visibilitychange', () => {
-  if (!document.hidden) {
-    setTimeout(recoverAfterExternalAction, 250);
-  }
-});
 
 function closeReceiptPopupAfterExternalPrint() {
   document.body.classList.remove('printing-receipt');
