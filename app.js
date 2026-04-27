@@ -15,8 +15,8 @@ const APP_CONFIG = {
   villageName: 'บ้านแสนสุข หมู่ 4',
   contact: '0XX-XXX-XXXX',
 
-  promptPayId: '0830053242',
-  promptPayName: 'วัชรพงษ์ กุณามี',
+  promptPayId: '0000000000',
+  promptPayName: 'Mr.Tony',
 
   ratePerUnit: 3,
   serviceFee: 0,
