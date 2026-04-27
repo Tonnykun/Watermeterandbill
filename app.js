@@ -39,6 +39,8 @@ let idleTimer = null;
 let idleEventsBound = false;
 let receiptImageBlob = null;
 let receiptImageUrl = '';
+let isSharingReceiptImage = false;
+let shareRecoveryTimer = null;
 let currentReceiptReadingId = '';
 let bprintFallbackTimer = null;
 
@@ -1892,30 +1894,44 @@ function buildReceiptImageFileName() {
 }
 
 async function saveReceiptImage() {
+  const btn = document.getElementById('saveReceiptImageBtn');
+
   try {
+    isSharingReceiptImage = true;
+
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = '🖼️ กำลังเปิดแชร์...';
+    }
+
     if (!receiptImageBlob) {
       await generateReceiptImage();
     }
 
     if (!receiptImageBlob) {
       showToast('ยังไม่มีรูปใบเสร็จ');
+      recoverAfterShareImage();
       return;
     }
 
     const fileName = buildReceiptImageFileName();
     const file = new File([receiptImageBlob], fileName, { type: 'image/png' });
 
-    // iPhone / Safari / WebView ถ้ารองรับ Share Sheet ให้เปิดแชร์
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      shareRecoveryTimer = setTimeout(() => {
+        recoverAfterShareImage();
+      }, 2500);
+
       await navigator.share({
         files: [file],
         title: 'ใบเสร็จค่าน้ำประปา',
         text: 'รูปใบเสร็จค่าน้ำประปา'
       });
+
+      recoverAfterShareImage();
       return;
     }
 
-    // fallback สำหรับ browser ที่ดาวน์โหลดได้
     const a = document.createElement('a');
     a.href = receiptImageUrl;
     a.download = fileName;
@@ -1923,15 +1939,68 @@ async function saveReceiptImage() {
     a.click();
     a.remove();
 
+    recoverAfterShareImage();
+
   } catch (err) {
     console.error('[saveReceiptImage]', err);
 
-    // fallback สุดท้าย: เปิดรูปในแท็บใหม่ ให้กดค้างเพื่อ Save Image
-    if (receiptImageUrl) {
-      window.open(receiptImageUrl, '_blank');
+    if (err && err.name === 'AbortError') {
+      recoverAfterShareImage();
       return;
     }
 
-    showToast('บันทึกรูปไม่สำเร็จ');
+    showToast('บันทึก/แชร์รูปไม่สำเร็จ');
+    recoverAfterShareImage();
   }
 }
+
+function recoverAfterShareImage() {
+  isSharingReceiptImage = false;
+
+  if (shareRecoveryTimer) {
+    clearTimeout(shareRecoveryTimer);
+    shareRecoveryTimer = null;
+  }
+
+  document.body.classList.remove('printing-receipt');
+  document.documentElement.style.pointerEvents = '';
+  document.body.style.pointerEvents = '';
+
+  const receiptSheet = document.getElementById('receiptSheet');
+  const btn = document.getElementById('saveReceiptImageBtn');
+
+  if (receiptSheet && receiptSheet.classList.contains('open')) {
+    document.body.style.overflow = 'hidden';
+  } else {
+    document.body.style.overflow = '';
+  }
+
+  if (btn) {
+    btn.disabled = !receiptImageBlob;
+    btn.textContent = receiptImageBlob
+      ? '🖼️ บันทึก/แชร์รูปใบเสร็จ'
+      : '🖼️ สร้างรูปอีกครั้ง';
+  }
+
+  try {
+    resetIdleTimer();
+  } catch (e) {}
+}
+
+window.addEventListener('pageshow', () => {
+  if (isSharingReceiptImage) {
+    setTimeout(recoverAfterShareImage, 250);
+  }
+});
+
+window.addEventListener('focus', () => {
+  if (isSharingReceiptImage) {
+    setTimeout(recoverAfterShareImage, 250);
+  }
+});
+
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && isSharingReceiptImage) {
+    setTimeout(recoverAfterShareImage, 250);
+  }
+});
