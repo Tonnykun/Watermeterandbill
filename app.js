@@ -1651,6 +1651,8 @@ function printReceipt() {
   // เปิด Bluetooth Print App
   window.location.href = bprintUrl;
 
+  setTimeout(recoverAfterExternalAction, 2500);
+
   // ถ้า Android เปิด bprint ไม่ได้ ให้กลับไปใช้ browser print
   if (isAndroidDevice()) {
     bprintFallbackTimer = setTimeout(() => {
@@ -2173,43 +2175,31 @@ window.addEventListener('afterprint', () => {
   document.body.classList.remove('printing-summary');
 });
 
-function recoverAfterExternalPrint() {
-  // ล้างโหมด print ที่อาจค้าง
+function recoverAfterExternalAction() {
   document.body.classList.remove('printing-receipt');
   document.body.classList.remove('printing-summary');
 
-  // คืนค่า touch/click
   document.documentElement.style.pointerEvents = '';
   document.body.style.pointerEvents = '';
 
-  // ถ้า popup ใบเสร็จยังเปิดอยู่ ให้คง popup ไว้ แต่คืน overflow ให้ถูก
   const receiptSheet = document.getElementById('receiptSheet');
-  const summarySheet = document.getElementById('summarySheet');
+  const sheetOverlay = document.getElementById('sheetOverlay');
 
-  const receiptOpen = receiptSheet && receiptSheet.classList.contains('open');
-  const summaryOpen = summarySheet && summarySheet.classList.contains('open');
+  // ปิดเฉพาะใบเสร็จที่ค้างหลังออกไปแอปปริ้นท์
+  if (receiptSheet) receiptSheet.classList.remove('open');
+  if (sheetOverlay) sheetOverlay.classList.remove('show');
 
-  if (receiptOpen || summaryOpen) {
-    document.body.style.overflow = 'hidden';
-  } else {
-    document.body.style.overflow = '';
-  }
+  // อย่าไปปิด historySheet เพราะเรายังอยากกลับมาหน้าประวัติ
+  const historySheet = document.getElementById('historySheet');
+  const historyOpen = historySheet && historySheet.classList.contains('open');
 
-  // รีเซ็ตปุ่มบันทึกรูปใบเสร็จ
+  document.body.style.overflow = historyOpen ? 'hidden' : '';
+
   const receiptImgBtn = document.getElementById('saveReceiptImageBtn');
   if (receiptImgBtn) {
     receiptImgBtn.disabled = !receiptImageBlob;
     receiptImgBtn.textContent = receiptImageBlob
       ? '🖼️ บันทึก/แชร์รูปใบเสร็จ'
-      : '🖼️ สร้างรูปอีกครั้ง';
-  }
-
-  // รีเซ็ตปุ่มบันทึกรูปสรุปยอด ถ้ามี
-  const summaryImgBtn = document.getElementById('saveSummaryImageBtn');
-  if (summaryImgBtn) {
-    summaryImgBtn.disabled = !summaryImageBlob;
-    summaryImgBtn.textContent = summaryImageBlob
-      ? '🖼️ บันทึก/แชร์รูปสรุปยอด'
       : '🖼️ สร้างรูปอีกครั้ง';
   }
 
@@ -2219,19 +2209,19 @@ function recoverAfterExternalPrint() {
 }
 
 window.addEventListener('pageshow', () => {
-  setTimeout(recoverAfterExternalPrint, 250);
+  setTimeout(recoverAfterExternalAction, 250);
 });
 
 window.addEventListener('focus', () => {
-  setTimeout(recoverAfterExternalPrint, 250);
+  setTimeout(recoverAfterExternalAction, 250);
 });
 
 document.addEventListener('visibilitychange', () => {
   if (!document.hidden) {
-    setTimeout(recoverAfterExternalPrint, 250);
+    setTimeout(recoverAfterExternalAction, 250);
   }
 });
 
 window.addEventListener('afterprint', () => {
-  recoverAfterExternalPrint();
+  recoverAfterExternalAction();
 });

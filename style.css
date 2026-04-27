@@ -1770,41 +1770,41 @@ body.maintenance .app-screen {
   }
 }
 
-/* ประวัติย้อนหลังมือถือ: ให้ปุ่มอยู่บรรทัดบนขวามือ */
+/* ประวัติย้อนหลังมือถือ: ปุ่มอยู่บนขวามือ ขนาดเล็ก ไม่ตกขอบ */
 @media (max-width: 640px) {
   .history-top {
-    display: grid !important;
-    grid-template-columns: minmax(0, 1fr) auto;
-    align-items: start;
-    gap: 8px;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: flex-start !important;
+    justify-content: space-between !important;
+    gap: 8px !important;
   }
 
   .history-top > div:first-child {
-    min-width: 0;
-    grid-column: 1;
-    grid-row: 1;
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
   }
 
   .history-house,
   .history-name {
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
   }
 
   .history-top-right {
-    grid-column: 2;
-    grid-row: 1 / span 2;
+    flex: 0 0 auto !important;
     width: auto !important;
-    max-width: 190px;
+    max-width: 185px !important;
     display: flex !important;
-    flex-wrap: wrap;
-    justify-content: flex-end;
-    align-items: flex-start;
-    align-content: flex-start;
-    gap: 5px;
-    overflow: visible;
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    justify-content: flex-end !important;
+    align-items: flex-start !important;
+    gap: 5px !important;
+    overflow: visible !important;
   }
 
   .history-badge,
@@ -1814,11 +1814,12 @@ body.maintenance .app-screen {
   .history-notice-btn {
     width: auto !important;
     flex: 0 0 auto !important;
-    max-width: 92px;
-    justify-content: center;
-    text-align: center;
-    white-space: nowrap;
+    max-width: 86px !important;
+    justify-content: center !important;
+    text-align: center !important;
+    white-space: nowrap !important;
     font-size: 10.5px !important;
     padding: 5px 7px !important;
+    line-height: 1.15 !important;
   }
 }
