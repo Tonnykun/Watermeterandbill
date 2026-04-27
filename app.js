@@ -8,19 +8,39 @@
 /* ── Config ── */
 let HOUSES   = [];
 let HOUSE_MAP = new Map();
-const API_URL             = 'https://script.google.com/macros/s/AKfycbwDYBiYgoew9Cq1o6J0tSjO5Or8oWgUPqcswr6h0n3HDj76SVRKwRx8tlaxMw8k-a-b/exec';
-const RATE_PER_UNIT       = 3;
-const SERVICE_FEE         = 0;
+const APP_CONFIG = {
+  appTitle: 'ระบบประปา',
+  loginTitle: 'ระบบบันทึกมิเตอร์ประปาหมู่บ้าน',
+  orgName: 'การประปาหมู่บ้านแสนสุข',
+  villageName: 'บ้านแสนสุข หมู่ 4',
+  contact: '0XX-XXX-XXXX',
+
+  promptPayId: '0830053242',
+  promptPayName: 'วัชรพงษ์ กุณามี',
+
+  ratePerUnit: 3,
+  serviceFee: 0,
+
+  apiUrl: 'https://script.google.com/macros/s/AKfycbwDYBiYgoew9Cq1o6J0tSjO5Or8oWgUPqcswr6h0n3HDj76SVRKwRx8tlaxMw8k-a-b/exec',
+};
+
+// คงชื่อตัวแปรเดิมไว้ เพื่อไม่ต้องแก้โค้ดทั้งไฟล์
+const API_URL             = APP_CONFIG.apiUrl;
+const RATE_PER_UNIT       = APP_CONFIG.ratePerUnit;
+const SERVICE_FEE         = APP_CONFIG.serviceFee;
+const PROMPTPAY_ID        = APP_CONFIG.promptPayId;
+const PROMPTPAY_NAME      = APP_CONFIG.promptPayName;
+
 const BOOTSTRAP_CACHE_KEY = 'wm_bootstrap_cache_v1';
 const BOOTSTRAP_CACHE_TTL = 5 * 60 * 1000;
-const PROMPTPAY_ID = '0830053242'; // เปลี่ยนเป็นเบอร์ PromptPay จริง
-const PROMPTPAY_NAME = 'วัชรพงษ์ กุณามี';
-const SESSION_KEY = 'wm_session';
-const IDLE_TIMEOUT_MS = 10 * 60 * 1000; // 30 นาที
+const SESSION_KEY         = 'wm_session';
+const IDLE_TIMEOUT_MS     = 10 * 60 * 1000; // 10 นาที
 let idleTimer = null;
 let idleEventsBound = false;
 let receiptImageBlob = null;
 let receiptImageUrl = '';
+let currentReceiptReadingId = '';
+let bprintFallbackTimer = null;
 
 const VALID_USERS = [
   { username: 'admin', password: 'water12345', displayName: 'ผู้ดูแลระบบ' },
@@ -1148,11 +1168,31 @@ function formatMonthTH(d) {
   return d.toLocaleDateString('th-TH', { month: 'long', year: 'numeric' });
 }
 
+function applyAppConfig() {
+  const setText = (id, text) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = text;
+  };
+
+  setText('cfgLoginTitle', APP_CONFIG.loginTitle);
+  setText('cfgLoginSub', APP_CONFIG.villageName);
+
+  setText('cfgNavTitle', APP_CONFIG.appTitle);
+  setText('cfgNavSub', APP_CONFIG.villageName);
+
+  setText('cfgReceiptOrg', APP_CONFIG.orgName);
+  setText('cfgReceiptSub', APP_CONFIG.villageName);
+  setText('cfgReceiptContact', `สอบถาม: ${APP_CONFIG.contact}`);
+
+  document.title = APP_CONFIG.appTitle;
+}
+
 /* ════════════════════════════════
    INIT
 ════════════════════════════════ */
 (async function init() {
   buildDomRefs();
+  applyAppConfig();
   bindMainEvents();
   bindIdleEvents();
   dom.todayDate.textContent = formatDateTH(new Date());
@@ -1419,6 +1459,8 @@ RECEIPT & QR CODE HELPERS
 function populateReceipt(house, meter, saved) {
   const isUnpaid = saved.payment_status === 'unpaid';
 
+  currentReceiptReadingId = saved.reading_id || saved.receipt_no || '';
+
   const receiptContent = document.getElementById('receiptContent');
   const titleEl = document.getElementById('receiptTitle');
   const warningEl = document.getElementById('receiptWarning');
@@ -1526,7 +1568,26 @@ function generatePromptPayQR(phone, amount, callback) {
 }
 
 // พิมพ์ใบเสร็จ
-function printReceipt() {
+function isIOSDevice() {
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+}
+
+function isAndroidDevice() {
+  return /Android/i.test(navigator.userAgent);
+}
+
+function buildBluetoothPrintResponseUrl(readingId) {
+  const id = String(readingId || '').trim();
+
+  if (!id) {
+    return '';
+  }
+
+  return `${API_URL}?action=bprintReceipt&reading_id=${encodeURIComponent(id)}`;
+}
+
+function openBrowserPrintFallback() {
   document.body.classList.add('printing-receipt');
 
   setTimeout(() => {
@@ -1536,6 +1597,84 @@ function printReceipt() {
   setTimeout(() => {
     document.body.classList.remove('printing-receipt');
   }, 1500);
+}
+
+window.addEventListener('afterprint', () => {
+  document.body.classList.remove('printing-receipt');
+});
+
+function printReceipt() {
+  if (!currentReceiptReadingId) {
+    showToast('ไม่พบเลขอ้างอิงใบเสร็จสำหรับพิมพ์');
+    return;
+  }
+
+  const responseUrl = buildBluetoothPrintResponseUrl(currentReceiptReadingId);
+
+  if (!responseUrl) {
+    showToast('สร้างลิงก์พิมพ์ไม่สำเร็จ');
+    return;
+  }
+
+  const bprintUrl = `bprint://${responseUrl}`;
+
+  let appOpened = false;
+
+  const markAppOpened = () => {
+    appOpened = true;
+    if (bprintFallbackTimer) {
+      clearTimeout(bprintFallbackTimer);
+      bprintFallbackTimer = null;
+    }
+    window.removeEventListener('pagehide', markAppOpened);
+    document.removeEventListener('visibilitychange', onVisibilityChange);
+  };
+
+  const onVisibilityChange = () => {
+    if (document.hidden) {
+      markAppOpened();
+    }
+  };
+
+  window.addEventListener('pagehide', markAppOpened, { once: true });
+  document.addEventListener('visibilitychange', onVisibilityChange);
+
+  // เปิด Bluetooth Print App
+  window.location.href = bprintUrl;
+
+  // ถ้า Android เปิด bprint ไม่ได้ ให้กลับไปใช้ browser print
+  if (isAndroidDevice()) {
+    bprintFallbackTimer = setTimeout(() => {
+      if (!appOpened) {
+        window.removeEventListener('pagehide', markAppOpened);
+        document.removeEventListener('visibilitychange', onVisibilityChange);
+
+        showToast('ไม่พบแอป Bluetooth Print กำลังเปิดหน้าพิมพ์สำรอง');
+        openBrowserPrintFallback();
+      }
+    }, 1400);
+    return;
+  }
+
+  // ถ้า iPhone/iPad เปิดแอปไม่ได้ ให้แจ้งให้ใช้ปุ่มรูปภาพสำรอง
+  if (isIOSDevice()) {
+    bprintFallbackTimer = setTimeout(() => {
+      if (!appOpened) {
+        window.removeEventListener('pagehide', markAppOpened);
+        document.removeEventListener('visibilitychange', onVisibilityChange);
+
+        showToast('ถ้าไม่เปิดแอป Bluetooth Print ให้ใช้ปุ่มบันทึก/แชร์รูป');
+      }
+    }, 1400);
+    return;
+  }
+
+  // อุปกรณ์อื่น ๆ ใช้ browser print
+  bprintFallbackTimer = setTimeout(() => {
+    if (!appOpened) {
+      openBrowserPrintFallback();
+    }
+  }, 1400);
 }
 
 window.addEventListener('afterprint', () => {
