@@ -15,8 +15,9 @@ const APP_CONFIG = {
   villageName: 'บ้านแสนสุข หมู่ 4',
   contact: '0XX-XXX-XXXX',
 
-  promptPayId: '0000000000',
-  promptPayName: 'Mr.Tony',
+  bankName: 'ธนาคารกรุงไทย',
+  bankAccountNo: '123-4-56789-0',
+  bankAccountName: 'ชื่อบัญชีร่วมของหมู่บ้าน',
 
   ratePerUnit: 3,
   serviceFee: 0,
@@ -1320,6 +1321,7 @@ function openReceiptFromHistoryItem(item, delay = 180) {
     receipt_no: item.receipt_no || item.reading_id || '---',
     read_date: item.read_date || item.created_at || new Date().toISOString(),
     payment_status: isUnpaid ? 'unpaid' : 'paid',
+    payment_method: item.payment_method || '',
     prev_reading: Number(item.prev_reading || 0),
     current_reading: Number(item.current_reading || 0),
     units_used: Number(item.units_used || 0),
@@ -1524,6 +1526,26 @@ function populateReceipt(house, meter, saved) {
   // สถานะ
   const statusEl = document.getElementById('rStatus');
 
+  let payMethodEl = document.getElementById('rPayMethod');
+
+  if (!payMethodEl && statusEl) {
+    payMethodEl = document.createElement('div');
+    payMethodEl.id = 'rPayMethod';
+    payMethodEl.className = 'receipt-pay-method';
+    statusEl.insertAdjacentElement('afterend', payMethodEl);
+  }
+
+  if (payMethodEl) {
+    if (isUnpaid) {
+      payMethodEl.style.display = 'none';
+      payMethodEl.textContent = '';
+    } else {
+      const methodLabel = getPaymentMethodLabel(saved.payment_method || 'cash');
+      payMethodEl.style.display = 'block';
+      payMethodEl.textContent = `วิธีชำระ: ${methodLabel}`;
+    }
+  }
+
   if (statusEl) {
     if (isUnpaid) {
       statusEl.className = 'receipt-status unpaid';
@@ -1538,7 +1560,7 @@ function populateReceipt(house, meter, saved) {
 }
 
 // จัดการแสดงผล QR Code
-function updateQrDisplay(showQr, amount) {
+function updateQrDisplay(showInfo, amount) {
   const qrBox = document.getElementById('qrCode');
   const qrSection = document.getElementById('qrSection');
   const qrNote = document.getElementById('qrNote');
@@ -1551,31 +1573,21 @@ function updateQrDisplay(showQr, amount) {
   qrBox.innerHTML = '';
 
   if (qrSection) {
-    qrSection.style.display = showQr ? 'block' : 'none';
+    qrSection.style.display = showInfo ? 'block' : 'none';
   }
 
-  if (!showQr) {
+  if (!showInfo) {
     return;
   }
 
-  if (typeof QRCode === 'undefined') {
-    qrBox.innerHTML = '<div style="font-size:11px;text-align:center;">โหลด QR library ไม่สำเร็จ</div>';
-    return;
-  }
-
-  if (typeof PROMPTPAY_ID === 'undefined' || !PROMPTPAY_ID) {
-    qrBox.innerHTML = '<div style="font-size:11px;text-align:center;">ยังไม่ได้ตั้งค่า PromptPay</div>';
-    return;
-  }
-
-  const payload = buildPromptPayPayload(PROMPTPAY_ID, amount);
-
-  new QRCode(qrBox, {
-    text: payload,
-    width: 128,
-    height: 128,
-    correctLevel: QRCode.CorrectLevel.M
-  });
+  qrBox.innerHTML = `
+    <div class="bank-transfer-box">
+      <div class="bank-transfer-title">โอนเข้าบัญชี</div>
+      <div class="bank-transfer-line">${APP_CONFIG.bankName || '-'}</div>
+      <div class="bank-transfer-account">${APP_CONFIG.bankAccountNo || '-'}</div>
+      <div class="bank-transfer-line">${APP_CONFIG.bankAccountName || '-'}</div>
+    </div>
+  `;
 
   if (qrNote) {
     qrNote.textContent = `ยอดชำระ ${Number(amount || 0).toLocaleString('th-TH', {

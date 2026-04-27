@@ -1823,3 +1823,40 @@ body.maintenance .app-screen {
     line-height: 1.15 !important;
   }
 }
+
+.bank-transfer-box {
+  width: 100%;
+  padding: 6px 4px;
+  text-align: center;
+  color: #000;
+  background: #fff;
+  border-top: 1px solid #000;
+  border-bottom: 1px solid #000;
+}
+
+.bank-transfer-title {
+  font-size: 10px;
+  font-weight: 800;
+  margin-bottom: 3px;
+}
+
+.bank-transfer-line {
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.bank-transfer-account {
+  font-size: 15px;
+  font-weight: 900;
+  letter-spacing: 1px;
+  line-height: 1.4;
+}
+
+.receipt-pay-method {
+  margin: 4px 0 7px;
+  text-align: center;
+  font-size: 10px;
+  font-weight: 700;
+  color: #000;
+}
