@@ -1045,18 +1045,18 @@ input[type="password"]::-ms-clear {
   align-items: flex-start;
   gap: 8px;
   padding: 4px 0;
-  font-size: 11px;
+  font-size: 10px;
   border-bottom: 1px dashed #999;
   background: transparent !important;
   color: #000 !important;
 }
 
 .mc-val {
-  font-size: 13px !important;
+  font-size: 12px !important;
 }
 
 .rt-amount {
-  font-size: 18px !important;
+  font-size: 17px !important;
 }
 
 .receipt-row:last-child { border-bottom: none; }

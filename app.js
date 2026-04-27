@@ -812,7 +812,7 @@ function openSheet() {
 }
 
 function closeSheet() { dom.sheetOverlay.classList.remove('show'); dom.receiptSheet.classList.remove('open'); document.body.style.overflow = ''; }
-function printReceipt() { window.print(); }
+
 
 /* ════════════════════════════════
    TOAST
@@ -1422,44 +1422,6 @@ function buildPromptPayPayload(promptPayId, amount) {
   return payload;
 }
 
-function updateQrDisplay(showQr, amount) {
-  const qrBox = document.getElementById('qrCode');
-  const qrSection = document.getElementById('qrSection');
-  const qrNote = document.getElementById('qrNote');
-
-  // ถ้ายังไม่มีพื้นที่ QR ใน HTML ให้หยุดทันที ไม่ให้เว็บ error
-  if (!qrBox) {
-    console.warn('ไม่พบ element id="qrCode" ใน index.html');
-    return;
-  }
-
-  qrBox.innerHTML = '';
-
-  if (qrSection) {
-    qrSection.style.display = showQr ? 'block' : 'none';
-  }
-
-  if (!showQr || !PROMPTPAY_ID) {
-    return;
-  }
-
-  const payload = buildPromptPayPayload(PROMPTPAY_ID, amount);
-
-  new QRCode(qrBox, {
-    text: payload,
-    width: 128,
-    height: 128,
-    correctLevel: QRCode.CorrectLevel.M
-  });
-
-  if (qrNote) {
-    qrNote.textContent = `ยอดชำระ ${Number(amount || 0).toLocaleString('th-TH', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    })} บาท`;
-  }
-}
-
 /* ════════════════════════════════
 RECEIPT & QR CODE HELPERS
 ════════════════════════════════ */
@@ -1576,7 +1538,7 @@ function generatePromptPayQR(phone, amount, callback) {
   console.log('📱 PromptPay QR: โทรศัพท์=' + phone + ', จำนวน=' + amount);
 }
 
-// พิมพ์ใบเสร็จ
+// พิมพ์ใบเสร็จผ่าน Bluetooth Print / Web Print
 function isIOSDevice() {
   return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
     (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
@@ -1596,6 +1558,30 @@ function buildBluetoothPrintResponseUrl(readingId) {
   return `${API_URL}?action=bprintReceipt&reading_id=${encodeURIComponent(id)}`;
 }
 
+function closeReceiptPopupAfterExternalPrint() {
+  document.body.classList.remove('printing-receipt');
+  document.body.classList.remove('printing-summary');
+
+  const receiptSheet = document.getElementById('receiptSheet');
+  const sheetOverlay = document.getElementById('sheetOverlay');
+
+  if (receiptSheet) {
+    receiptSheet.classList.remove('open');
+  }
+
+  if (sheetOverlay) {
+    sheetOverlay.classList.remove('show');
+  }
+
+  document.body.style.overflow = '';
+  document.documentElement.style.pointerEvents = '';
+  document.body.style.pointerEvents = '';
+
+  try {
+    resetIdleTimer();
+  } catch (e) {}
+}
+
 function openBrowserPrintFallback() {
   document.body.classList.add('printing-receipt');
 
@@ -1604,12 +1590,36 @@ function openBrowserPrintFallback() {
   }, 120);
 
   setTimeout(() => {
-    recoverAfterExternalPrint();
+    closeReceiptPopupAfterExternalPrint();
   }, 1500);
 }
 
+let isExternalPrinting = false;
+
+function handleReturnToWebApp() {
+  if (isSharingReceiptImage) {
+    setTimeout(recoverAfterShareImage, 250);
+  }
+
+  if (isExternalPrinting) {
+    setTimeout(() => {
+      closeReceiptPopupAfterExternalPrint();
+      isExternalPrinting = false;
+    }, 250);
+  }
+}
+
+window.addEventListener('pageshow', handleReturnToWebApp);
+window.addEventListener('focus', handleReturnToWebApp);
+
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) {
+    handleReturnToWebApp();
+  }
+});
+
 window.addEventListener('afterprint', () => {
-  recoverAfterExternalPrint();
+  closeReceiptPopupAfterExternalPrint();
 });
 
 function printReceipt() {
@@ -1631,10 +1641,12 @@ function printReceipt() {
 
   const markAppOpened = () => {
     appOpened = true;
+
     if (bprintFallbackTimer) {
       clearTimeout(bprintFallbackTimer);
       bprintFallbackTimer = null;
     }
+
     window.removeEventListener('pagehide', markAppOpened);
     document.removeEventListener('visibilitychange', onVisibilityChange);
   };
@@ -1648,12 +1660,15 @@ function printReceipt() {
   window.addEventListener('pagehide', markAppOpened, { once: true });
   document.addEventListener('visibilitychange', onVisibilityChange);
 
-  // เปิด Bluetooth Print App
-  window.location.href = bprintUrl;
+  // ปิด popup ก่อนออกไปแอปปริ้นท์ ป้องกันจอดำตอนกลับมา
+  isExternalPrinting = true;
+  closeReceiptPopupAfterExternalPrint();
 
-  setTimeout(recoverAfterExternalAction, 2500);
+  setTimeout(() => {
+    window.location.href = bprintUrl;
+  }, 120);
 
-  // ถ้า Android เปิด bprint ไม่ได้ ให้กลับไปใช้ browser print
+  // Android ถ้าเปิด bprint ไม่ได้ ให้ fallback เป็น browser print
   if (isAndroidDevice()) {
     bprintFallbackTimer = setTimeout(() => {
       if (!appOpened) {
@@ -1667,7 +1682,7 @@ function printReceipt() {
     return;
   }
 
-  // ถ้า iPhone/iPad เปิดแอปไม่ได้ ให้แจ้งให้ใช้ปุ่มรูปภาพสำรอง
+  // iPhone/iPad ถ้าไม่เปิดแอป ให้ใช้ปุ่มบันทึก/แชร์รูปแทน
   if (isIOSDevice()) {
     bprintFallbackTimer = setTimeout(() => {
       if (!appOpened) {
@@ -1675,22 +1690,18 @@ function printReceipt() {
         document.removeEventListener('visibilitychange', onVisibilityChange);
 
         showToast('ถ้าไม่เปิดแอป Bluetooth Print ให้ใช้ปุ่มบันทึก/แชร์รูป');
+        closeReceiptPopupAfterExternalPrint();
       }
     }, 1400);
     return;
   }
 
-  // อุปกรณ์อื่น ๆ ใช้ browser print
   bprintFallbackTimer = setTimeout(() => {
     if (!appOpened) {
       openBrowserPrintFallback();
     }
   }, 1400);
 }
-
-window.addEventListener('afterprint', () => {
-  document.body.classList.remove('printing-receipt');
-});
 
 function openSummarySheetAndLoad() {
   if (!isAdminUser()) {
@@ -2019,21 +2030,27 @@ function recoverAfterShareImage() {
   } catch (e) {}
 }
 
-window.addEventListener('pageshow', () => {
-  if (isSharingReceiptImage) {
-    setTimeout(recoverAfterShareImage, 250);
-  }
-});
+let isExternalPrinting = false;
 
-window.addEventListener('focus', () => {
+function handleReturnToWebApp() {
   if (isSharingReceiptImage) {
     setTimeout(recoverAfterShareImage, 250);
   }
-});
+
+  if (isExternalPrinting) {
+    setTimeout(() => {
+      closeReceiptPopupAfterExternalPrint();
+      isExternalPrinting = false;
+    }, 250);
+  }
+}
+
+window.addEventListener('pageshow', handleReturnToWebApp);
+window.addEventListener('focus', handleReturnToWebApp);
 
 document.addEventListener('visibilitychange', () => {
-  if (!document.hidden && isSharingReceiptImage) {
-    setTimeout(recoverAfterShareImage, 250);
+  if (!document.hidden) {
+    handleReturnToWebApp();
   }
 });
 
@@ -2171,10 +2188,6 @@ function printSummarySlip() {
   }, 1500);
 }
 
-window.addEventListener('afterprint', () => {
-  document.body.classList.remove('printing-summary');
-});
-
 function recoverAfterExternalAction() {
   document.body.classList.remove('printing-receipt');
   document.body.classList.remove('printing-summary');
@@ -2222,6 +2235,41 @@ document.addEventListener('visibilitychange', () => {
   }
 });
 
-window.addEventListener('afterprint', () => {
-  recoverAfterExternalAction();
+function closeReceiptPopupAfterExternalPrint() {
+  document.body.classList.remove('printing-receipt');
+  document.body.classList.remove('printing-summary');
+
+  const receiptSheet = document.getElementById('receiptSheet');
+  const sheetOverlay = document.getElementById('sheetOverlay');
+
+  if (receiptSheet) {
+    receiptSheet.classList.remove('open');
+  }
+
+  if (sheetOverlay) {
+    sheetOverlay.classList.remove('show');
+  }
+
+  document.body.style.overflow = '';
+
+  document.documentElement.style.pointerEvents = '';
+  document.body.style.pointerEvents = '';
+
+  try {
+    resetIdleTimer();
+  } catch (e) {}
+}
+
+window.addEventListener('pageshow', () => {
+  setTimeout(closeReceiptPopupAfterExternalPrint, 250);
+});
+
+window.addEventListener('focus', () => {
+  setTimeout(closeReceiptPopupAfterExternalPrint, 250);
+});
+
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) {
+    setTimeout(closeReceiptPopupAfterExternalPrint, 250);
+  }
 });
