@@ -988,16 +988,16 @@ input[type="password"]::-ms-clear {
    เน้นพื้นขาว ตัวหนังสือดำ ไม่มีพื้นหลังทึบ
 ════════════════════════════════ */
 .receipt-paper {
-  width: 40mm;
-  max-width: 40mm;
+  width: 58mm;
+  max-width: 58mm;
   margin: 0 auto;
   background: #fff;
 }
 
 #receiptContent,
 .receipt-content {
-  width: 36mm;
-  max-width: 36mm;
+  width: 52mm;
+  max-width: 52mm;
   margin: 0 auto;
   padding: 2mm 0 3mm;
   background: #fff !important;
@@ -1261,12 +1261,12 @@ input[type="password"]::-ms-clear {
   body.printing-receipt .sheet-handle,
   body.printing-receipt .sheet-btn-group { display: none !important; }
 
-  body.printing-receipt .receipt-paper { width: 40mm !important; max-width: 40mm !important; margin: 0 !important; }
+  body.printing-receipt .receipt-paper { width: 58mm !important; max-width: 58mm !important; margin: 0 auto !important; }
 
   body.printing-receipt #receiptContent,
   body.printing-receipt .receipt-content {
-    width: 36mm !important;
-    max-width: 36mm !important;
+    width: 52mm !important;
+    max-width: 52mm !important;
     margin: 0 auto !important;
     padding: 0 !important;
     page-break-inside: avoid !important;
@@ -1763,8 +1763,8 @@ body.maintenance .app-screen {
   }
 
   body.printing-summary .summary-slip {
-    width: 36mm !important;
-    max-width: 36mm !important;
+    width: 52mm !important;
+    max-width: 52mm !important;
     margin: 0 auto !important;
     padding: 0 !important;
   }
@@ -1966,101 +1966,5 @@ body.maintenance .app-screen {
   .brand-subtitle {
     font-size: 11px !important;
     white-space: nowrap !important;
-  }
-}
-
-/* HTML-V3 receipt fallback: narrow one-column thermal layout */
-#receiptContent,
-.receipt-content {
-  width: 36mm !important;
-  max-width: 36mm !important;
-  margin: 0 auto !important;
-  font-size: 9px !important;
-  line-height: 1.18 !important;
-}
-
-.receipt-paper {
-  width: 40mm !important;
-  max-width: 40mm !important;
-}
-
-.receipt-row {
-  display: block !important;
-  padding: 2px 0 !important;
-  gap: 0 !important;
-  font-size: 9px !important;
-}
-
-.rl,
-.rv {
-  display: inline !important;
-  max-width: none !important;
-  text-align: left !important;
-  white-space: normal !important;
-  word-break: break-word !important;
-  overflow-wrap: anywhere !important;
-}
-
-.rl::after {
-  content: ': ';
-}
-
-.receipt-meter-grid {
-  display: block !important;
-  margin: 4px 0 !important;
-}
-
-.meter-cell,
-.accent-cell {
-  border: none !important;
-  padding: 1px 0 !important;
-}
-
-.meter-arrow-cell {
-  display: none !important;
-}
-
-.mc-label,
-.mc-val {
-  display: inline !important;
-}
-
-.mc-label::after {
-  content: ': ';
-}
-
-.receipt-row.highlight {
-  text-align: center !important;
-  border: 1px solid #000 !important;
-  padding: 3px !important;
-}
-
-@media print {
-  @page {
-    size: 40mm auto;
-    margin: 0;
-  }
-
-  html,
-  body {
-    width: 40mm !important;
-  }
-
-  body.printing-receipt #receiptSheet {
-    width: 40mm !important;
-    max-width: 40mm !important;
-  }
-
-  body.printing-receipt .receipt-paper {
-    width: 40mm !important;
-    max-width: 40mm !important;
-    margin: 0 !important;
-  }
-
-  body.printing-receipt #receiptContent,
-  body.printing-receipt .receipt-content {
-    width: 36mm !important;
-    max-width: 36mm !important;
-    margin: 0 !important;
   }
 }
