@@ -1690,6 +1690,33 @@ window.addEventListener('afterprint', () => {
   closeReceiptPopupAfterExternalPrint();
 });
 
+function testAndroidIntentPrint() {
+  const printText = [
+    '<110>การประปาหมู่บ้านแสนสุข',
+    '<110>บ้านแสนสุข หมู่ 4',
+    '<100>------------------------',
+    '<110>ใบเสร็จรับเงินค่าน้ำประปา',
+    '<100>ยอดก่อนหน้า: 1,313',
+    '<100>ยอดปัจจุบัน: 1,320',
+    '<110>หน่วยที่ใช้: 7',
+    '<100>------------------------',
+    '<110>จำนวนเงินทั้งสิ้น',
+    '<110>21.00 บาท',
+    '<100>------------------------',
+    '<100>ขอบคุณที่ใช้บริการ'
+  ].join('\n');
+
+  const intentUrl =
+    'intent:#Intent;' +
+    'action=android.intent.action.SEND;' +
+    'type=text/plain;' +
+    'package=mate.bluetoothprint;' +
+    'S.android.intent.extra.TEXT=' + encodeURIComponent(printText) + ';' +
+    'end';
+
+  window.location.href = intentUrl;
+}
+
 function printReceipt() {
   if (!currentReceiptReadingId) {
     showToast('ไม่พบเลขอ้างอิงใบเสร็จสำหรับพิมพ์');
