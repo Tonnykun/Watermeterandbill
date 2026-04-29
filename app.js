@@ -16,8 +16,8 @@ const APP_CONFIG = {
   contact: '0XX-XXX-XXXX',
 
   bankName: 'ธนาคารกรุงไทย',
-  bankAccountNo: '123-4-56789-0',
-  bankAccountName: 'ชื่อบัญชีร่วมของหมู่บ้าน',
+  bankAccountNo: '519-0-58775-4',
+  bankAccountName: 'กองทุนประปาป่าบ้านไผ่หมู่ 8',
 
   ratePerUnit: 3,
   serviceFee: 0,
@@ -1733,13 +1733,18 @@ function buildAndroidReceiptHtmlFromScreen() {
 
   return `
     <div style="
-      width: 270px;
+      width: 48mm;
+      max-width: 48mm;
+      display: inline-block;
       font-family: sans-serif;
       color: #000;
       background: #fff;
-      font-size: 13px;
-      line-height: 1.18;
+      font-size: 12px;
+      line-height: 1.05;
       text-align: left;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
     ">
       <div style="text-align:center; font-weight:bold; font-size:15px;">
         ${APP_CONFIG.orgName}
@@ -1749,7 +1754,7 @@ function buildAndroidReceiptHtmlFromScreen() {
         ${APP_CONFIG.villageName}
       </div>
 
-      <div style="border-top:1px dashed #000; margin:6px 0;"></div>
+      <div style="border-top:1px dashed #000; margin:3px 0;"></div>
 
       <div style="text-align:center; font-weight:bold; font-size:15px;">
         ${receiptTitle}
@@ -1763,7 +1768,7 @@ function buildAndroidReceiptHtmlFromScreen() {
         ${getText('rDate')}
       </div>
 
-      <div style="border-top:1px dashed #000; margin:6px 0;"></div>
+      <div style="border-top:1px dashed #000; margin:3px 0;"></div>
 
       <table style="width:100%; border-collapse:collapse; font-size:13px; line-height:1.2;">
         <tr>
@@ -1784,7 +1789,7 @@ function buildAndroidReceiptHtmlFromScreen() {
         </tr>
       </table>
 
-      <div style="border-top:1px dashed #000; margin:6px 0;"></div>
+      <div style="border-top:1px dashed #000; margin:3px 0;"></div>
 
       <table style="width:100%; border-collapse:collapse; text-align:center; font-size:13px;">
         <tr>
@@ -1811,7 +1816,7 @@ function buildAndroidReceiptHtmlFromScreen() {
         <span>${getText('rUnits')}</span>
       </div>
 
-      <div style="border-top:1px dashed #000; margin:6px 0;"></div>
+      <div style="border-top:1px dashed #000; margin:3px 0;"></div>
 
       <table style="width:100%; border-collapse:collapse; font-size:13px;">
         <tr>
@@ -1824,16 +1829,16 @@ function buildAndroidReceiptHtmlFromScreen() {
         </tr>
       </table>
 
-      <div style="border-top:2px solid #000; margin:6px 0;"></div>
+      <div style="border-top:2px solid #000; margin:4px 0;"></div>
 
       <div style="text-align:center;">
         <div style="font-weight:bold;">จำนวนเงินทั้งสิ้น</div>
-        <div style="font-size:22px; font-weight:bold; margin-top:2px;">
+        <div style="font-size:18px; font-weight:bold; margin-top:1px;">
           ${totalText}
         </div>
       </div>
 
-      <div style="border-top:2px solid #000; margin:6px 0;"></div>
+      <div style="border-top:2px solid #000; margin:4px 0;"></div>
 
       <div style="text-align:center; font-weight:bold; font-size:15px;">
         สถานะ: ${statusText}
@@ -1843,7 +1848,7 @@ function buildAndroidReceiptHtmlFromScreen() {
 
       ${bankHtml}
 
-      <div style="border-top:1px dashed #000; margin:6px 0;"></div>
+      <div style="border-top:1px dashed #000; margin:3px 0;"></div>
 
       <div style="text-align:center; font-weight:bold;">
         ขอบคุณที่ใช้บริการ
@@ -1861,8 +1866,6 @@ function buildAndroidReceiptHtmlFromScreen() {
         }
       </div>
 
-      <br>
-      <br>
     </div>
   `;
 }
