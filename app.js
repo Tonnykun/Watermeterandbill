@@ -1757,127 +1757,131 @@ function buildAndroidReceiptHtmlFromScreen() {
 <head>
 <meta charset="utf-8">
 <style>
+  @page {
+    size: 36mm auto;
+    margin: 0;
+  }
+
   html, body {
-    margin: 0 !important;
-    padding: 0 !important;
-    width: 36mm !important;
-    min-width: 36mm !important;
-    max-width: 36mm !important;
-    background: #fff !important;
-    color: #000 !important;
-  }
-
-  * {
-    box-sizing: border-box !important;
-  }
-
-  body {
-    font-family: Tahoma, Arial, sans-serif !important;
-    font-size: 8.5px !important;
-    line-height: 1.12 !important;
-    -webkit-text-size-adjust: 100% !important;
+    width: 36mm;
+    margin: 0;
+    padding: 0;
+    background: #fff;
+    color: #000;
+    font-family: Arial, Tahoma, sans-serif;
+    font-size: 7px;
+    line-height: 1.05;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
 
   .receipt {
-    width: 36mm !important;
-    max-width: 36mm !important;
-    margin: 0 !important;
-    padding: 0 0.5mm !important;
-    overflow: hidden !important;
+    width: 36mm;
+    max-width: 36mm;
+    margin: 0;
+    padding: 1mm 1.2mm 0.5mm;
+    box-sizing: border-box;
+    overflow: hidden;
   }
 
-  .center { text-align: center !important; }
-  .b { font-weight: 800 !important; }
+  .center {
+    text-align: center;
+  }
 
   .org {
-    font-size: 10px !important;
-    line-height: 1.05 !important;
+    font-size: 8.5px;
+    font-weight: 700;
+    line-height: 1.05;
   }
 
   .sub {
-    font-size: 8px !important;
-    line-height: 1.05 !important;
-    margin-top: 1px !important;
+    font-size: 7px;
+    line-height: 1.05;
   }
 
   .title {
-    font-size: 10px !important;
-    line-height: 1.05 !important;
-    margin-top: 2px !important;
+    font-size: 8.5px;
+    font-weight: 700;
+    line-height: 1.05;
+    margin-top: 0.5mm;
   }
 
-  .meta {
-    font-size: 8px !important;
-    line-height: 1.05 !important;
-    margin-top: 1px !important;
+  .sep {
+    border-top: 1px dashed #000;
+    margin: 0.6mm 0;
+    height: 0;
   }
 
-  .dash {
-    border-top: 1px dashed #000 !important;
-    margin: 2px 0 !important;
-    height: 0 !important;
+  .row {
+    display: flex;
+    justify-content: space-between;
+    gap: 1mm;
+    font-size: 7px;
+    line-height: 1.05;
+    margin: 0;
+    padding: 0;
   }
 
-  .solid {
-    border-top: 2px solid #000 !important;
-    margin: 3px 0 !important;
-    height: 0 !important;
+  .label {
+    white-space: nowrap;
   }
 
-  .r-row {
-    display: block !important;
-    width: 100% !important;
-    padding: 1px 0 !important;
-    white-space: normal !important;
-    overflow: hidden !important;
+  .value {
+    text-align: right;
+    font-weight: 700;
+    overflow: hidden;
+    text-overflow: clip;
   }
-
-  .r-label { font-weight: 400 !important; }
-  .r-value { font-weight: 700 !important; }
 
   .meter-line {
-    text-align: center !important;
-    font-size: 8.5px !important;
-    line-height: 1.05 !important;
-    margin-top: 2px !important;
+    text-align: center;
+    font-size: 8.5px;
+    font-weight: 700;
+    line-height: 1;
+    margin: 0.6mm 0;
   }
 
-  .meter-num {
-    text-align: center !important;
-    font-size: 12px !important;
-    line-height: 1.05 !important;
-    font-weight: 800 !important;
-    margin: 1px 0 2px !important;
-  }
-
-  .unit-box {
-    border: 1px solid #000 !important;
-    padding: 2px !important;
-    margin: 2px 0 !important;
-    font-size: 9px !important;
-    font-weight: 800 !important;
-    text-align: center !important;
+  .box-label {
+    border: 1px solid #000;
+    padding: 0.3mm 0.8mm;
+    font-size: 7px;
+    font-weight: 700;
+    line-height: 1;
+    margin: 0.5mm 0;
   }
 
   .total-label {
-    font-size: 9px !important;
-    line-height: 1 !important;
+    text-align: center;
+    font-size: 7px;
+    line-height: 1;
+    margin-top: 0.7mm;
   }
 
   .total {
-    font-size: 15px !important;
-    line-height: 1.05 !important;
-    font-weight: 900 !important;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 800;
+    line-height: 1;
+    margin: 0.5mm 0;
   }
 
-  .small {
-    font-size: 8px !important;
-    line-height: 1.05 !important;
+  .status {
+    text-align: center;
+    font-size: 8px;
+    font-weight: 700;
+    line-height: 1.05;
+    margin-top: 0.5mm;
   }
 
-  .tiny {
-    font-size: 6.5px !important;
-    line-height: 1 !important;
+  .footer {
+    text-align: center;
+    font-size: 6.6px;
+    line-height: 1.05;
+    margin-top: 0.5mm;
+  }
+
+  .debug {
+    display: none;
   }
 </style>
 </head>
