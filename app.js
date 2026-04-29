@@ -1743,10 +1743,10 @@ function printReceipt() {
         window.removeEventListener('pagehide', markAppOpened);
         document.removeEventListener('visibilitychange', onVisibilityChange);
 
-        showToast('ไม่พบแอป Bluetooth Print กำลังเปิดหน้าพิมพ์สำรอง');
-        openBrowserPrintFallback();
+        showToast('ไม่พบแอป Web Print / Bluetooth Print ที่รองรับลิงก์นี้');
+        closeReceiptPopupAfterExternalPrint();
       }
-    }, 1400);
+    }, 1800);
     return;
   }
 
