@@ -1704,6 +1704,14 @@ function safeBluetoothHtmlText(value) {
     .replace(/"/g, '&quot;');
 }
 
+function safeBluetoothHtmlText(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
 function buildAndroidReceiptHtmlFromScreen() {
   const getTextRaw = id => document.getElementById(id)?.textContent?.trim() || '-';
   const getText = id => safeBluetoothHtmlText(getTextRaw(id));
