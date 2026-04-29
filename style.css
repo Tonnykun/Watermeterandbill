@@ -1847,10 +1847,28 @@ body.maintenance .app-screen {
 }
 
 .bank-transfer-account {
-  font-size: 15px;
+  font-size: 12px;
   font-weight: 900;
-  letter-spacing: 1px;
-  line-height: 1.4;
+  letter-spacing: 0;
+  line-height: 1.15;
+  white-space: nowrap;
+}
+
+.bank-transfer-inline {
+  display: flex;
+  justify-content: center;
+  align-items: baseline;
+  gap: 4px;
+  white-space: nowrap;
+  font-size: 9.5px;
+  font-weight: 800;
+  line-height: 1.15;
+}
+
+.bank-transfer-account-inline {
+  font-size: 10.5px;
+  font-weight: 900;
+  letter-spacing: 0;
 }
 
 .receipt-pay-method {
@@ -1966,5 +1984,116 @@ body.maintenance .app-screen {
   .brand-subtitle {
     font-size: 11px !important;
     white-space: nowrap !important;
+  }
+}
+
+/* ===== FIX: Login eye button inside field ===== */
+.login-field-wrap {
+  position: relative;
+}
+
+.login-field-input {
+  min-width: 0;
+}
+
+#loginPassword {
+  padding-right: 44px;
+}
+
+.login-eye-btn {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(60,60,67,0.45);
+  background: transparent;
+  padding: 0;
+}
+
+.login-eye-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+
+/* ===== FIX: Top nav buttons on small Android/iPhone screens ===== */
+@media (max-width: 430px) {
+  .nav-bar {
+    padding: 0 10px;
+    gap: 8px;
+  }
+
+  .nav-left {
+    min-width: 0;
+    flex: 1;
+    gap: 8px;
+  }
+
+  .nav-logo-wrap {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    flex-shrink: 0;
+  }
+
+  .nav-text {
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .nav-heading {
+    font-size: 15px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .nav-sub {
+    font-size: 10px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .nav-right {
+    flex-shrink: 0;
+    gap: 5px;
+  }
+
+  .nav-action-btn {
+    width: 38px;
+    height: 38px;
+    min-width: 38px;
+    padding: 0;
+    border-radius: 50%;
+    justify-content: center;
+    font-size: 18px;
+    line-height: 1;
+  }
+
+  .nav-action-btn span {
+    display: none;
+  }
+
+  .nav-action-btn svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .nav-avatar,
+  .nav-logout-btn {
+    width: 38px;
+    height: 38px;
+    min-width: 38px;
+  }
+
+  .nav-avatar {
+    font-size: 16px;
   }
 }
