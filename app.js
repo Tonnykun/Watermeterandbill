@@ -1691,7 +1691,9 @@ window.addEventListener('afterprint', () => {
 });
 
 function escapeBluetoothHtml(html) {
+  // ใช้สำหรับข้อความธรรมดาเท่านั้น — HTML print ต้องส่ง tag จริง ไม่ใช่ &lt;div&gt;
   return String(html || '')
+    .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;');
 }
@@ -1704,225 +1706,228 @@ function safeBluetoothHtmlText(value) {
     .replace(/"/g, '&quot;');
 }
 
-function safeBluetoothHtmlText(value) {
-  return String(value ?? '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-}
-
 function buildAndroidReceiptHtmlFromScreen() {
   const getTextRaw = id => document.getElementById(id)?.textContent?.trim() || '-';
-  const getText = id => safeBluetoothHtmlText(getTextRaw(id));
+
+  const clean = value => String(value ?? '')
+    .replace(/✅|⚠️|฿/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  const safe = value => safeBluetoothHtmlText(clean(value));
 
   const receiptTitleRaw =
     document.getElementById('receiptTitle')?.textContent?.trim() ||
     'ใบเสร็จรับเงินค่าน้ำประปา';
 
-  const receiptTitle = safeBluetoothHtmlText(receiptTitleRaw);
-
-  const statusRaw = getTextRaw('rStatus')
-    .replace('✅', '')
-    .replace('⚠️', '')
-    .trim();
-
-  const statusText = safeBluetoothHtmlText(statusRaw);
-
-  const payMethodRaw =
-    document.getElementById('rPayMethod')?.textContent?.trim() || '';
-
-  const payMethodText = safeBluetoothHtmlText(payMethodRaw);
-
-  const totalText = safeBluetoothHtmlText(
-    getTextRaw('rTotal').replace('฿', 'บาท')
-  );
-
-  const waterText = safeBluetoothHtmlText(
-    getTextRaw('rWater').replace('฿', 'บาท')
-  );
+  const statusRaw = clean(getTextRaw('rStatus'));
+  const payMethodRaw = clean(document.getElementById('rPayMethod')?.textContent?.trim() || '');
 
   const isUnpaid = statusRaw.includes('ยังไม่ชำระ');
+  const shouldShowBank = isUnpaid || payMethodRaw.includes('เงินโอน');
 
-  const shouldShowBank =
-    isUnpaid ||
-    payMethodRaw.includes('เงินโอน');
+  const moneyText = id => {
+    const raw = clean(getTextRaw(id)).replace(/บาท/g, '').trim();
+    return `${raw} บาท`;
+  };
+
+  const row = (label, value, bold = false) => `
+    <div class="r-row">
+      <span class="r-label">${safe(label)}:</span>
+      <span class="r-value ${bold ? 'b' : ''}">${safe(value)}</span>
+    </div>
+  `;
 
   const bankHtml = shouldShowBank ? `
-    <div style="border-top:1px dashed #000; margin:2px 0 0; padding-top:2px;">
-      <div style="font-weight:bold; text-align:center;">ข้อมูลบัญชีรับโอน</div>
-      <div>ธนาคาร: ${safeBluetoothHtmlText(APP_CONFIG.bankName || '-')}</div>
-      <div>เลขบัญชี: ${safeBluetoothHtmlText(APP_CONFIG.bankAccountNo || '-')}</div>
-      <div>ชื่อบัญชี: ${safeBluetoothHtmlText(APP_CONFIG.bankAccountName || '-')}</div>
-    </div>
+    <div class="dash"></div>
+    <div class="center b">ข้อมูลบัญชีรับโอน</div>
+    ${row('ธนาคาร', APP_CONFIG.bankName || '-')}
+    ${row('เลขบัญชี', APP_CONFIG.bankAccountNo || '-', true)}
+    ${row('ชื่อบัญชี', APP_CONFIG.bankAccountName || '-')}
   ` : '';
 
   const payMethodHtml = payMethodRaw
-    ? `<div style="text-align:center; font-weight:bold;">${payMethodText}</div>`
+    ? `<div class="center b small">วิธีชำระ: ${safe(payMethodRaw)}</div>`
     : '';
 
+  // HTML-V3: บังคับใบเสร็จให้เป็นคอลัมน์เดียว ไม่ใช้ตาราง/กริด เพื่อกันด้านขวาถูกตัด
   return `
-    <style>
-      html, body {
-        margin: 0 !important;
-        padding: 0 !important;
-        width: 42mm !important;
-        height: auto !important;
-        min-height: 0 !important;
-        background: #fff !important;
-      }
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  html, body {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 36mm !important;
+    min-width: 36mm !important;
+    max-width: 36mm !important;
+    background: #fff !important;
+    color: #000 !important;
+  }
 
-      * {
-        box-sizing: border-box;
-      }
+  * {
+    box-sizing: border-box !important;
+  }
 
-      table {
-        width: 100%;
-        border-collapse: collapse;
-      }
+  body {
+    font-family: Tahoma, Arial, sans-serif !important;
+    font-size: 8.5px !important;
+    line-height: 1.12 !important;
+    -webkit-text-size-adjust: 100% !important;
+  }
 
-      td {
-        padding: 0;
-        vertical-align: top;
-      }
-    </style>
+  .receipt {
+    width: 36mm !important;
+    max-width: 36mm !important;
+    margin: 0 !important;
+    padding: 0 0.5mm !important;
+    overflow: hidden !important;
+  }
 
-    <div style="
-      width: 42mm;
-      max-width: 42mm;
-      display: inline-block;
-      font-family: 'Noto Sans Thai', Tahoma, Arial, sans-serif;
-      color: #000;
-      background: #fff;
-      font-size: 9px;
-      line-height: 1;
-      text-align: left;
-      margin: 0;
-      padding: 0;
-      overflow: hidden;
-    ">
+  .center { text-align: center !important; }
+  .b { font-weight: 800 !important; }
 
-      <div style="text-align:center; font-weight:bold; font-size:11px; line-height:1;">
-        ${safeBluetoothHtmlText(APP_CONFIG.orgName)}
-      </div>
+  .org {
+    font-size: 10px !important;
+    line-height: 1.05 !important;
+  }
 
-      <div style="text-align:center; font-size:8.5px; line-height:1; margin-top:1px;">
-        ${safeBluetoothHtmlText(APP_CONFIG.villageName)}
-      </div>
+  .sub {
+    font-size: 8px !important;
+    line-height: 1.05 !important;
+    margin-top: 1px !important;
+  }
 
-      <div style="border-top:1px dashed #000; margin:2px 0;"></div>
+  .title {
+    font-size: 10px !important;
+    line-height: 1.05 !important;
+    margin-top: 2px !important;
+  }
 
-      <div style="text-align:center; font-weight:bold; font-size:11px; line-height:1;">
-        ${receiptTitle}
-      </div>
+  .meta {
+    font-size: 8px !important;
+    line-height: 1.05 !important;
+    margin-top: 1px !important;
+  }
 
-      <div style="text-align:center; font-weight:bold; font-size:9px; line-height:1; margin-top:1px;">
-        ${getText('rNo')}
-      </div>
+  .dash {
+    border-top: 1px dashed #000 !important;
+    margin: 2px 0 !important;
+    height: 0 !important;
+  }
 
-      <div style="text-align:center; font-size:8.5px; line-height:1; margin-top:1px;">
-        ${getText('rDate')}
-      </div>
+  .solid {
+    border-top: 2px solid #000 !important;
+    margin: 3px 0 !important;
+    height: 0 !important;
+  }
 
-      <div style="border-top:1px dashed #000; margin:2px 0;"></div>
+  .r-row {
+    display: block !important;
+    width: 100% !important;
+    padding: 1px 0 !important;
+    white-space: normal !important;
+    overflow: hidden !important;
+  }
 
-      <table style="font-size:9px; line-height:1;">
-        <tr>
-          <td>ชื่อลูกค้า</td>
-          <td style="text-align:right; font-weight:bold;">${getText('rName')}</td>
-        </tr>
-        <tr>
-          <td>บ้านเลขที่</td>
-          <td style="text-align:right; font-weight:bold;">${getText('rAddr')}</td>
-        </tr>
-        <tr>
-          <td>มิเตอร์</td>
-          <td style="text-align:right; font-weight:bold;">${getText('rMeter')}</td>
-        </tr>
-        <tr>
-          <td>ประจำเดือน</td>
-          <td style="text-align:right; font-weight:bold;">${getText('rMonth')}</td>
-        </tr>
-      </table>
+  .r-label { font-weight: 400 !important; }
+  .r-value { font-weight: 700 !important; }
 
-      <div style="border-top:1px dashed #000; margin:2px 0;"></div>
+  .meter-line {
+    text-align: center !important;
+    font-size: 8.5px !important;
+    line-height: 1.05 !important;
+    margin-top: 2px !important;
+  }
 
-      <table style="text-align:center; font-size:9px; line-height:1;">
-        <tr>
-          <td style="font-weight:bold;">ยอดก่อนหน้า</td>
-          <td></td>
-          <td style="font-weight:bold;">ยอดปัจจุบัน</td>
-        </tr>
-        <tr>
-          <td style="font-size:13px; font-weight:bold; padding-top:1px;">${getText('rPrev')}</td>
-          <td style="font-size:12px; font-weight:bold; padding-top:1px;">&gt;</td>
-          <td style="font-size:13px; font-weight:bold; padding-top:1px;">${getText('rCurr')}</td>
-        </tr>
-      </table>
+  .meter-num {
+    text-align: center !important;
+    font-size: 12px !important;
+    line-height: 1.05 !important;
+    font-weight: 800 !important;
+    margin: 1px 0 2px !important;
+  }
 
-      <table style="
-        border:1px solid #000;
-        font-size:9px;
-        line-height:1;
-        margin-top:2px;
-        font-weight:bold;
-      ">
-        <tr>
-          <td style="padding:2px 3px;">หน่วยที่ใช้</td>
-          <td style="padding:2px 3px; text-align:right;">${getText('rUnits')}</td>
-        </tr>
-      </table>
+  .unit-box {
+    border: 1px solid #000 !important;
+    padding: 2px !important;
+    margin: 2px 0 !important;
+    font-size: 9px !important;
+    font-weight: 800 !important;
+    text-align: center !important;
+  }
 
-      <div style="border-top:1px dashed #000; margin:2px 0;"></div>
+  .total-label {
+    font-size: 9px !important;
+    line-height: 1 !important;
+  }
 
-      <table style="font-size:9px; line-height:1;">
-        <tr>
-          <td>ค่าน้ำประปา</td>
-          <td style="text-align:right; font-weight:bold;">${waterText}</td>
-        </tr>
-        <tr>
-          <td>ค่าบริการรายเดือน</td>
-          <td style="text-align:right; font-weight:bold;">0.00 บาท</td>
-        </tr>
-      </table>
+  .total {
+    font-size: 15px !important;
+    line-height: 1.05 !important;
+    font-weight: 900 !important;
+  }
 
-      <div style="border-top:2px solid #000; margin:3px 0;"></div>
+  .small {
+    font-size: 8px !important;
+    line-height: 1.05 !important;
+  }
 
-      <div style="text-align:center; line-height:1;">
-        <div style="font-weight:bold; font-size:9px;">จำนวนเงินทั้งสิ้น</div>
-        <div style="font-size:15px; font-weight:bold; margin-top:1px;">
-          ${totalText}
-        </div>
-      </div>
+  .tiny {
+    font-size: 6.5px !important;
+    line-height: 1 !important;
+  }
+</style>
+</head>
+<body>
+  <div class="receipt">
+    <div class="center b org">${safe(APP_CONFIG.orgName)}</div>
+    <div class="center sub">${safe(APP_CONFIG.villageName)}</div>
 
-      <div style="border-top:2px solid #000; margin:3px 0;"></div>
+    <div class="dash"></div>
 
-      <div style="text-align:center; font-weight:bold; font-size:10px; line-height:1;">
-        สถานะ: ${statusText}
-      </div>
+    <div class="center b title">${safe(receiptTitleRaw)}</div>
+    <div class="center b meta">${safe(getTextRaw('rNo'))}</div>
+    <div class="center meta">${safe(getTextRaw('rDate'))}</div>
 
-      ${payMethodHtml}
+    <div class="dash"></div>
 
-      ${bankHtml}
+    ${row('ชื่อลูกค้า', getTextRaw('rName'), true)}
+    ${row('บ้านเลขที่', getTextRaw('rAddr'), true)}
+    ${row('มิเตอร์', getTextRaw('rMeter'), true)}
+    ${row('ประจำเดือน', getTextRaw('rMonth'), true)}
 
-      <div style="border-top:1px dashed #000; margin:2px 0;"></div>
+    <div class="dash"></div>
 
-      <div style="text-align:center; font-weight:bold; font-size:9px; line-height:1;">
-        ขอบคุณที่ใช้บริการ
-      </div>
+    <div class="meter-line b">ยอดก่อนหน้า &gt; ยอดปัจจุบัน</div>
+    <div class="meter-num">${safe(getTextRaw('rPrev'))} &gt; ${safe(getTextRaw('rCurr'))}</div>
+    <div class="unit-box">หน่วยที่ใช้: ${safe(getTextRaw('rUnits'))}</div>
 
-      <div style="text-align:center; font-size:8.5px; line-height:1;">
-        สอบถาม: ${safeBluetoothHtmlText(APP_CONFIG.contact)}
-      </div>
+    <div class="dash"></div>
 
-      <div style="text-align:center; font-size:8px; line-height:1; margin-top:1px;">
-        ${
-          isUnpaid
-            ? 'เอกสารนี้ยังไม่ใช่หลักฐานการชำระเงิน'
-            : 'ใบเสร็จนี้ใช้เป็นหลักฐานการชำระเงิน'
-        }
-      </div>
-    </div>
+    ${row('ค่าน้ำประปา', moneyText('rWater'), true)}
+    ${row('ค่าบริการรายเดือน', '0.00 บาท', true)}
+
+    <div class="solid"></div>
+    <div class="center total-label b">จำนวนเงินทั้งสิ้น</div>
+    <div class="center total">${safe(moneyText('rTotal'))}</div>
+    <div class="solid"></div>
+
+    <div class="center b">สถานะ: ${safe(statusRaw)}</div>
+    ${payMethodHtml}
+    ${bankHtml}
+
+    <div class="dash"></div>
+
+    <div class="center b small">ขอบคุณที่ใช้บริการ</div>
+    <div class="center small">สอบถาม: ${safe(APP_CONFIG.contact)}</div>
+    <div class="center tiny">${isUnpaid ? 'เอกสารนี้ยังไม่ใช่หลักฐานการชำระเงิน' : 'ใบเสร็จนี้ใช้เป็นหลักฐานการชำระเงิน'}</div>
+    <div class="center tiny">HTML-V3</div>
+  </div>
+</body>
+</html>
   `;
 }
 
@@ -1931,7 +1936,7 @@ async function printReceiptByAndroidShare() {
     const html = buildAndroidReceiptHtmlFromScreen();
 
     // Bluetooth Print HTML mode
-    const printPayload = '<HTML>' + escapeBluetoothHtml(html);
+    const printPayload = '<HTML>' + html;
 
     if (!navigator.share) {
       showToast('Android เครื่องนี้ไม่รองรับ Share Print');

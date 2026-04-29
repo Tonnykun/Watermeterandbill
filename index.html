@@ -6,7 +6,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>ระบบประปา</title>
-  <link rel="stylesheet" href="style.css?v=20260429-printfix4">
+  <link rel="stylesheet" href="style.css?v=20260429-htmlv3">
 </head>
 <body>
     <div class="maintenance-overlay">
@@ -433,15 +433,16 @@
             disabled
           >
             🖼️ กำลังสร้างรูป...
+          </button>
 
-          <button class="sheet-btn secondary" onclick="printReceiptByAndroidShare()">
+          <button class="sheet-btn secondary" onclick="printReceiptByAndroidShare()" type="button">
             ทดสอบ Android HTML Print
           </button>
 
-          <button class="sheet-btn primary" onclick="printReceipt()">
+          <button class="sheet-btn primary" onclick="printReceipt()" type="button">
             🖨️ พิมพ์ใบเสร็จ
           </button>
-          <button class="sheet-btn secondary" onclick="closeSheet()">
+          <button class="sheet-btn secondary" onclick="closeSheet()" type="button">
             ปิด
           </button>
         </div>
@@ -643,7 +644,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-  <script src="app.js?v=20260429-printfix7"></script>
+  <script src="app.js?v=20260429-htmlv3"></script>
 
 </body>
 </html>
