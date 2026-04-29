@@ -1717,6 +1717,37 @@ function testAndroidIntentPrint() {
   window.location.href = intentUrl;
 }
 
+async function testAndroidSharePrint() {
+  const printText = [
+    '<110>การประปาหมู่บ้านแสนสุข',
+    '<110>บ้านแสนสุข หมู่ 4',
+    '<100>------------------------',
+    '<110>ใบเสร็จรับเงินค่าน้ำประปา',
+    '<100>ยอดก่อนหน้า: 1,313',
+    '<100>ยอดปัจจุบัน: 1,320',
+    '<110>หน่วยที่ใช้: 7',
+    '<100>------------------------',
+    '<110>จำนวนเงินทั้งสิ้น',
+    '<110>21.00 บาท',
+    '<100>------------------------',
+    '<100>ขอบคุณที่ใช้บริการ'
+  ].join('\n');
+
+  try {
+    if (navigator.share) {
+      await navigator.share({
+        title: 'ใบเสร็จค่าน้ำประปา',
+        text: printText
+      });
+    } else {
+      showToast('เบราว์เซอร์นี้ไม่รองรับการแชร์ข้อความ');
+    }
+  } catch (err) {
+    console.error('[testAndroidSharePrint]', err);
+    showToast('ยกเลิกหรือแชร์ไม่สำเร็จ');
+  }
+}
+
 function printReceipt() {
   if (!currentReceiptReadingId) {
     showToast('ไม่พบเลขอ้างอิงใบเสร็จสำหรับพิมพ์');
