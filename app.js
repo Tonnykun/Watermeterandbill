@@ -1696,271 +1696,69 @@ function escapeBluetoothHtml(html) {
     .replace(/>/g, '&gt;');
 }
 
-function buildAndroidReceiptHtmlFromScreen() {
+function buildBluetoothPrintText() {
   const getText = id => document.getElementById(id)?.textContent?.trim() || '-';
 
-  const receiptTitle =
-    document.getElementById('receiptTitle')?.textContent?.trim() ||
-    'ใบเสร็จรับเงินค่าน้ำประปา';
-
-  const statusText = getText('rStatus')
-    .replace('✅', '')
-    .replace('⚠️', '')
-    .trim();
-
-  const payMethodText =
-    document.getElementById('rPayMethod')?.textContent?.trim() || '';
-
-  const totalText = getText('rTotal').replace('฿', 'บาท');
-  const waterText = getText('rWater').replace('฿', 'บาท');
-
-  const shouldShowBank =
-    statusText.includes('ยังไม่ชำระ') ||
-    payMethodText.includes('เงินโอน');
-
-  const bankHtml = shouldShowBank ? `
-    <div style="border-top:1px dashed #000; margin-top:6px; padding-top:5px;">
-      <div style="font-weight:bold; text-align:center;">ข้อมูลบัญชีรับโอน</div>
-      <div>ธนาคาร: ${APP_CONFIG.bankName || '-'}</div>
-      <div>เลขบัญชี: ${APP_CONFIG.bankAccountNo || '-'}</div>
-      <div>ชื่อบัญชี: ${APP_CONFIG.bankAccountName || '-'}</div>
-    </div>
-  ` : '';
-
-  const payMethodHtml = payMethodText
-    ? `<div style="text-align:center; font-weight:bold;">${payMethodText}</div>`
-    : '';
-
-  return `
-    <div style="
-      width: 48mm;
-      max-width: 48mm;
-      display: inline-block;
-      font-family: sans-serif;
-      color: #000;
-      background: #fff;
-      font-size: 12px;
-      line-height: 1.05;
-      text-align: left;
-      margin: 0;
-      padding: 0;
-      overflow: hidden;
-    ">
-      <div style="text-align:center; font-weight:bold; font-size:15px;">
-        ${APP_CONFIG.orgName}
-      </div>
-
-      <div style="text-align:center; font-size:12px; margin-top:2px;">
-        ${APP_CONFIG.villageName}
-      </div>
-
-      <div style="border-top:1px dashed #000; margin:3px 0;"></div>
-
-      <div style="text-align:center; font-weight:bold; font-size:15px;">
-        ${receiptTitle}
-      </div>
-
-      <div style="text-align:center; font-weight:bold; margin-top:2px;">
-        ${getText('rNo')}
-      </div>
-
-      <div style="text-align:center; margin-top:1px;">
-        ${getText('rDate')}
-      </div>
-
-      <div style="border-top:1px dashed #000; margin:3px 0;"></div>
-
-      <table style="width:100%; border-collapse:collapse; font-size:13px; line-height:1.2;">
-        <tr>
-          <td>ชื่อลูกค้า</td>
-          <td style="text-align:right; font-weight:bold;">${getText('rName')}</td>
-        </tr>
-        <tr>
-          <td>บ้านเลขที่</td>
-          <td style="text-align:right; font-weight:bold;">${getText('rAddr')}</td>
-        </tr>
-        <tr>
-          <td>มิเตอร์</td>
-          <td style="text-align:right; font-weight:bold;">${getText('rMeter')}</td>
-        </tr>
-        <tr>
-          <td>ประจำเดือน</td>
-          <td style="text-align:right; font-weight:bold;">${getText('rMonth')}</td>
-        </tr>
-      </table>
-
-      <div style="border-top:1px dashed #000; margin:3px 0;"></div>
-
-      <table style="width:100%; border-collapse:collapse; text-align:center; font-size:13px;">
-        <tr>
-          <td style="font-weight:bold;">ยอดก่อนหน้า</td>
-          <td></td>
-          <td style="font-weight:bold;">ยอดปัจจุบัน</td>
-        </tr>
-        <tr>
-          <td style="font-size:18px; font-weight:bold;">${getText('rPrev')}</td>
-          <td style="font-size:18px; font-weight:bold;">&gt;</td>
-          <td style="font-size:18px; font-weight:bold;">${getText('rCurr')}</td>
-        </tr>
-      </table>
-
-      <div style="
-        border:1px solid #000;
-        padding:4px 6px;
-        margin-top:5px;
-        display:flex;
-        justify-content:space-between;
-        font-weight:bold;
-      ">
-        <span>หน่วยที่ใช้</span>
-        <span>${getText('rUnits')}</span>
-      </div>
-
-      <div style="border-top:1px dashed #000; margin:3px 0;"></div>
-
-      <table style="width:100%; border-collapse:collapse; font-size:13px;">
-        <tr>
-          <td>ค่าน้ำประปา</td>
-          <td style="text-align:right; font-weight:bold;">${waterText}</td>
-        </tr>
-        <tr>
-          <td>ค่าบริการรายเดือน</td>
-          <td style="text-align:right; font-weight:bold;">0.00 บาท</td>
-        </tr>
-      </table>
-
-      <div style="border-top:2px solid #000; margin:4px 0;"></div>
-
-      <div style="text-align:center;">
-        <div style="font-weight:bold;">จำนวนเงินทั้งสิ้น</div>
-        <div style="font-size:18px; font-weight:bold; margin-top:1px;">
-          ${totalText}
-        </div>
-      </div>
-
-      <div style="border-top:2px solid #000; margin:4px 0;"></div>
-
-      <div style="text-align:center; font-weight:bold; font-size:15px;">
-        สถานะ: ${statusText}
-      </div>
-
-      ${payMethodHtml}
-
-      ${bankHtml}
-
-      <div style="border-top:1px dashed #000; margin:3px 0;"></div>
-
-      <div style="text-align:center; font-weight:bold;">
-        ขอบคุณที่ใช้บริการ
-      </div>
-
-      <div style="text-align:center;">
-        สอบถาม: ${APP_CONFIG.contact}
-      </div>
-
-      <div style="text-align:center; margin-top:3px;">
-        ${
-          statusText.includes('ยังไม่ชำระ')
-            ? 'เอกสารนี้ยังไม่ใช่หลักฐานการชำระเงิน'
-            : 'ใบเสร็จนี้ใช้เป็นหลักฐานการชำระเงิน'
-        }
-      </div>
-
-    </div>
-  `;
-}
-
-window.testAndroidHtmlPrint = async function testAndroidHtmlPrint() {
-  try {
-    const html = buildAndroidReceiptHtmlFromScreen();
-
-    const printPayload = '<HTML>' + escapeBluetoothHtml(html);
-
-    alert('เริ่มทดสอบ HTML Print');
-
-    if (!navigator.share) {
-      alert('เบราว์เซอร์นี้ไม่รองรับ navigator.share');
-      return;
-    }
-
-    await navigator.share({
-      title: 'ใบเสร็จค่าน้ำประปา',
-      text: printPayload
-    });
-
-  } catch (err) {
-    console.error('[testAndroidHtmlPrint]', err);
-    alert('HTML Print ไม่สำเร็จ: ' + (err.message || err.name || err));
-  }
-};
-
-function buildAndroidReceiptTextFromScreen() {
-  const getText = id => document.getElementById(id)?.textContent?.trim() || '-';
-
-  const receiptTitle = document.getElementById('receiptTitle')?.textContent?.trim() || 'ใบเสร็จรับเงินค่าน้ำประปา';
-  const statusText = getText('rStatus').replace('✅', '').replace('⚠️', '').trim();
+  const receiptTitle = document.getElementById('receiptTitle')?.textContent?.trim() 
+    || 'ใบเสร็จรับเงินค่าน้ำประปา';
+  const statusText = getText('rStatus').replace('✅','').replace('⚠️','').trim();
   const payMethodText = document.getElementById('rPayMethod')?.textContent?.trim() || '';
+  const shouldShowBank = statusText.includes('ยังไม่ชำระ') || payMethodText.includes('เงินโอน');
 
-  const lines = [
-    '<110>' + APP_CONFIG.orgName,
-    '<110>' + APP_CONFIG.villageName,
-    '<100>------------------------',
+  // <BAF> format:
+  // B: 1=bold, 0=normal
+  // A: 0=left, 1=center, 2=right  
+  // F: 0=normal, 1=doubleHeight, 2=doubleHeight+Width, 3=doubleWidth
 
-    '<110>' + receiptTitle,
-    '<100>' + getText('rNo'),
-    '<100>' + getText('rDate'),
-    '<100>------------------------',
-
-    '<100>ชื่อลูกค้า: ' + getText('rName'),
-    '<100>บ้านเลขที่: ' + getText('rAddr'),
-    '<100>มิเตอร์: ' + getText('rMeter'),
-    '<100>ประจำเดือน: ' + getText('rMonth'),
-    '<100>------------------------',
-
-    '<110>ยอดก่อนหน้า        ยอดปัจจุบัน',
-    '<110> ' + getText('rPrev') + '      >      ' + getText('rCurr'),
-    '<110>หน่วยที่ใช้: ' + getText('rUnits'),
-    '<100>------------------------',
-
-    '<100>ค่าน้ำประปา: ' + getText('rWater').replace('฿', 'บาท'),
-    '<100>ค่าบริการ: 0.00 บาท',
-    '<100>========================',
-
-    '<110>จำนวนเงินทั้งสิ้น',
-    '<110>' + getText('rTotal').replace('฿', 'บาท'),
-    '<100>========================',
-
-    '<110>สถานะ: ' + statusText
+  let lines = [
+    `<110>${APP_CONFIG.orgName}`,           // bold, center, normal
+    `<110>${APP_CONFIG.villageName}`,
+    `<100>--------------------------------`,
+    `<110>${receiptTitle}`,
+    `<100>${getText('rNo')}`,               // normal, center
+    `<100>${getText('rDate')}`,
+    `<100>--------------------------------`,
+    `<000>ชื่อลูกค้า: ${getText('rName')}`, // normal, left
+    `<000>บ้านเลขที่: ${getText('rAddr')}`,
+    `<000>มิเตอร์: ${getText('rMeter')}`,
+    `<000>ประจำเดือน: ${getText('rMonth')}`,
+    `<100>--------------------------------`,
+    `<100>ยอดก่อนหน้า        ยอดปัจจุบัน`,
+    `<110>${getText('rPrev')}    >    ${getText('rCurr')}`,
+    `<100>--------------------------------`,
+    `<000>หน่วยที่ใช้: ${getText('rUnits')}`,
+    `<100>--------------------------------`,
+    `<000>ค่าน้ำประปา: ${getText('rWater').replace('฿','บาท')}`,
+    `<000>ค่าบริการรายเดือน: 0.00 บาท`,
+    `<100>================================`,
+    `<110>จำนวนเงินทั้งสิ้น`,
+    `<112>${getText('rTotal').replace('฿','บาท')}`,  // bold, center, doubleHeight+Width
+    `<100>================================`,
+    `<110>สถานะ: ${statusText}`,
   ];
 
   if (payMethodText) {
-    lines.push('<100>' + payMethodText);
+    lines.push(`<100>${payMethodText}`);
   }
-
-  // ถ้าเป็นใบค้างชำระ หรือชำระด้วยเงินโอน ให้แสดงเลขบัญชี
-  const shouldShowBank =
-    statusText.includes('ยังไม่ชำระ') ||
-    payMethodText.includes('เงินโอน');
 
   if (shouldShowBank) {
     lines.push(
-      '<100>------------------------',
-      '<110>ข้อมูลบัญชีรับโอน',
-      '<100>ธนาคาร: ' + (APP_CONFIG.bankName || '-'),
-      '<100>เลขบัญชี: ' + (APP_CONFIG.bankAccountNo || '-'),
-      '<100>ชื่อบัญชี: ' + (APP_CONFIG.bankAccountName || '-')
+      `<100>--------------------------------`,
+      `<110>ข้อมูลบัญชีรับโอน`,
+      `<000>ธนาคาร: ${APP_CONFIG.bankName || '-'}`,
+      `<000>เลขบัญชี: ${APP_CONFIG.bankAccountNo || '-'}`,
+      `<000>ชื่อบัญชี: ${APP_CONFIG.bankAccountName || '-'}`,
     );
   }
 
   lines.push(
-    '<100>------------------------',
-    '<110>ขอบคุณที่ใช้บริการ',
-    '<100>สอบถาม: ' + APP_CONFIG.contact,
-    statusText.includes('ยังไม่ชำระ')
-      ? '<100>เอกสารนี้ยังไม่ใช่หลักฐานการชำระเงิน'
-      : '<100>ใบเสร็จนี้ใช้เป็นหลักฐานการชำระเงิน',
-    '<100> ',
-    '<100> '
+    `<100>--------------------------------`,
+    `<110>ขอบคุณที่ใช้บริการ`,
+    `<000>สอบถาม: ${APP_CONFIG.contact}`,
+    `<000>${statusText.includes('ยังไม่ชำระ') 
+      ? 'เอกสารนี้ยังไม่ใช่หลักฐานการชำระเงิน' 
+      : 'ใบเสร็จนี้ใช้เป็นหลักฐานการชำระเงิน'}`,
+    `<000> `,   // feed 1 บรรทัดก่อนตัด
   );
 
   return lines.join('\n');
@@ -1968,7 +1766,7 @@ function buildAndroidReceiptTextFromScreen() {
 
 async function printReceiptByAndroidShare() {
   try {
-    const printText = buildAndroidReceiptTextFromScreen();
+    const printText = buildBluetoothPrintText();
 
     if (!navigator.share) {
       showToast('Android เครื่องนี้ไม่รองรับ Share Print');
