@@ -1690,27 +1690,84 @@ window.addEventListener('afterprint', () => {
   closeReceiptPopupAfterExternalPrint();
 });
 
-window.testAndroidSharePrint = async function testAndroidSharePrint() {
-  const printText = [
-    '<110>การประปาหมู่บ้านแสนสุข',
-    '<110>บ้านแสนสุข หมู่ 4',
+function buildAndroidReceiptTextFromScreen() {
+  const getText = id => document.getElementById(id)?.textContent?.trim() || '-';
+
+  const receiptTitle = document.getElementById('receiptTitle')?.textContent?.trim() || 'ใบเสร็จรับเงินค่าน้ำประปา';
+  const statusText = getText('rStatus').replace('✅', '').replace('⚠️', '').trim();
+  const payMethodText = document.getElementById('rPayMethod')?.textContent?.trim() || '';
+
+  const lines = [
+    '<110>' + APP_CONFIG.orgName,
+    '<110>' + APP_CONFIG.villageName,
     '<100>------------------------',
-    '<110>ใบเสร็จรับเงินค่าน้ำประปา',
-    '<100>ยอดก่อนหน้า: 1,313',
-    '<100>ยอดปัจจุบัน: 1,320',
-    '<110>หน่วยที่ใช้: 7',
+
+    '<110>' + receiptTitle,
+    '<100>' + getText('rNo'),
+    '<100>' + getText('rDate'),
     '<100>------------------------',
+
+    '<100>ชื่อลูกค้า: ' + getText('rName'),
+    '<100>บ้านเลขที่: ' + getText('rAddr'),
+    '<100>มิเตอร์: ' + getText('rMeter'),
+    '<100>ประจำเดือน: ' + getText('rMonth'),
+    '<100>------------------------',
+
+    '<110>ยอดก่อนหน้า        ยอดปัจจุบัน',
+    '<110> ' + getText('rPrev') + '      >      ' + getText('rCurr'),
+    '<110>หน่วยที่ใช้: ' + getText('rUnits'),
+    '<100>------------------------',
+
+    '<100>ค่าน้ำประปา: ' + getText('rWater').replace('฿', 'บาท'),
+    '<100>ค่าบริการ: 0.00 บาท',
+    '<100>========================',
+
     '<110>จำนวนเงินทั้งสิ้น',
-    '<110>21.00 บาท',
+    '<110>' + getText('rTotal').replace('฿', 'บาท'),
+    '<100>========================',
+
+    '<110>สถานะ: ' + statusText
+  ];
+
+  if (payMethodText) {
+    lines.push('<100>' + payMethodText);
+  }
+
+  // ถ้าเป็นใบค้างชำระ หรือชำระด้วยเงินโอน ให้แสดงเลขบัญชี
+  const shouldShowBank =
+    statusText.includes('ยังไม่ชำระ') ||
+    payMethodText.includes('เงินโอน');
+
+  if (shouldShowBank) {
+    lines.push(
+      '<100>------------------------',
+      '<110>ข้อมูลบัญชีรับโอน',
+      '<100>ธนาคาร: ' + (APP_CONFIG.bankName || '-'),
+      '<100>เลขบัญชี: ' + (APP_CONFIG.bankAccountNo || '-'),
+      '<100>ชื่อบัญชี: ' + (APP_CONFIG.bankAccountName || '-')
+    );
+  }
+
+  lines.push(
     '<100>------------------------',
-    '<100>ขอบคุณที่ใช้บริการ'
-  ].join('\n');
+    '<110>ขอบคุณที่ใช้บริการ',
+    '<100>สอบถาม: ' + APP_CONFIG.contact,
+    statusText.includes('ยังไม่ชำระ')
+      ? '<100>เอกสารนี้ยังไม่ใช่หลักฐานการชำระเงิน'
+      : '<100>ใบเสร็จนี้ใช้เป็นหลักฐานการชำระเงิน',
+    '<100> ',
+    '<100> '
+  );
 
-  alert('เริ่มทดสอบ Share Print');
+  return lines.join('\n');
+}
 
+async function printReceiptByAndroidShare() {
   try {
+    const printText = buildAndroidReceiptTextFromScreen();
+
     if (!navigator.share) {
-      alert('เบราว์เซอร์นี้ไม่รองรับ navigator.share');
+      showToast('Android เครื่องนี้ไม่รองรับ Share Print');
       return;
     }
 
@@ -1719,47 +1776,29 @@ window.testAndroidSharePrint = async function testAndroidSharePrint() {
       text: printText
     });
 
-    alert('ส่งเข้าเมนูแชร์แล้ว');
+    setTimeout(() => {
+      closeReceiptPopupAfterExternalPrint();
+    }, 300);
+
   } catch (err) {
-    alert('แชร์ไม่สำเร็จ: ' + (err.message || err.name || err));
-    console.error('[testAndroidSharePrint]', err);
-  }
-};
+    console.error('[printReceiptByAndroidShare]', err);
 
-async function testAndroidSharePrint() {
-  const printText = [
-    '<110>การประปาหมู่บ้านแสนสุข',
-    '<110>บ้านแสนสุข หมู่ 4',
-    '<100>------------------------',
-    '<110>ใบเสร็จรับเงินค่าน้ำประปา',
-    '<100>ยอดก่อนหน้า: 1,313',
-    '<100>ยอดปัจจุบัน: 1,320',
-    '<110>หน่วยที่ใช้: 7',
-    '<100>------------------------',
-    '<110>จำนวนเงินทั้งสิ้น',
-    '<110>21.00 บาท',
-    '<100>------------------------',
-    '<100>ขอบคุณที่ใช้บริการ'
-  ].join('\n');
-
-  try {
-    if (navigator.share) {
-      await navigator.share({
-        title: 'ใบเสร็จค่าน้ำประปา',
-        text: printText
-      });
-    } else {
-      showToast('เบราว์เซอร์นี้ไม่รองรับการแชร์ข้อความ');
+    if (err && err.name === 'AbortError') {
+      return;
     }
-  } catch (err) {
-    console.error('[testAndroidSharePrint]', err);
-    showToast('ยกเลิกหรือแชร์ไม่สำเร็จ');
+
+    showToast('แชร์ไปแอปปริ้นท์ไม่สำเร็จ');
   }
 }
 
 function printReceipt() {
   if (!currentReceiptReadingId) {
     showToast('ไม่พบเลขอ้างอิงใบเสร็จสำหรับพิมพ์');
+    return;
+  }
+
+  if (isAndroidDevice()) {
+    printReceiptByAndroidShare();
     return;
   }
 
