@@ -1156,14 +1156,21 @@ input[type="password"]::-ms-clear {
 .receipt-status.unpaid { color: #000 !important; background: transparent !important; border-color: #000 !important; }
 
 .receipt-qr-section {
-  margin: 9px 0 6px;
-  padding: 0;
+  margin: 3px 0 2px;
+  padding: 2px 0 0;
   text-align: center;
   background: transparent !important;
   border: none;
+  border-top: 1px solid #000;
 }
 
-.receipt-qr-title { margin-bottom: 5px; color: #000 !important; font-size: 10px; font-weight: 700; }
+.receipt-qr-title {
+  margin: 0 0 2px;
+  color: #000 !important;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.1;
+}
 
 .receipt-qr-box {
   width: 26mm;
@@ -1826,32 +1833,35 @@ body.maintenance .app-screen {
 
 .bank-transfer-box {
   width: 100%;
-  padding: 6px 4px;
+  padding: 1px 4px 2px;
   text-align: center;
   color: #000;
   background: #fff;
-  border-top: 1px solid #000;
+  border-top: none;
   border-bottom: 1px solid #000;
 }
 
 .bank-transfer-title {
   font-size: 10px;
   font-weight: 800;
-  margin-bottom: 3px;
+  margin: 0 0 1px;
+  line-height: 1.05;
 }
 
 .bank-transfer-line {
   font-size: 10px;
   font-weight: 700;
-  line-height: 1.35;
+  line-height: 1.05;
+  margin: 0;
 }
 
 .bank-transfer-account {
   font-size: 12px;
   font-weight: 900;
   letter-spacing: 0;
-  line-height: 1.15;
+  line-height: 1.25;
   white-space: nowrap;
+  margin: 2px 0 2px;
 }
 
 .bank-transfer-inline {

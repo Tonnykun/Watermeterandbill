@@ -2000,15 +2000,6 @@ function printReceiptAndroidByWebPrint() {
   openBluetoothPrintScheme(responseUrl);
 }
 
-// คงชื่อเดิมไว้เพื่อให้ปุ่มเก่าใน index.html ยังทำงานได้
-function printReceiptByAndroidShare() {
-  return printReceiptAndroidByWebPrint();
-}
-
-window.testAndroidHtmlPrint = function testAndroidHtmlPrint() {
-  return printReceiptAndroidByWebPrint();
-};
-
 function printReceipt() {
   if (!currentReceiptReadingId) {
     showToast('ไม่พบเลขอ้างอิงใบเสร็จสำหรับพิมพ์');
