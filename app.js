@@ -1690,7 +1690,7 @@ window.addEventListener('afterprint', () => {
   closeReceiptPopupAfterExternalPrint();
 });
 
-function testAndroidIntentPrint() {
+window.testAndroidSharePrint = async function testAndroidSharePrint() {
   const printText = [
     '<110>การประปาหมู่บ้านแสนสุข',
     '<110>บ้านแสนสุข หมู่ 4',
@@ -1706,16 +1706,25 @@ function testAndroidIntentPrint() {
     '<100>ขอบคุณที่ใช้บริการ'
   ].join('\n');
 
-  const intentUrl =
-    'intent:#Intent;' +
-    'action=android.intent.action.SEND;' +
-    'type=text/plain;' +
-    'package=mate.bluetoothprint;' +
-    'S.android.intent.extra.TEXT=' + encodeURIComponent(printText) + ';' +
-    'end';
+  alert('เริ่มทดสอบ Share Print');
 
-  window.location.href = intentUrl;
-}
+  try {
+    if (!navigator.share) {
+      alert('เบราว์เซอร์นี้ไม่รองรับ navigator.share');
+      return;
+    }
+
+    await navigator.share({
+      title: 'ใบเสร็จค่าน้ำประปา',
+      text: printText
+    });
+
+    alert('ส่งเข้าเมนูแชร์แล้ว');
+  } catch (err) {
+    alert('แชร์ไม่สำเร็จ: ' + (err.message || err.name || err));
+    console.error('[testAndroidSharePrint]', err);
+  }
+};
 
 async function testAndroidSharePrint() {
   const printText = [
