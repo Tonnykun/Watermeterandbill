@@ -1696,77 +1696,234 @@ function escapeBluetoothHtml(html) {
     .replace(/>/g, '&gt;');
 }
 
-function buildBluetoothPrintText() {
-  const getText = id => document.getElementById(id)?.textContent?.trim() || '-';
+function safeBluetoothHtmlText(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
 
-  const receiptTitle = document.getElementById('receiptTitle')?.textContent?.trim() 
-    || 'ใบเสร็จรับเงินค่าน้ำประปา';
-  const statusText = getText('rStatus').replace('✅','').replace('⚠️','').trim();
-  const payMethodText = document.getElementById('rPayMethod')?.textContent?.trim() || '';
-  const shouldShowBank = statusText.includes('ยังไม่ชำระ') || payMethodText.includes('เงินโอน');
+function buildAndroidReceiptHtmlFromScreen() {
+  const getTextRaw = id => document.getElementById(id)?.textContent?.trim() || '-';
+  const getText = id => safeBluetoothHtmlText(getTextRaw(id));
 
-  // <BAF> format:
-  // B: 1=bold, 0=normal
-  // A: 0=left, 1=center, 2=right  
-  // F: 0=normal, 1=doubleHeight, 2=doubleHeight+Width, 3=doubleWidth
+  const receiptTitleRaw =
+    document.getElementById('receiptTitle')?.textContent?.trim() ||
+    'ใบเสร็จรับเงินค่าน้ำประปา';
 
-  let lines = [
-    `<110>${APP_CONFIG.orgName}`,           // bold, center, normal
-    `<110>${APP_CONFIG.villageName}`,
-    `<100>--------------------------------`,
-    `<110>${receiptTitle}`,
-    `<100>${getText('rNo')}`,               // normal, center
-    `<100>${getText('rDate')}`,
-    `<100>--------------------------------`,
-    `<000>ชื่อลูกค้า: ${getText('rName')}`, // normal, left
-    `<000>บ้านเลขที่: ${getText('rAddr')}`,
-    `<000>มิเตอร์: ${getText('rMeter')}`,
-    `<000>ประจำเดือน: ${getText('rMonth')}`,
-    `<100>--------------------------------`,
-    `<100>ยอดก่อนหน้า        ยอดปัจจุบัน`,
-    `<110>${getText('rPrev')}    >    ${getText('rCurr')}`,
-    `<100>--------------------------------`,
-    `<000>หน่วยที่ใช้: ${getText('rUnits')}`,
-    `<100>--------------------------------`,
-    `<000>ค่าน้ำประปา: ${getText('rWater').replace('฿','บาท')}`,
-    `<000>ค่าบริการรายเดือน: 0.00 บาท`,
-    `<100>================================`,
-    `<110>จำนวนเงินทั้งสิ้น`,
-    `<112>${getText('rTotal').replace('฿','บาท')}`,  // bold, center, doubleHeight+Width
-    `<100>================================`,
-    `<110>สถานะ: ${statusText}`,
-  ];
+  const receiptTitle = safeBluetoothHtmlText(receiptTitleRaw);
 
-  if (payMethodText) {
-    lines.push(`<100>${payMethodText}`);
-  }
+  const statusRaw = getTextRaw('rStatus')
+    .replace('✅', '')
+    .replace('⚠️', '')
+    .trim();
 
-  if (shouldShowBank) {
-    lines.push(
-      `<100>--------------------------------`,
-      `<110>ข้อมูลบัญชีรับโอน`,
-      `<000>ธนาคาร: ${APP_CONFIG.bankName || '-'}`,
-      `<000>เลขบัญชี: ${APP_CONFIG.bankAccountNo || '-'}`,
-      `<000>ชื่อบัญชี: ${APP_CONFIG.bankAccountName || '-'}`,
-    );
-  }
+  const statusText = safeBluetoothHtmlText(statusRaw);
 
-  lines.push(
-    `<100>--------------------------------`,
-    `<110>ขอบคุณที่ใช้บริการ`,
-    `<000>สอบถาม: ${APP_CONFIG.contact}`,
-    `<000>${statusText.includes('ยังไม่ชำระ') 
-      ? 'เอกสารนี้ยังไม่ใช่หลักฐานการชำระเงิน' 
-      : 'ใบเสร็จนี้ใช้เป็นหลักฐานการชำระเงิน'}`,
-    `<000> `,   // feed 1 บรรทัดก่อนตัด
+  const payMethodRaw =
+    document.getElementById('rPayMethod')?.textContent?.trim() || '';
+
+  const payMethodText = safeBluetoothHtmlText(payMethodRaw);
+
+  const totalText = safeBluetoothHtmlText(
+    getTextRaw('rTotal').replace('฿', 'บาท')
   );
 
-  return lines.join('\n');
+  const waterText = safeBluetoothHtmlText(
+    getTextRaw('rWater').replace('฿', 'บาท')
+  );
+
+  const isUnpaid = statusRaw.includes('ยังไม่ชำระ');
+
+  const shouldShowBank =
+    isUnpaid ||
+    payMethodRaw.includes('เงินโอน');
+
+  const bankHtml = shouldShowBank ? `
+    <div style="border-top:1px dashed #000; margin:2px 0 0; padding-top:2px;">
+      <div style="font-weight:bold; text-align:center;">ข้อมูลบัญชีรับโอน</div>
+      <div>ธนาคาร: ${safeBluetoothHtmlText(APP_CONFIG.bankName || '-')}</div>
+      <div>เลขบัญชี: ${safeBluetoothHtmlText(APP_CONFIG.bankAccountNo || '-')}</div>
+      <div>ชื่อบัญชี: ${safeBluetoothHtmlText(APP_CONFIG.bankAccountName || '-')}</div>
+    </div>
+  ` : '';
+
+  const payMethodHtml = payMethodRaw
+    ? `<div style="text-align:center; font-weight:bold;">${payMethodText}</div>`
+    : '';
+
+  return `
+    <style>
+      html, body {
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 42mm !important;
+        height: auto !important;
+        min-height: 0 !important;
+        background: #fff !important;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      td {
+        padding: 0;
+        vertical-align: top;
+      }
+    </style>
+
+    <div style="
+      width: 42mm;
+      max-width: 42mm;
+      display: inline-block;
+      font-family: 'Noto Sans Thai', Tahoma, Arial, sans-serif;
+      color: #000;
+      background: #fff;
+      font-size: 9px;
+      line-height: 1;
+      text-align: left;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+    ">
+
+      <div style="text-align:center; font-weight:bold; font-size:11px; line-height:1;">
+        ${safeBluetoothHtmlText(APP_CONFIG.orgName)}
+      </div>
+
+      <div style="text-align:center; font-size:8.5px; line-height:1; margin-top:1px;">
+        ${safeBluetoothHtmlText(APP_CONFIG.villageName)}
+      </div>
+
+      <div style="border-top:1px dashed #000; margin:2px 0;"></div>
+
+      <div style="text-align:center; font-weight:bold; font-size:11px; line-height:1;">
+        ${receiptTitle}
+      </div>
+
+      <div style="text-align:center; font-weight:bold; font-size:9px; line-height:1; margin-top:1px;">
+        ${getText('rNo')}
+      </div>
+
+      <div style="text-align:center; font-size:8.5px; line-height:1; margin-top:1px;">
+        ${getText('rDate')}
+      </div>
+
+      <div style="border-top:1px dashed #000; margin:2px 0;"></div>
+
+      <table style="font-size:9px; line-height:1;">
+        <tr>
+          <td>ชื่อลูกค้า</td>
+          <td style="text-align:right; font-weight:bold;">${getText('rName')}</td>
+        </tr>
+        <tr>
+          <td>บ้านเลขที่</td>
+          <td style="text-align:right; font-weight:bold;">${getText('rAddr')}</td>
+        </tr>
+        <tr>
+          <td>มิเตอร์</td>
+          <td style="text-align:right; font-weight:bold;">${getText('rMeter')}</td>
+        </tr>
+        <tr>
+          <td>ประจำเดือน</td>
+          <td style="text-align:right; font-weight:bold;">${getText('rMonth')}</td>
+        </tr>
+      </table>
+
+      <div style="border-top:1px dashed #000; margin:2px 0;"></div>
+
+      <table style="text-align:center; font-size:9px; line-height:1;">
+        <tr>
+          <td style="font-weight:bold;">ยอดก่อนหน้า</td>
+          <td></td>
+          <td style="font-weight:bold;">ยอดปัจจุบัน</td>
+        </tr>
+        <tr>
+          <td style="font-size:13px; font-weight:bold; padding-top:1px;">${getText('rPrev')}</td>
+          <td style="font-size:12px; font-weight:bold; padding-top:1px;">&gt;</td>
+          <td style="font-size:13px; font-weight:bold; padding-top:1px;">${getText('rCurr')}</td>
+        </tr>
+      </table>
+
+      <table style="
+        border:1px solid #000;
+        font-size:9px;
+        line-height:1;
+        margin-top:2px;
+        font-weight:bold;
+      ">
+        <tr>
+          <td style="padding:2px 3px;">หน่วยที่ใช้</td>
+          <td style="padding:2px 3px; text-align:right;">${getText('rUnits')}</td>
+        </tr>
+      </table>
+
+      <div style="border-top:1px dashed #000; margin:2px 0;"></div>
+
+      <table style="font-size:9px; line-height:1;">
+        <tr>
+          <td>ค่าน้ำประปา</td>
+          <td style="text-align:right; font-weight:bold;">${waterText}</td>
+        </tr>
+        <tr>
+          <td>ค่าบริการรายเดือน</td>
+          <td style="text-align:right; font-weight:bold;">0.00 บาท</td>
+        </tr>
+      </table>
+
+      <div style="border-top:2px solid #000; margin:3px 0;"></div>
+
+      <div style="text-align:center; line-height:1;">
+        <div style="font-weight:bold; font-size:9px;">จำนวนเงินทั้งสิ้น</div>
+        <div style="font-size:15px; font-weight:bold; margin-top:1px;">
+          ${totalText}
+        </div>
+      </div>
+
+      <div style="border-top:2px solid #000; margin:3px 0;"></div>
+
+      <div style="text-align:center; font-weight:bold; font-size:10px; line-height:1;">
+        สถานะ: ${statusText}
+      </div>
+
+      ${payMethodHtml}
+
+      ${bankHtml}
+
+      <div style="border-top:1px dashed #000; margin:2px 0;"></div>
+
+      <div style="text-align:center; font-weight:bold; font-size:9px; line-height:1;">
+        ขอบคุณที่ใช้บริการ
+      </div>
+
+      <div style="text-align:center; font-size:8.5px; line-height:1;">
+        สอบถาม: ${safeBluetoothHtmlText(APP_CONFIG.contact)}
+      </div>
+
+      <div style="text-align:center; font-size:8px; line-height:1; margin-top:1px;">
+        ${
+          isUnpaid
+            ? 'เอกสารนี้ยังไม่ใช่หลักฐานการชำระเงิน'
+            : 'ใบเสร็จนี้ใช้เป็นหลักฐานการชำระเงิน'
+        }
+      </div>
+    </div>
+  `;
 }
 
 async function printReceiptByAndroidShare() {
   try {
-    const printText = buildBluetoothPrintText();
+    const html = buildAndroidReceiptHtmlFromScreen();
+
+    // Bluetooth Print HTML mode
+    const printPayload = '<HTML>' + escapeBluetoothHtml(html);
 
     if (!navigator.share) {
       showToast('Android เครื่องนี้ไม่รองรับ Share Print');
@@ -1775,7 +1932,7 @@ async function printReceiptByAndroidShare() {
 
     await navigator.share({
       title: 'ใบเสร็จค่าน้ำประปา',
-      text: printText
+      text: printPayload
     });
 
     setTimeout(() => {
@@ -1792,6 +1949,10 @@ async function printReceiptByAndroidShare() {
     showToast('แชร์ไปแอปปริ้นท์ไม่สำเร็จ');
   }
 }
+
+window.testAndroidHtmlPrint = async function testAndroidHtmlPrint() {
+  return printReceiptByAndroidShare();
+};
 
 function printReceipt() {
   if (!currentReceiptReadingId) {
