@@ -1626,6 +1626,17 @@ function buildBluetoothPrintResponseUrl(readingId) {
   return `${API_URL}?action=bprintReceipt&reading_id=${encodeURIComponent(id)}`;
 }
 
+function buildAndroidBluetoothPrintResponseUrl(readingId) {
+  const id = String(readingId || '').trim();
+
+  if (!id) {
+    return '';
+  }
+
+  // ของ Android เท่านั้น
+  return `${API_URL}?action=bprintReceipt&reading_id=${encodeURIComponent(id)}&mode=html4`;
+}
+
 function closeReceiptPopupAfterExternalPrint() {
   document.body.classList.remove('printing-receipt');
   document.body.classList.remove('printing-summary');
@@ -1985,7 +1996,7 @@ function printReceiptAndroidByWebPrint() {
     return;
   }
 
-  const responseUrl = buildBluetoothPrintResponseUrl(currentReceiptReadingId);
+  const responseUrl = buildAndroidBluetoothPrintResponseUrl(currentReceiptReadingId);
   openBluetoothPrintScheme(responseUrl);
 }
 
