@@ -2618,19 +2618,137 @@ body.maintenance .app-screen {
   padding-bottom: 6px !important;
 }
 
+/* ===== Make receipt image easier to read ===== */
 #receiptContent.receipt-image-bprint,
 .receipt-content.receipt-image-bprint {
+  font-size: 12px !important;
+  line-height: 1.3 !important;
+  width: 52mm !important;
+  max-width: 52mm !important;
+  padding: 2.5mm 3mm 4mm !important;
+}
+
+/* หัวบน */
+.receipt-image-bprint .receipt-org {
+  font-size: 14px !important;
+  line-height: 1.25 !important;
+  margin-bottom: 2px !important;
+}
+
+.receipt-image-bprint .receipt-sub {
   font-size: 11px !important;
-  width: 56mm !important;
-  max-width: 56mm !important;
+  line-height: 1.25 !important;
+}
+
+.receipt-image-bprint .receipt-doc-title {
+  font-size: 14px !important;
+  line-height: 1.25 !important;
+  margin: 2px 0 !important;
+}
+
+.receipt-image-bprint .receipt-no,
+.receipt-image-bprint .receipt-date {
+  font-size: 11px !important;
+  line-height: 1.25 !important;
+}
+
+/* เส้นคั่น */
+.receipt-image-bprint .receipt-text-divider {
+  font-size: 11px !important;
+  margin: 5px 0 !important;
+}
+
+/* ข้อมูลทั่วไป */
+.receipt-image-bprint .receipt-line {
+  font-size: 12px !important;
+  line-height: 1.35 !important;
+  margin: 1px 0 !important;
+}
+
+/* ส่วนมิเตอร์ */
+.receipt-image-bprint .receipt-meter-title {
+  font-size: 12px !important;
+  line-height: 1.3 !important;
+}
+
+.receipt-image-bprint .receipt-meter-values {
+  font-size: 17px !important;
+  line-height: 1.25 !important;
+  margin: 2px 0 !important;
+}
+
+.receipt-image-bprint .receipt-units-line {
+  font-size: 12px !important;
+  line-height: 1.3 !important;
+}
+
+/* ค่าน้ำ / ค่าบริการ */
+.receipt-image-bprint .receipt-img-cost .receipt-line {
+  font-size: 12px !important;
+  line-height: 1.35 !important;
+  margin: 1px 0 !important;
+}
+
+/* ยอดรวม */
+.receipt-image-bprint .rt-label {
+  font-size: 12px !important;
+  line-height: 1.3 !important;
 }
 
 .receipt-image-bprint .rt-amount {
-  font-size: 18px !important;
+  font-size: 20px !important;
+  line-height: 1.2 !important;
+  margin-top: 2px !important;
 }
 
-#receiptContent.receipt-image-bprint,
-.receipt-content.receipt-image-bprint {
-  width: 56mm !important;
-  max-width: 56mm !important;
+/* สถานะ / วิธีชำระ */
+.receipt-image-bprint .receipt-status {
+  font-size: 12px !important;
+  line-height: 1.3 !important;
+  margin-top: 3px !important;
+}
+
+.receipt-image-bprint .receipt-pay-method {
+  font-size: 12px !important;
+  line-height: 1.3 !important;
+  margin-top: 2px !important;
+}
+
+/* ช่องทางโอน */
+.receipt-image-bprint .receipt-qr-title {
+  font-size: 12px !important;
+  line-height: 1.35 !important;
+  margin-bottom: 5px !important;
+}
+
+.receipt-image-bprint .bank-transfer-title {
+  font-size: 12px !important;
+  line-height: 1.35 !important;
+  margin-bottom: 5px !important;
+}
+
+.receipt-image-bprint .bank-transfer-line {
+  font-size: 12px !important;
+  line-height: 1.45 !important;
+  margin: 2px 0 !important;
+}
+
+.receipt-image-bprint .bank-transfer-account {
+  font-size: 14px !important;
+  line-height: 1.45 !important;
+  margin: 4px 0 !important;
+}
+
+/* footer */
+.receipt-image-bprint .footer-thanks {
+  font-size: 12px !important;
+  line-height: 1.3 !important;
+  margin-top: 4px !important;
+}
+
+.receipt-image-bprint .footer-contact,
+.receipt-image-bprint .footer-note {
+  font-size: 11px !important;
+  line-height: 1.35 !important;
+  margin-top: 2px !important;
 }
