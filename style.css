@@ -2107,3 +2107,74 @@ body.maintenance .app-screen {
     font-size: 16px;
   }
 }
+
+/* ===== FIX: center icon inside top circular buttons ===== */
+.nav-action-btn,
+.nav-avatar,
+.nav-logout-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  line-height: 1;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+/* ถ้าเป็น svg / img */
+.nav-action-btn svg,
+.nav-action-btn img,
+.nav-avatar svg,
+.nav-avatar img,
+.nav-logout-btn svg,
+.nav-logout-btn img {
+  display: block;
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  flex-shrink: 0;
+}
+
+/* ถ้าเป็น emoji / ตัวอักษร เช่น 📊 A ⏰ */
+.nav-action-btn {
+  font-size: 18px;
+  line-height: 1;
+}
+
+/* จัดขนาดปุ่มมือถือให้เท่ากัน */
+@media (max-width: 430px) {
+  .nav-right {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .nav-action-btn,
+  .nav-avatar,
+  .nav-logout-btn {
+    width: 42px;
+    height: 42px;
+    min-width: 42px;
+    min-height: 42px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    line-height: 1;
+  }
+
+  .nav-action-btn svg,
+  .nav-action-btn img,
+  .nav-avatar svg,
+  .nav-avatar img,
+  .nav-logout-btn svg,
+  .nav-logout-btn img {
+    width: 18px;
+    height: 18px;
+  }
+
+  .nav-action-btn {
+    font-size: 18px;
+  }
+}
