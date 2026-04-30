@@ -2617,3 +2617,20 @@ body.maintenance .app-screen {
   padding-top: 2px !important;
   padding-bottom: 6px !important;
 }
+
+#receiptContent.receipt-image-bprint,
+.receipt-content.receipt-image-bprint {
+  font-size: 11px !important;
+  width: 56mm !important;
+  max-width: 56mm !important;
+}
+
+.receipt-image-bprint .rt-amount {
+  font-size: 18px !important;
+}
+
+#receiptContent.receipt-image-bprint,
+.receipt-content.receipt-image-bprint {
+  width: 56mm !important;
+  max-width: 56mm !important;
+}
