@@ -2178,3 +2178,43 @@ body.maintenance .app-screen {
     font-size: 18px;
   }
 }
+
+.nav-action-btn {
+  font-size: 18px;
+  line-height: 1;
+  vertical-align: middle;
+}
+
+/* ===== FIX: center nav icons ===== */
+.nav-icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nav-btn-icon {
+  display: block;
+  flex-shrink: 0;
+  margin: 0;
+}
+
+@media (max-width: 430px) {
+  .nav-icon-btn {
+    width: 42px;
+    height: 42px;
+    min-width: 42px;
+    min-height: 42px;
+    padding: 0;
+    border-radius: 50%;
+    gap: 0;
+  }
+
+  .nav-btn-label {
+    display: none;
+  }
+
+  .nav-btn-icon {
+    width: 18px;
+    height: 18px;
+  }
+}
