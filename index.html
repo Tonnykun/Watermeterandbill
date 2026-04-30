@@ -6,7 +6,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>ระบบประปา</title>
-  <link rel="stylesheet" href="style.css?v=20260430-navdesktop1">
+  <link rel="stylesheet" href="style.css?v=20260430-historyfix2">
 </head>
 <body>
     <div class="maintenance-overlay">
@@ -349,110 +349,143 @@
       <div class="sheet-handle"></div>
       <div class="sheet-scroll">
         
-        <!-- Receipt Content -->
-        <div class="receipt-paper">
-          <div id="receiptContent" class="receipt-content">
-            
-            <div class="receipt-header">
-              <div class="receipt-logo">💧🚰</div>
-              <div class="receipt-org" id="cfgReceiptOrg">การประปาหมู่บ้านป่าไผ่ใต้</div>
-              <div class="receipt-sub" id="cfgReceiptSub">บ้านป่าไผ่ใต้ หมู่ 8</div>
 
-              <div class="receipt-doc-title" id="receiptTitle">
-                ใบเสร็จรับเงินค่าน้ำประปา
-              </div>
+        <!-- Receipt Content: Image fallback layout like Bprint -->
+        <div id="receiptContent" class="receipt-content receipt-image-bprint">
 
-              <div class="receipt-no" id="rNo">ใบเสร็จ #---</div>
-              <div class="receipt-date" id="rDate">วันที่: ---</div>
+          <!-- Header -->
+          <div class="receipt-header receipt-img-header">
+            <div class="receipt-org" id="cfgReceiptOrg">การประปาหมู่บ้านแสนสุข</div>
+            <div class="receipt-sub" id="cfgReceiptSub">บ้านแสนสุข หมู่ 4</div>
+
+            <div class="receipt-text-divider">------------------------</div>
+
+            <div class="receipt-doc-title" id="receiptTitle">
+              ใบเสร็จรับเงินค่าน้ำประปา
             </div>
 
-            <div class="receipt-block">
-              <div class="receipt-row">
-                <span class="rl">ชื่อลูกค้า</span>
-                <span class="rv" id="rName">---</span>
-              </div>
-              <div class="receipt-row">
-                <span class="rl">บ้านเลขที่</span>
-                <span class="rv" id="rAddr">---</span>
-              </div>
-              <div class="receipt-row">
-                <span class="rl">มิเตอร์</span>
-                <span class="rv" id="rMeter">---</span>
-              </div>
-              <div class="receipt-row">
-                <span class="rl">ประจำเดือน</span>
-                <span class="rv" id="rMonth">---</span>
-              </div>
+            <div class="receipt-no" id="rNo">ใบเสร็จ #---</div>
+            <div class="receipt-date" id="rDate">วันที่: ---</div>
+
+            <div class="receipt-doc-warning" id="receiptWarning" style="display:none">
+              เอกสารนี้ยังไม่ใช่หลักฐานการชำระเงิน
             </div>
 
-            <div class="receipt-meter-grid">
-              <div class="meter-cell">
-                <div class="mc-label">ยอดก่อนหน้า</div>
-                <div class="mc-val" id="rPrev">0</div>
-              </div>
-              <div class="meter-arrow-cell">➜</div>
-              <div class="meter-cell accent-cell">
-                <div class="mc-label">ยอดปัจจุบัน</div>
-                <div class="mc-val" id="rCurr">0</div>
-              </div>
-            </div>
-
-            <div class="receipt-row highlight">
-              <span class="rl">หน่วยที่ใช้</span>
-              <span class="rv mono" id="rUnits">0</span>
-            </div>
-
-            <div class="receipt-block">
-              <div class="receipt-row">
-                <span class="rl">ค่าน้ำประปา</span>
-                <span class="rv mono" id="rWater">0.00 ฿</span>
-              </div>
-              <div class="receipt-row">
-                <span class="rl">ค่าบริการรายเดือน</span>
-                <span class="rv mono" id="rServiceFee">— ฿</span>
-              </div>
-            </div>
-
-            <div class="receipt-divider-thick"></div>
-
-            <div class="receipt-total">
-              <div class="rt-label">จำนวนเงินทั้งสิ้น</div>
-              <div class="rt-amount" id="rTotal">0.00 ฿</div>
-            </div>
-
-            <div class="receipt-status paid" id="rStatus">
-              ✅ ชำระแล้ว
-            </div>
-
-            <!-- Bank Transfer Section: ใช้แทน QR Code -->
-            <div class="receipt-qr-section receipt-bank-section" id="bankSection" style="display:none">
-              <div class="receipt-qr-title">ช่องทางโอนชำระ</div>
-
-              <div class="bank-transfer-box">
-                <div class="bank-transfer-title">โอนเข้าบัญชี</div>
-                <div class="bank-transfer-line" id="cfgBankName">ธนาคารกรุงไทย</div>
-                <div class="bank-transfer-account" id="cfgBankNo">519-0-58775-4</div>
-                <div class="bank-transfer-line" id="cfgBankAccName">กองทุนประปาป่าบ้านไผ่หมู่ 8</div>
-              </div>
-            </div>
-
-            <!-- QR Section เดิม: ซ่อนไว้ก่อน เผื่อใช้ในอนาคต -->
-            <div class="receipt-qr-section" id="qrSection" style="display:none">
-              <div class="receipt-qr-title">ช่องทางโอนชำระ</div>
-              <div class="receipt-qr-box" id="qrCode"></div>
-              <div class="receipt-qr-note" id="qrNote">QR สำหรับชำระค่าน้ำประปา</div>
-            </div>
-
-            <div class="receipt-footer">
-              <div class="footer-thanks">ขอบคุณที่ใช้บริการ</div>
-              <div class="footer-contact" id="cfgReceiptContact">สอบถาม: 097-928-2272</div>
-              <div class="footer-note">ใบเสร็จนี้ใช้เป็นหลักฐานการชำระเงิน</div>
-            </div>
-
+            <div class="receipt-text-divider">------------------------</div>
           </div>
-        </div>
 
-        <!-- Print Buttons (Hidden in Print) -->
+          <!-- Customer Info -->
+          <div class="receipt-block receipt-img-customer">
+            <div class="receipt-line">
+              <span class="receipt-line-label">ชื่อลูกค้า:</span>
+              <span class="receipt-line-value" id="rName">---</span>
+            </div>
+
+            <div class="receipt-line">
+              <span class="receipt-line-label">บ้านเลขที่:</span>
+              <span class="receipt-line-value" id="rAddr">---</span>
+            </div>
+
+            <div class="receipt-line">
+              <span class="receipt-line-label">มิเตอร์:</span>
+              <span class="receipt-line-value" id="rMeter">---</span>
+            </div>
+
+            <div class="receipt-line">
+              <span class="receipt-line-label">ประจำเดือน:</span>
+              <span class="receipt-line-value" id="rMonth">---</span>
+            </div>
+          </div>
+
+          <div class="receipt-text-divider">------------------------</div>
+
+          <!-- Meter Readings -->
+          <div class="receipt-img-meter">
+            <div class="receipt-meter-title">
+              <b>ยอดก่อนหน้า&nbsp;&nbsp;&nbsp;&nbsp;ยอดปัจจุบัน</b>
+            </div>
+
+            <div class="receipt-meter-values">
+              <b>
+                <span id="rPrev">0</span>
+                &gt;
+                <span id="rCurr">0</span>
+              </b>
+            </div>
+
+            <div class="receipt-units-line">
+              <b>หน่วยที่ใช้: <span id="rUnits">0</span></b>
+            </div>
+          </div>
+
+          <div class="receipt-text-divider">------------------</div>
+
+          <!-- Cost -->
+          <div class="receipt-block receipt-img-cost">
+            <div class="receipt-line">
+              <span class="receipt-line-label">ค่าน้ำประปา:</span>
+              <span class="receipt-line-value" id="rWater">0.00 ฿</span>
+            </div>
+
+            <div class="receipt-line">
+              <span class="receipt-line-label">ค่าบริการ:</span>
+              <span class="receipt-line-value" id="rServiceFee">0.00 ฿</span>
+            </div>
+          </div>
+
+          <div class="receipt-text-divider">==================</div>
+
+          <!-- Total -->
+          <div class="receipt-total receipt-img-total">
+            <div class="rt-label">จำนวนเงินทั้งสิ้น</div>
+            <div class="rt-amount" id="rTotal">0.00 ฿</div>
+          </div>
+
+          <div class="receipt-text-divider">==================</div>
+
+          <!-- Status -->
+          <div class="receipt-status paid" id="rStatus">
+            ✅ ชำระแล้ว
+          </div>
+
+          <div class="receipt-pay-method" id="rPayMethod">
+            วิธีชำระ: เงินสด
+          </div>
+
+          <div class="receipt-text-divider">------------------</div>
+
+          <!-- Bank Transfer Section: ใช้กับใบค้างชำระ หรือเงินโอน -->
+          <div class="receipt-qr-section receipt-bank-section" id="bankSection" style="display:none">
+            <div class="receipt-qr-title">ช่องทางโอนชำระ</div>
+
+            <div class="bank-transfer-box">
+              <div class="bank-transfer-title">โอนเข้าบัญชี</div>
+              <div class="bank-transfer-line" id="cfgBankName">ธนาคารกรุงไทย</div>
+              <div class="bank-transfer-account" id="cfgBankNo">519-0-58775-4</div>
+              <div class="bank-transfer-line" id="cfgBankAccName">กองทุนประปาป่าบ้านไผ่หมู่ 8</div>
+            </div>
+          </div>
+
+          <!-- QR Section เดิม: ซ่อนไว้ เผื่อกลับมาใช้ในอนาคต -->
+          <div class="receipt-qr-section" id="qrSection" style="display:none">
+            <div class="receipt-qr-title">ช่องทางโอนชำระ</div>
+            <div class="receipt-qr-box" id="qrCode"></div>
+            <div class="receipt-qr-note" id="qrNote">QR สำหรับชำระค่าน้ำประปา</div>
+          </div>
+
+          <!-- Footer -->
+          <div class="receipt-footer">
+            <div class="footer-thanks">ขอบคุณที่ใช้บริการ</div>
+            <div class="footer-contact" id="cfgReceiptContact">สอบถาม: 0XX-XXX-XXXX</div>
+            <div class="footer-note" id="receiptFooterNote">
+              ใบเสร็จนี้ใช้เป็นหลักฐานการชำระเงิน
+            </div>
+          </div>
+
+        </div>
+        <!-- end receiptContent -->
+
+        <!-- Print / Image Buttons -->
         <div class="sheet-btn-group">
           <button
             class="sheet-btn image-save"
@@ -466,14 +499,19 @@
           <button class="sheet-btn primary" onclick="printReceipt()">
             🖨️ พิมพ์ใบเสร็จ
           </button>
+
           <button class="sheet-btn secondary" onclick="closeSheet()">
             ปิด
           </button>
         </div>
 
       </div>
+      <!-- end sheet-scroll -->
+
     </div>
-  </div>
+    <!-- end receiptSheet -->
+
+    </div>
 
     <!-- SUMMARY SHEET -->
     <div class="sheet-overlay" id="summaryOverlay" onclick="closeSummarySheet()"></div>
@@ -668,7 +706,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-  <script src="app.js?v=20260430-receiptshift1"></script>
+  <script src="app.js?v=20260430-historyfix2"></script>
 
 </body>
 </html>

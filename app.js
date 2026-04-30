@@ -1171,8 +1171,33 @@ async function submitEditPayment(newStatus) {
   }
 }
 
-function openHistorySheet()  { dom.historyOverlay.classList.add('show');    dom.historySheet.classList.add('open');    document.body.style.overflow = 'hidden'; }
-function closeHistorySheet() { dom.historyOverlay.classList.remove('show'); dom.historySheet.classList.remove('open'); document.body.style.overflow = ''; }
+function openHistorySheet() {
+  const overlay = dom.historyOverlay || document.getElementById('historyOverlay');
+  const sheet = dom.historySheet || document.getElementById('historySheet');
+
+  if (!overlay || !sheet) {
+    console.error('[openHistorySheet] ไม่พบ historyOverlay หรือ historySheet');
+    return;
+  }
+
+  overlay.classList.add('show');
+
+  requestAnimationFrame(() => {
+    sheet.classList.add('open');
+  });
+
+  document.body.style.overflow = 'hidden';
+}
+
+function closeHistorySheet() {
+  const overlay = dom.historyOverlay || document.getElementById('historyOverlay');
+  const sheet = dom.historySheet || document.getElementById('historySheet');
+
+  if (overlay) overlay.classList.remove('show');
+  if (sheet) sheet.classList.remove('open');
+
+  document.body.style.overflow = '';
+}
 
 /* ════════════════════════════════
    UI HELPERS
@@ -1488,9 +1513,11 @@ function buildPromptPayPayload(promptPayId, amount) {
 RECEIPT & QR CODE HELPERS
 ════════════════════════════════ */
 
-// อัปเดตข้อมูลใบเสร็จ (แทนที่ populateReceipt เดิม)
+// อัปเดตข้อมูลใบเสร็จสำหรับแสดงบนหน้าเว็บ + บันทึก/แชร์รูปภาพ
 function populateReceipt(house, meter, saved) {
-  const isUnpaid = saved.payment_status === 'unpaid';
+  const isUnpaid = String(saved.payment_status || '').toLowerCase() === 'unpaid';
+  const paymentMethod = String(saved.payment_method || '').toLowerCase();
+  const paymentMethodLabel = paymentMethod === 'transfer' ? 'เงินโอน' : 'เงินสด';
 
   currentReceiptReadingId = saved.reading_id || saved.receipt_no || '';
 
@@ -1499,6 +1526,7 @@ function populateReceipt(house, meter, saved) {
   const warningEl = document.getElementById('receiptWarning');
 
   if (receiptContent) {
+    receiptContent.classList.add('receipt-image-bprint');
     receiptContent.classList.toggle('receipt-is-unpaid', isUnpaid);
     receiptContent.classList.toggle('receipt-is-paid', !isUnpaid);
   }
@@ -1513,43 +1541,32 @@ function populateReceipt(house, meter, saved) {
     warningEl.style.display = 'none';
   }
 
-  document.getElementById('rNo').textContent = isUnpaid
-    ? `ใบแจ้ง #${saved.receipt_no || saved.reading_id || '---'}`
-    : `ใบเสร็จ #${saved.receipt_no || '---'}`;
-  document.getElementById('rDate').textContent  = `วันที่: ${formatDateTH(new Date(saved.read_date))}`;
-  document.getElementById('rName').textContent  = house.name || '---';
-  document.getElementById('rAddr').textContent  = house.addr || house.address || house.num || '---';
-  document.getElementById('rMeter').textContent = meter.label || 'มิเตอร์ 1';
-  document.getElementById('rMonth').textContent = formatMonthTH(new Date(saved.read_date));
-  document.getElementById('rPrev').textContent  = Number(saved.prev_reading || 0).toLocaleString();
-  document.getElementById('rCurr').textContent  = Number(saved.current_reading || 0).toLocaleString();
-  document.getElementById('rUnits').textContent = Number(saved.units_used || 0).toLocaleString();
-  document.getElementById('rWater').textContent = `${Number(saved.water_cost || 0).toLocaleString('th-TH', { minimumFractionDigits: 2 })} ฿`;
-  document.getElementById('rTotal').textContent = `${Number(saved.total_amount || 0).toLocaleString('th-TH', { minimumFractionDigits: 2 })} ฿`;
-  
-  // สถานะ
+  setTextIfExists('cfgReceiptOrg', APP_CONFIG.orgName || 'การประปาหมู่บ้านแสนสุข');
+  setTextIfExists('cfgReceiptSub', APP_CONFIG.villageName || 'บ้านแสนสุข หมู่ 4');
+  setTextIfExists('cfgReceiptContact', `สอบถาม: ${APP_CONFIG.contact || '0XX-XXX-XXXX'}`);
+
+  setTextIfExists(
+    'rNo',
+    isUnpaid
+      ? `ใบแจ้ง #${saved.receipt_no || saved.reading_id || '---'}`
+      : `ใบเสร็จ #${saved.receipt_no || saved.reading_id || '---'}`
+  );
+
+  setTextIfExists('rDate', `วันที่: ${formatDateTH(new Date(saved.read_date || saved.created_at || Date.now()))}`);
+  setTextIfExists('rName', house.name || saved.owner_name || saved.name || '---');
+  setTextIfExists('rAddr', house.addr || house.address || house.num || saved.house_no || saved.house_id || '---');
+  setTextIfExists('rMeter', meter.label || saved.meter_label || saved.meter_key || 'มิเตอร์ 1');
+  setTextIfExists('rMonth', formatMonthTH(new Date(saved.read_date || saved.created_at || Date.now())));
+
+  setTextIfExists('rPrev', Number(saved.prev_reading || 0).toLocaleString());
+  setTextIfExists('rCurr', Number(saved.current_reading || 0).toLocaleString());
+  setTextIfExists('rUnits', Number(saved.units_used || 0).toLocaleString());
+
+  setTextIfExists('rWater', `${formatReceiptMoney(saved.water_cost)} ฿`);
+  setTextIfExists('rServiceFee', `${formatReceiptMoney(saved.service_fee)} ฿`);
+  setTextIfExists('rTotal', `${formatReceiptMoney(saved.total_amount)} ฿`);
+
   const statusEl = document.getElementById('rStatus');
-
-  let payMethodEl = document.getElementById('rPayMethod');
-
-  if (!payMethodEl && statusEl) {
-    payMethodEl = document.createElement('div');
-    payMethodEl.id = 'rPayMethod';
-    payMethodEl.className = 'receipt-pay-method';
-    statusEl.insertAdjacentElement('afterend', payMethodEl);
-  }
-
-  if (payMethodEl) {
-    if (isUnpaid) {
-      payMethodEl.style.display = 'none';
-      payMethodEl.textContent = '';
-    } else {
-      const methodLabel = getPaymentMethodLabel(saved.payment_method || 'cash');
-      payMethodEl.style.display = 'block';
-      payMethodEl.textContent = `วิธีชำระ: ${methodLabel}`;
-    }
-  }
-
   if (statusEl) {
     if (isUnpaid) {
       statusEl.className = 'receipt-status unpaid';
@@ -1559,9 +1576,63 @@ function populateReceipt(house, meter, saved) {
       statusEl.textContent = '✅ ชำระแล้ว';
     }
   }
-    // แสดง QR PromptPay ทั้งใบเสร็จและใบแจ้งค้างชำระ
-  updateBankTransferSection(saved.total_amount);
 
+  const payMethodEl = document.getElementById('rPayMethod');
+  if (payMethodEl) {
+    if (isUnpaid) {
+      payMethodEl.style.display = 'none';
+      payMethodEl.textContent = '';
+    } else {
+      payMethodEl.style.display = 'block';
+      payMethodEl.textContent = `วิธีชำระ: ${paymentMethodLabel}`;
+    }
+  }
+
+  const footerNoteEl = document.getElementById('receiptFooterNote');
+  if (footerNoteEl) {
+    footerNoteEl.textContent = isUnpaid
+      ? 'เอกสารนี้ยังไม่ใช่หลักฐานการชำระเงิน'
+      : 'ใบเสร็จนี้ใช้เป็นหลักฐานการชำระเงิน';
+  }
+
+  // ซ่อน QR เดิมไว้ก่อน เพราะตอนนี้ใช้ข้อมูลบัญชีแทน
+  updateQrDisplay(false, saved.total_amount);
+
+  // ให้แสดงข้อมูลบัญชีเฉพาะใบค้างชำระ
+  // ถ้าต้องการให้ใบเสร็จเงินโอนแสดงบัญชีด้วย เปลี่ยน shouldShowBank เป็น: isUnpaid || paymentMethod === 'transfer'
+  const shouldShowBank = isUnpaid || paymentMethod === 'transfer';
+  updateBankSectionForReceipt(shouldShowBank);
+}
+
+function setTextIfExists(id, text) {
+  const el = document.getElementById(id);
+  if (el) {
+    el.textContent = text;
+  }
+}
+
+function formatReceiptMoney(value) {
+  return Number(value || 0).toLocaleString('th-TH', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  });
+}
+
+function updateBankSectionForReceipt(show) {
+  const bankSection = document.getElementById('bankSection');
+  const qrSection = document.getElementById('qrSection');
+
+  if (qrSection) {
+    qrSection.style.display = 'none';
+  }
+
+  if (!bankSection) return;
+
+  bankSection.style.display = show ? 'block' : 'none';
+
+  setTextIfExists('cfgBankName', APP_CONFIG.bankName || '-');
+  setTextIfExists('cfgBankNo', APP_CONFIG.bankAccountNo || '-');
+  setTextIfExists('cfgBankAccName', APP_CONFIG.bankAccountName || '-');
 }
 
 function updateBankTransferSection(amount) {
@@ -2317,7 +2388,7 @@ async function generateReceiptImage() {
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, targetWidth, targetHeight);
     ctx.drawImage(canvas, 0, 0, targetWidth, targetHeight);
-    
+
     receiptImageBlob = await new Promise(resolve => {
       outputCanvas.toBlob(resolve, 'image/png', 1);
     });

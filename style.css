@@ -2222,3 +2222,398 @@ body.maintenance .app-screen {
   line-height: 1.25;
   margin-top: 1px;
 }
+
+/* =========================================================
+   RECEIPT IMAGE FALLBACK — BPRINT STYLE
+   ใช้กับปุ่ม บันทึก/แชร์รูปภาพใบเสร็จ
+   ========================================================= */
+
+#receiptContent.receipt-image-bprint,
+.receipt-content.receipt-image-bprint {
+  width: 52mm !important;
+  max-width: 52mm !important;
+  margin: 0 auto !important;
+  padding: 2mm 3mm 3mm !important;
+  box-sizing: border-box !important;
+
+  background: #ffffff !important;
+  color: #000000 !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+
+  font-family: Tahoma, Arial, "Noto Sans Thai", sans-serif !important;
+  font-size: 10px !important;
+  line-height: 1.15 !important;
+  text-align: center !important;
+}
+
+/* ล้างสี/เงา/พื้นหลังเดิมในใบเสร็จ */
+.receipt-image-bprint * {
+  color: #000000 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+  border-radius: 0 !important;
+}
+
+/* Header */
+.receipt-image-bprint .receipt-header,
+.receipt-image-bprint .receipt-img-header {
+  margin: 0 !important;
+  padding: 0 !important;
+  border-bottom: none !important;
+  text-align: center !important;
+}
+
+.receipt-image-bprint .receipt-org {
+  font-size: 12px !important;
+  font-weight: 800 !important;
+  line-height: 1.2 !important;
+  margin: 0 0 1px !important;
+}
+
+.receipt-image-bprint .receipt-sub {
+  font-size: 9px !important;
+  font-weight: 400 !important;
+  line-height: 1.15 !important;
+  margin: 0 !important;
+}
+
+.receipt-image-bprint .receipt-doc-title {
+  font-size: 12px !important;
+  font-weight: 800 !important;
+  line-height: 1.2 !important;
+  margin: 1px 0 !important;
+  padding: 0 !important;
+  border: none !important;
+}
+
+.receipt-image-bprint .receipt-no {
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  line-height: 1.15 !important;
+  margin: 1px 0 0 !important;
+}
+
+.receipt-image-bprint .receipt-date {
+  font-size: 9px !important;
+  font-weight: 400 !important;
+  line-height: 1.15 !important;
+  margin: 0 !important;
+}
+
+/* เส้นคั่นแบบตัวอักษร เช่น ---------------- */
+.receipt-image-bprint .receipt-text-divider {
+  font-family: Arial, Tahoma, sans-serif !important;
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  line-height: 1.05 !important;
+  text-align: center !important;
+  margin: 3px 0 !important;
+  white-space: nowrap !important;
+}
+
+/* Customer / Cost lines */
+.receipt-image-bprint .receipt-block {
+  margin: 2px 0 !important;
+  padding: 0 !important;
+}
+
+.receipt-image-bprint .receipt-line {
+  display: flex !important;
+  align-items: flex-start !important;
+  justify-content: flex-start !important;
+  gap: 3px !important;
+
+  margin: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+
+  font-size: 10px !important;
+  line-height: 1.18 !important;
+  text-align: left !important;
+}
+
+.receipt-image-bprint .receipt-line-label {
+  flex: 0 0 auto !important;
+  font-weight: 400 !important;
+  white-space: nowrap !important;
+}
+
+.receipt-image-bprint .receipt-line-value {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  font-weight: 700 !important;
+  text-align: left !important;
+  word-break: break-word !important;
+  overflow-wrap: anywhere !important;
+}
+
+/* Meter section */
+.receipt-image-bprint .receipt-img-meter {
+  margin: 1px 0 2px !important;
+  padding: 0 !important;
+  text-align: center !important;
+}
+
+.receipt-image-bprint .receipt-meter-title {
+  font-size: 10px !important;
+  line-height: 1.15 !important;
+  margin: 0 0 1px !important;
+}
+
+.receipt-image-bprint .receipt-meter-values {
+  font-size: 14px !important;
+  font-weight: 800 !important;
+  line-height: 1.2 !important;
+  margin: 0 !important;
+}
+
+.receipt-image-bprint .receipt-units-line {
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  line-height: 1.15 !important;
+  margin: 1px 0 0 !important;
+}
+
+/* Total section */
+.receipt-image-bprint .receipt-total,
+.receipt-image-bprint .receipt-img-total {
+  margin: 1px 0 !important;
+  padding: 0 !important;
+  border: none !important;
+  text-align: center !important;
+}
+
+.receipt-image-bprint .rt-label {
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  line-height: 1.15 !important;
+  margin: 0 0 1px !important;
+}
+
+.receipt-image-bprint .rt-amount {
+  font-size: 16px !important;
+  font-weight: 900 !important;
+  line-height: 1.2 !important;
+  margin: 0 !important;
+}
+
+/* Status + payment method */
+.receipt-image-bprint .receipt-status {
+  margin: 2px 0 0 !important;
+  padding: 0 !important;
+  border: none !important;
+  text-align: center !important;
+
+  font-size: 10px !important;
+  font-weight: 800 !important;
+  line-height: 1.2 !important;
+}
+
+.receipt-image-bprint .receipt-pay-method {
+  margin: 1px 0 2px !important;
+  padding: 0 !important;
+  text-align: center !important;
+
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  line-height: 1.2 !important;
+}
+
+/* Bank transfer block */
+.receipt-image-bprint .receipt-bank-section,
+.receipt-image-bprint .receipt-qr-section {
+  margin: 2px 0 !important;
+  padding: 0 !important;
+  border: none !important;
+  text-align: center !important;
+}
+
+.receipt-image-bprint .receipt-qr-title {
+  font-size: 10px !important;
+  font-weight: 800 !important;
+  line-height: 1.15 !important;
+  margin: 0 0 1px !important;
+}
+
+.receipt-image-bprint .bank-transfer-box {
+  width: 100% !important;
+  margin: 2px 0 4px !important;
+  padding: 4px 0 6px !important;
+  text-align: center !important;
+
+  border-top: 1px dashed #000 !important;
+  border-bottom: none !important;
+}
+
+.receipt-image-bprint .bank-transfer-title {
+  font-size: 10px !important;
+  font-weight: 800 !important;
+  line-height: 1.15 !important;
+  margin: 0 0 5px !important;
+}
+
+.receipt-image-bprint .bank-transfer-line {
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  line-height: 1.18 !important;
+  margin: 0 !important;
+}
+
+.receipt-image-bprint .bank-transfer-account {
+  font-size: 12px !important;
+  font-weight: 900 !important;
+  line-height: 1.25 !important;
+  margin: 4px 0 !important;
+  white-space: nowrap !important;
+}
+
+/* Footer */
+.receipt-image-bprint .receipt-footer {
+  margin-top: 3px !important;
+  padding: 0 !important;
+  text-align: center !important;
+
+  font-size: 9px !important;
+  line-height: 1.18 !important;
+}
+
+.receipt-image-bprint .footer-thanks {
+  font-size: 10px !important;
+  font-weight: 800 !important;
+  margin: 1px 0 !important;
+}
+
+.receipt-image-bprint .footer-contact,
+.receipt-image-bprint .footer-note {
+  font-size: 9px !important;
+  font-weight: 400 !important;
+  margin: 1px 0 !important;
+}
+
+/* กัน element เก่าโผล่ ถ้ายังเหลือจาก layout เดิม */
+.receipt-image-bprint .receipt-meter-grid,
+.receipt-image-bprint .receipt-divider,
+.receipt-image-bprint .receipt-divider-dotted,
+.receipt-image-bprint .receipt-divider-thick {
+  display: none !important;
+}
+
+/* ===== SAFE FIX: History sheet height only ===== */
+
+#historyOverlay.sheet-overlay.show {
+  display: block !important;
+  z-index: 390 !important;
+}
+
+#historySheet.history-sheet {
+  height: 88dvh !important;
+  max-height: 88dvh !important;
+  min-height: 88dvh !important;
+  z-index: 410 !important;
+
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+#historySheet .sheet-scroll {
+  flex: 1 1 auto !important;
+  height: auto !important;
+  max-height: none !important;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: calc(env(safe-area-inset-bottom, 16px) + 20px) !important;
+}
+
+#historySheet .history-list {
+  padding-bottom: 24px;
+}
+
+/* ===== Center customer info block in receipt image ===== */
+.receipt-image-bprint .receipt-img-customer {
+  text-align: center !important;
+}
+
+.receipt-image-bprint .receipt-img-customer .receipt-line {
+  display: block !important;
+  text-align: center !important;
+  line-height: 1.18 !important;
+  margin: 0 !important;
+}
+
+.receipt-image-bprint .receipt-img-customer .receipt-line-label,
+.receipt-image-bprint .receipt-img-customer .receipt-line-value {
+  display: inline !important;
+  flex: none !important;
+  text-align: center !important;
+}
+
+/* ===== Center cost block in receipt image ===== */
+.receipt-image-bprint .receipt-img-cost {
+  text-align: center !important;
+}
+
+.receipt-image-bprint .receipt-img-cost .receipt-line {
+  display: block !important;
+  text-align: center !important;
+  line-height: 1.2 !important;
+  margin: 0 !important;
+}
+
+.receipt-image-bprint .receipt-img-cost .receipt-line-label,
+.receipt-image-bprint .receipt-img-cost .receipt-line-value {
+  display: inline !important;
+  flex: none !important;
+  text-align: center !important;
+}
+
+/* ===== ปรับ block ช่องทางโอนชำระ ===== */
+
+.receipt-image-bprint .receipt-qr-title {
+  font-size: 10px !important;
+  font-weight: 800 !important;
+  line-height: 1.3 !important;
+  margin: 0 0 4px !important;
+}
+
+.receipt-image-bprint .bank-transfer-box {
+  width: 100% !important;
+  margin: 2px 0 4px !important;
+  padding: 4px 0 6px !important;
+  text-align: center !important;
+
+  border-top: 1px dashed #000 !important;
+  border-bottom: none !important;
+}
+
+.receipt-image-bprint .bank-transfer-title {
+  font-size: 10px !important;
+  font-weight: 800 !important;
+  line-height: 1.3 !important;
+  margin: 0 0 4px !important;
+}
+
+.receipt-image-bprint .bank-transfer-line {
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  line-height: 1.35 !important;
+  margin: 1px 0 !important;
+}
+
+.receipt-image-bprint .bank-transfer-account {
+  font-size: 12px !important;
+  font-weight: 900 !important;
+  line-height: 1.4 !important;
+  margin: 3px 0 !important;
+  white-space: nowrap !important;
+}
+
+/* ===== Remove dashed line under ช่องทางโอนชำระ ===== */
+
+.receipt-image-bprint #bankSection .bank-transfer-box {
+  border-top: none !important;
+  border-bottom: none !important;
+  padding-top: 2px !important;
+  padding-bottom: 6px !important;
+}
