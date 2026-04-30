@@ -2376,7 +2376,7 @@ async function generateReceiptImage() {
     });
 
     // ขนาดเหมาะกับเครื่อง thermal 58mm ส่วนมาก = 384px
-    const targetWidth = 384;
+    const targetWidth = 420;
     const ratio = targetWidth / canvas.width;
     const targetHeight = Math.ceil(canvas.height * ratio);
 
