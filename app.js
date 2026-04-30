@@ -11,9 +11,9 @@ let HOUSE_MAP = new Map();
 const APP_CONFIG = {
   appTitle: 'ระบบประปา',
   loginTitle: 'ระบบบันทึกมิเตอร์ประปาหมู่บ้าน',
-  orgName: 'การประปาหมู่บ้านแสนสุข',
-  villageName: 'บ้านแสนสุข หมู่ 4',
-  contact: '0XX-XXX-XXXX',
+  orgName: 'การประปาหมู่บ้านป่าไผ่ใต้',
+  villageName: 'บ้านป่าไผ่ใต้ หมู่ 8',
+  contact: '097-928-2272',
 
   bankName: 'ธนาคารกรุงไทย',
   bankAccountNo: '519-0-58775-4',
@@ -1560,7 +1560,41 @@ function populateReceipt(house, meter, saved) {
     }
   }
     // แสดง QR PromptPay ทั้งใบเสร็จและใบแจ้งค้างชำระ
-  updateQrDisplay(true, saved.total_amount);
+  updateBankTransferSection(saved.total_amount);
+
+}
+
+function updateBankTransferSection(amount) {
+  const bankSection = document.getElementById('bankSection');
+  const qrSection = document.getElementById('qrSection');
+
+  if (bankSection) {
+    bankSection.style.display = 'block';
+
+    if (qrSection) {
+      qrSection.style.display = 'none';
+    }
+
+    const cfgBankName    = document.getElementById('cfgBankName');
+    const cfgBankNo      = document.getElementById('cfgBankNo');
+    const cfgBankAccName = document.getElementById('cfgBankAccName');
+    const cfgBankAmount  = document.getElementById('cfgBankAmount');
+
+    if (cfgBankName)    cfgBankName.textContent    = APP_CONFIG.bankName || '-';
+    if (cfgBankNo)      cfgBankNo.textContent      = APP_CONFIG.bankAccountNo || '-';
+    if (cfgBankAccName) cfgBankAccName.textContent = APP_CONFIG.bankAccountName || '-';
+
+    if (cfgBankAmount) {
+      cfgBankAmount.textContent = `${Number(amount || 0).toLocaleString('th-TH', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      })} บาท`;
+    }
+
+    return;
+  }
+
+  updateQrDisplay(true, amount);
 }
 
 // จัดการแสดงผล QR Code

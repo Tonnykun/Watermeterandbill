@@ -6,7 +6,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>ระบบประปา</title>
-  <link rel="stylesheet" href="style.css?v=20260430-navcenter2">
+  <link rel="stylesheet" href="style.css?v=20260430-navdesktop1">
 </head>
 <body>
     <div class="maintenance-overlay">
@@ -36,7 +36,7 @@
       <div class="login-logo">
         <div class="login-logo-icon">💧</div>
         <div class="login-logo-text" id="cfgLoginTitle">ระบบบันทึกมิเตอร์ประปาหมู่บ้าน</div>
-        <div class="login-logo-sub" id="cfgLoginSub">บ้านแสนสุข หมู่ 4</div>
+        <div class="login-logo-sub" id="cfgLoginSub">บ้านป่าไผ่ใต้ หมู่ 8</div>
       </div>
       <div class="login-form">
         <div class="login-field-group">
@@ -97,7 +97,7 @@
         <div class="nav-logo-wrap"><span class="nav-logo-icon">💧</span></div>
         <div class="nav-text">
           <h1 class="nav-heading" id="cfgNavTitle">ระบบประปา</h1>
-          <p class="nav-sub" id="cfgNavSub">บ้านแสนสุข หมู่ 4</p>
+          <p class="nav-sub" id="cfgNavSub">บ้านป่าไผ่ใต้ หมู่ 8</p>
         </div>
       </div>
       <div class="nav-right">
@@ -110,10 +110,12 @@
         </button>
 
         <button class="nav-action-btn nav-icon-btn admin-only" id="summaryBtn" onclick="openSummarySheetAndLoad()" style="display:none" aria-label="สรุปยอด">
-          <svg class="nav-btn-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="4" y="10" width="3.5" height="8" rx="1"/>
-            <rect x="10.25" y="6" width="3.5" height="12" rx="1"/>
-            <rect x="16.5" y="3" width="3.5" height="15" rx="1"/>
+          <svg class="nav-btn-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M7 3.5h8l3 3V19a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5.5a2 2 0 0 1 2-2z"/>
+            <path d="M15 3.5V7h3"/>
+            <line x1="8.5" y1="10" x2="15.5" y2="10"/>
+            <line x1="8.5" y1="13" x2="15.5" y2="13"/>
+            <line x1="8.5" y1="16" x2="13.5" y2="16"/>
           </svg>
           <span class="nav-btn-label">สรุปยอด</span>
         </button>
@@ -353,8 +355,8 @@
             
             <div class="receipt-header">
               <div class="receipt-logo">💧🚰</div>
-              <div class="receipt-org" id="cfgReceiptOrg">การประปาหมู่บ้านแสนสุข</div>
-              <div class="receipt-sub" id="cfgReceiptSub">บ้านแสนสุข หมู่ 4</div>
+              <div class="receipt-org" id="cfgReceiptOrg">การประปาหมู่บ้านป่าไผ่ใต้</div>
+              <div class="receipt-sub" id="cfgReceiptSub">บ้านป่าไผ่ใต้ หมู่ 8</div>
 
               <div class="receipt-doc-title" id="receiptTitle">
                 ใบเสร็จรับเงินค่าน้ำประปา
@@ -422,7 +424,20 @@
               ✅ ชำระแล้ว
             </div>
 
-            <div class="receipt-qr-section" id="qrSection">
+            <!-- Bank Transfer Section: ใช้แทน QR Code -->
+            <div class="receipt-qr-section receipt-bank-section" id="bankSection" style="display:none">
+              <div class="receipt-qr-title">ช่องทางโอนชำระ</div>
+
+              <div class="bank-transfer-box">
+                <div class="bank-transfer-title">โอนเข้าบัญชี</div>
+                <div class="bank-transfer-line" id="cfgBankName">ธนาคารกรุงไทย</div>
+                <div class="bank-transfer-account" id="cfgBankNo">519-0-58775-4</div>
+                <div class="bank-transfer-line" id="cfgBankAccName">กองทุนประปาป่าบ้านไผ่หมู่ 8</div>
+              </div>
+            </div>
+
+            <!-- QR Section เดิม: ซ่อนไว้ก่อน เผื่อใช้ในอนาคต -->
+            <div class="receipt-qr-section" id="qrSection" style="display:none">
               <div class="receipt-qr-title">ช่องทางโอนชำระ</div>
               <div class="receipt-qr-box" id="qrCode"></div>
               <div class="receipt-qr-note" id="qrNote">QR สำหรับชำระค่าน้ำประปา</div>
@@ -430,7 +445,7 @@
 
             <div class="receipt-footer">
               <div class="footer-thanks">ขอบคุณที่ใช้บริการ</div>
-              <div class="footer-contact" id="cfgReceiptContact">สอบถาม: 0XX-XXX-XXXX</div>
+              <div class="footer-contact" id="cfgReceiptContact">สอบถาม: 097-928-2272</div>
               <div class="footer-note">ใบเสร็จนี้ใช้เป็นหลักฐานการชำระเงิน</div>
             </div>
 
@@ -470,8 +485,8 @@
         <div class="summary-slip" id="summarySlip">
           <div class="summary-slip-header">
             <div class="summary-slip-logo">💧🚰</div>
-            <div class="summary-slip-org">การประปาหมู่บ้านแสนสุข</div>
-            <div class="summary-slip-sub">บ้านแสนสุข หมู่ 4</div>
+            <div class="summary-slip-org">การประปาหมู่บ้านป่าไผ่ใต้</div>
+            <div class="summary-slip-sub">บ้านป่าไผ่ใต้ หมู่ 8</div>
             <div class="summary-slip-title">สลิปสรุปยอดรับชำระ</div>
             <div class="summary-slip-month" id="summaryMonthLabel">ประจำเดือน —</div>
             <div class="summary-slip-date" id="summaryGeneratedAt">วันที่สรุป: —</div>
@@ -653,7 +668,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-  <script src="app.js?v=20260430-usermenu1"></script>
+  <script src="app.js?v=20260430-banksection6"></script>
 
 </body>
 </html>

@@ -1173,7 +1173,7 @@ input[type="password"]::-ms-clear {
   color: #000 !important;
   font-size: 10px;
   font-weight: 700;
-  line-height: 1.1;
+  line-height: 1.2;
 }
 
 .receipt-qr-box {
@@ -1837,7 +1837,7 @@ body.maintenance .app-screen {
 
 .bank-transfer-box {
   width: 100%;
-  padding: 1px 4px 2px;
+  padding: 5px 5px 6px;
   text-align: center;
   color: #000;
   background: #fff;
@@ -1848,14 +1848,14 @@ body.maintenance .app-screen {
 .bank-transfer-title {
   font-size: 10px;
   font-weight: 800;
-  margin: 0 0 1px;
-  line-height: 1.05;
+  margin: 0 0 2px;
+  line-height: 1.10;
 }
 
 .bank-transfer-line {
   font-size: 10px;
   font-weight: 700;
-  line-height: 1.05;
+  line-height: 1.15;
   margin: 0;
 }
 
@@ -1863,7 +1863,7 @@ body.maintenance .app-screen {
   font-size: 12px;
   font-weight: 900;
   letter-spacing: 0;
-  line-height: 1.25;
+  line-height: 1.50;
   white-space: nowrap;
   margin: 2px 0 2px;
 }
@@ -1931,75 +1931,6 @@ body.maintenance .app-screen {
   }
 }
 
-/* Mobile header fix: กันปุ่มขวาบนตกขอบ */
-@media (max-width: 430px) {
-  .top-nav,
-  .app-nav,
-  .navbar,
-  .nav-bar {
-    width: 100% !important;
-    max-width: 100% !important;
-    box-sizing: border-box !important;
-  }
-
-  .nav-actions,
-  .header-actions,
-  .top-actions {
-    display: flex !important;
-    flex-wrap: nowrap !important;
-    align-items: center !important;
-    justify-content: flex-end !important;
-    gap: 5px !important;
-    min-width: 0 !important;
-    max-width: 48% !important;
-    overflow: hidden !important;
-  }
-
-  #summaryBtn {
-    width: 42px !important;
-    min-width: 42px !important;
-    height: 42px !important;
-    padding: 0 !important;
-    border-radius: 999px !important;
-    overflow: hidden !important;
-    font-size: 0 !important;
-  }
-
-  #summaryBtn::before {
-    content: "📊";
-    font-size: 18px;
-  }
-
-  #navAvatar,
-  .nav-avatar {
-    width: 38px !important;
-    min-width: 38px !important;
-    height: 38px !important;
-    font-size: 17px !important;
-  }
-
-  #logoutBtn,
-  .logout-btn,
-  .nav-logout {
-    width: 38px !important;
-    min-width: 38px !important;
-    height: 38px !important;
-    padding: 0 !important;
-  }
-
-  .nav-title,
-  .brand-title {
-    font-size: 16px !important;
-    white-space: nowrap !important;
-  }
-
-  .nav-subtitle,
-  .brand-subtitle {
-    font-size: 11px !important;
-    white-space: nowrap !important;
-  }
-}
-
 /* ===== FIX: Login eye button inside field ===== */
 .login-field-wrap {
   position: relative;
@@ -2034,190 +1965,260 @@ body.maintenance .app-screen {
   height: 18px;
 }
 
+/* ===== TOP NAV: rounded-rectangle buttons on ALL devices ===== */
 
-/* ===== FIX: Top nav buttons on small Android/iPhone screens ===== */
+.nav-bar {
+  gap: 8px;
+}
+
+.nav-left {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.nav-text {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.nav-heading,
+.nav-sub {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.nav-right {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex: 0 0 auto;
+  min-width: 0;
+}
+
+.nav-user-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
+/* ปุ่ม ประวัติ / สรุปยอด */
+.nav-icon-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+
+  width: auto !important;
+  height: 42px !important;
+  min-height: 42px !important;
+  max-height: 42px !important;
+
+  padding: 0 12px !important;
+  border-radius: 10px !important;
+
+  box-sizing: border-box;
+  flex: 0 0 auto !important;
+  white-space: nowrap;
+  line-height: 1;
+}
+
+/* แสดงข้อความทุกอุปกรณ์ */
+.nav-btn-label {
+  display: inline !important;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+/* ไอคอนในปุ่ม */
+.nav-btn-icon {
+  width: 18px !important;
+  height: 18px !important;
+  display: block;
+  flex-shrink: 0;
+}
+
+/* Avatar + Logout เป็นสี่เหลี่ยมมน */
+.nav-avatar,
+.nav-logout-btn {
+  width: 42px !important;
+  height: 42px !important;
+  min-width: 42px !important;
+  min-height: 42px !important;
+  max-width: 42px !important;
+  max-height: 42px !important;
+
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+
+  border-radius: 10px !important;
+  box-sizing: border-box;
+  flex: 0 0 42px !important;
+  padding: 0 !important;
+  line-height: 1;
+}
+
+/* ขนาดตัว A/S ใน avatar */
+.nav-avatar {
+  font-size: 18px !important;
+  font-weight: 800;
+}
+
+/* svg ใน logout/avatar */
+.nav-logout-btn svg,
+.nav-avatar svg {
+  width: 18px !important;
+  height: 18px !important;
+  display: block;
+  flex-shrink: 0;
+}
+
+/* จอเล็กมาก: ลดขนาดนิดเดียว แต่ยังเป็นสี่เหลี่ยมมน */
 @media (max-width: 430px) {
   .nav-bar {
     padding: 0 10px;
-    gap: 8px;
   }
 
   .nav-left {
-    min-width: 0;
-    flex: 1;
     gap: 8px;
   }
 
   .nav-logo-wrap {
     width: 34px;
     height: 34px;
-    border-radius: 10px;
     flex-shrink: 0;
-  }
-
-  .nav-text {
-    min-width: 0;
-    overflow: hidden;
   }
 
   .nav-heading {
     font-size: 15px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
   }
 
   .nav-sub {
     font-size: 10px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
   }
 
-  .nav-right {
-    flex-shrink: 0;
-    gap: 5px;
-  }
-
-  .nav-action-btn {
-    width: 38px;
-    height: 38px;
-    min-width: 38px;
-    padding: 0;
-    border-radius: 50%;
-    justify-content: center;
-    font-size: 18px;
-    line-height: 1;
-  }
-
-  .nav-action-btn span {
-    display: none;
-  }
-
-  .nav-action-btn svg {
-    width: 18px;
-    height: 18px;
-  }
-
-  .nav-avatar,
-  .nav-logout-btn {
-    width: 38px;
-    height: 38px;
-    min-width: 38px;
-  }
-
-  .nav-avatar {
-    font-size: 16px;
-  }
-}
-
-/* ===== FIX: center icon inside top circular buttons ===== */
-.nav-action-btn,
-.nav-avatar,
-.nav-logout-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  line-height: 1;
-  text-align: center;
-  box-sizing: border-box;
-}
-
-/* ถ้าเป็น svg / img */
-.nav-action-btn svg,
-.nav-action-btn img,
-.nav-avatar svg,
-.nav-avatar img,
-.nav-logout-btn svg,
-.nav-logout-btn img {
-  display: block;
-  width: 18px;
-  height: 18px;
-  margin: 0;
-  flex-shrink: 0;
-}
-
-/* ถ้าเป็น emoji / ตัวอักษร เช่น 📊 A ⏰ */
-.nav-action-btn {
-  font-size: 18px;
-  line-height: 1;
-}
-
-/* จัดขนาดปุ่มมือถือให้เท่ากัน */
-@media (max-width: 430px) {
-  .nav-right {
-    display: flex;
-    align-items: center;
+  .nav-right,
+  .nav-user-wrap {
     gap: 6px;
   }
 
-  .nav-action-btn,
+  .nav-icon-btn {
+    height: 38px !important;
+    min-height: 38px !important;
+    max-height: 38px !important;
+    padding: 0 9px !important;
+    border-radius: 9px !important;
+  }
+
   .nav-avatar,
   .nav-logout-btn {
-    width: 42px;
-    height: 42px;
-    min-width: 42px;
-    min-height: 42px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0;
-    line-height: 1;
-  }
-
-  .nav-action-btn svg,
-  .nav-action-btn img,
-  .nav-avatar svg,
-  .nav-avatar img,
-  .nav-logout-btn svg,
-  .nav-logout-btn img {
-    width: 18px;
-    height: 18px;
-  }
-
-  .nav-action-btn {
-    font-size: 18px;
-  }
-}
-
-.nav-action-btn {
-  font-size: 18px;
-  line-height: 1;
-  vertical-align: middle;
-}
-
-/* ===== FIX: center nav icons ===== */
-.nav-icon-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.nav-btn-icon {
-  display: block;
-  flex-shrink: 0;
-  margin: 0;
-}
-
-@media (max-width: 430px) {
-  .nav-icon-btn {
-    width: 42px;
-    height: 42px;
-    min-width: 42px;
-    min-height: 42px;
-    padding: 0;
-    border-radius: 50%;
-    gap: 0;
+    width: 38px !important;
+    height: 38px !important;
+    min-width: 38px !important;
+    min-height: 38px !important;
+    max-width: 38px !important;
+    max-height: 38px !important;
+    flex: 0 0 38px !important;
+    border-radius: 9px !important;
   }
 
   .nav-btn-label {
-    display: none;
+    font-size: 12px;
+  }
+
+  .nav-btn-icon,
+  .nav-logout-btn svg,
+  .nav-avatar svg {
+    width: 17px !important;
+    height: 17px !important;
+  }
+
+  .nav-avatar {
+    font-size: 16px !important;
+  }
+}
+
+/* ===== Desktop: top nav buttons as rounded rectangles ===== */
+@media (min-width: 431px) {
+  .nav-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  .nav-icon-btn {
+    width: auto !important;
+    height: 36px !important;
+    min-width: auto !important;
+    max-width: none !important;
+    flex: 0 0 auto !important;
+    padding: 0 12px !important;
+    border-radius: 10px !important;
+    gap: 6px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  .nav-btn-label {
+    display: inline !important;
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1;
   }
 
   .nav-btn-icon {
-    width: 18px;
-    height: 18px;
+    width: 17px !important;
+    height: 17px !important;
+    display: block;
+    flex-shrink: 0;
   }
+
+  .nav-avatar,
+  .nav-logout-btn {
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    max-width: 36px !important;
+    flex: 0 0 36px !important;
+    border-radius: 10px !important;
+  }
+}
+
+/* ===== ปรับระยะห่างบล็อกช่องทางโอนชำระ ===== */
+
+.receipt-qr-title {
+  line-height: 1.2;
+  margin-bottom: 2px;
+}
+
+.bank-transfer-box {
+  padding-top: 4px;
+  padding-bottom: 5px;
+}
+
+.bank-transfer-title {
+  line-height: 1.2;
+  margin-bottom: 3px;
+}
+
+#cfgBankName {
+  line-height: 1.25;
+  margin-bottom: 1px;
+}
+
+#cfgBankNo {
+  line-height: 1.35;
+  margin: 2px 0;
+}
+
+#cfgBankAccName {
+  line-height: 1.25;
+  margin-top: 1px;
 }
