@@ -408,10 +408,26 @@
               ✅ ชำระแล้ว
             </div>
 
-            <div class="receipt-qr-section" id="qrSection">
+            <div class="receipt-qr-section" id="qrSection" style="display:none;">
               <div class="receipt-qr-title">ช่องทางโอนชำระ</div>
               <div class="receipt-qr-box" id="qrCode"></div>
               <div class="receipt-qr-note" id="qrNote">QR สำหรับชำระค่าน้ำประปา</div>
+            </div>
+
+            <div class="receipt-bank-section" id="bankSection">
+              <div class="receipt-bank-title">ข้อมูลบัญชีรับโอน</div>
+              <div class="receipt-bank-row">
+                <span class="bank-label">ธนาคาร</span>
+                <span class="bank-val" id="cfgBankName">ธนาคารกรุงไทย</span>
+              </div>
+              <div class="receipt-bank-row">
+                <span class="bank-label">เลขบัญชี</span>
+                <span class="bank-val bank-no" id="cfgBankNo">519-0-58775-4</span>
+              </div>
+              <div class="receipt-bank-row">
+                <span class="bank-label">ชื่อบัญชี</span>
+                <span class="bank-val" id="cfgBankAccName">กองทุนประปาป่าบ้านไผ่หมู่ 8</span>
+              </div>
             </div>
 
             <div class="receipt-footer">
@@ -639,7 +655,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-  <script src="app.js?v=20260430-navcenter1"></script>
+  <script src="app.js?v=20260430-navcenter2"></script>
 
 </body>
 </html>

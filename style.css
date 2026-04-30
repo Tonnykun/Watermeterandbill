@@ -1094,7 +1094,7 @@ input[type="password"]::-ms-clear {
 .meter-cell,
 .accent-cell {
   background: transparent !important;
-  border: 1px solid #000;
+  border: none;
   border-radius: 0;
   padding: 5px 3px;
   text-align: center;
@@ -1106,9 +1106,11 @@ input[type="password"]::-ms-clear {
 .mc-val { font-size: 11px; font-weight: 800; color: #000 !important; }
 
 .receipt-row.highlight {
-  margin: 7px 0;
-  padding: 5px 6px;
-  border: 1px solid #000;
+  margin: 4px 0;
+  padding: 4px 0;
+  border: none;
+  border-top: 1px dashed #000;
+  border-bottom: 1px dashed #000;
   border-radius: 0;
   background: transparent !important;
 }
@@ -1136,18 +1138,18 @@ input[type="password"]::-ms-clear {
   box-shadow: none !important;
 }
 
-.rt-label { font-size: 9px; color: #000 !important; opacity: 1; margin-bottom: 2px; }
-.rt-amount { font-size: 16px; font-weight: 800; color: #000 !important; line-height: 1.25; }
+.rt-label { font-size: 9px; color: #000 !important; opacity: 1; margin-bottom: 2px; font-weight: 700; }
+.rt-amount { font-size: 12px; font-weight: 800; color: #000 !important; line-height: 1.25; }
 
 .receipt-status {
-  margin: 7px 0;
-  padding: 4px 6px;
+  margin: 5px 0;
+  padding: 3px 0;
   text-align: center;
   font-size: 10px;
   font-weight: 700;
   color: #000 !important;
   background: transparent !important;
-  border: 1px solid #000;
+  border: none;
   border-radius: 0;
   box-shadow: none !important;
 }
@@ -1196,6 +1198,37 @@ input[type="password"]::-ms-clear {
 
 .receipt-qr-box img { display: none !important; }
 .receipt-qr-note { color: #000 !important; font-size: 8px; text-align: center; }
+
+.receipt-bank-section {
+  margin: 4px 0 2px;
+  padding: 4px 0 0;
+  border-top: 1px dashed #000;
+}
+
+.receipt-bank-title {
+  font-size: 10px;
+  font-weight: 700;
+  text-align: center;
+  color: #000 !important;
+  margin-bottom: 4px;
+}
+
+.receipt-bank-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 6px;
+  padding: 2px 0;
+  font-size: 9px;
+  color: #000 !important;
+  border-bottom: 1px dashed #ccc;
+}
+
+.receipt-bank-row:last-child { border-bottom: none; }
+
+.bank-label { color: #000 !important; font-weight: 400; white-space: nowrap; }
+.bank-val { font-weight: 700; color: #000 !important; text-align: right; word-break: break-all; }
+.bank-val.bank-no { font-size: 11px; letter-spacing: 0.5px; }
 
 .receipt-footer {
   margin-top: 7px;
