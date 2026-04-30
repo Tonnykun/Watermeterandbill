@@ -2316,7 +2316,16 @@ async function generateReceiptImage() {
     const ctx = outputCanvas.getContext('2d');
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, targetWidth, targetHeight);
-    ctx.drawImage(canvas, 0, 0, targetWidth, targetHeight);
+    /* ขยับรูปใบเสร็จไปทางซ้ายเล็กน้อย */
+    const receiptShiftLeftPx = 6;
+
+    ctx.drawImage(
+      canvas,
+      -receiptShiftLeftPx,
+      0,
+      targetWidth,
+      targetHeight
+    );
 
     receiptImageBlob = await new Promise(resolve => {
       outputCanvas.toBlob(resolve, 'image/png', 1);
