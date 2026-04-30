@@ -308,6 +308,7 @@ function showLoginError(msg) {
 
 function applyNavAvatarRole() {
   const u = state.currentUser?.username || '';
+  if (!dom.navAvatar) return;
   dom.navAvatar.classList.remove('role-admin', 'role-staff', 'role-default');
   if (u === 'admin') { dom.navAvatar.textContent = 'A'; dom.navAvatar.classList.add('role-admin'); }
   else if (u === 'staff') { dom.navAvatar.textContent = 'S'; dom.navAvatar.classList.add('role-staff'); }
@@ -320,9 +321,10 @@ function enterApp(displayName) {
 
   setTimeout(() => {
     dom.loginScreen.style.display = 'none';
-    dom.appScreen.style.display   = 'block';
+    dom.appScreen.style.display = 'flex';
     dom.navInfoDate.textContent   = formatDateTH(new Date());
     dom.navInfoUser.textContent   = displayName;
+    applyNavAvatarRole();
     buildMonthOptions();
     updateAdminVisibility();
     resetIdleTimer();
@@ -373,8 +375,10 @@ function confirmLogout() {
   dom.loginError.style.display = 'none';
   rememberMe = false;
   dom.rememberToggle.classList.remove('on');
-  dom.navAvatar.textContent = 'A';
-  dom.navAvatar.classList.remove('role-admin', 'role-staff', 'role-default');
+  if (dom.navAvatar) {
+    dom.navAvatar.textContent = 'A';
+    dom.navAvatar.classList.remove('role-admin', 'role-staff', 'role-default');
+  }
 
   if (dom.summaryBtn) {
   dom.summaryBtn.style.display = 'none';
@@ -1760,23 +1764,11 @@ function buildAndroidReceiptHtmlFromScreen() {
     payMethodRaw.includes('เงินโอน');
 
   const bankHtml = shouldShowBank ? `
-    <div style="margin:3px 0 0;">
-      <div style="border-top:1px dashed #000; margin-bottom:3px;"></div>
-      <div style="font-weight:bold; font-size:10px; text-align:center; margin-bottom:2px;">ข้อมูลบัญชีรับโอน</div>
-      <table style="font-size:9px; line-height:1.6; width:100%;">
-        <tr>
-          <td style="width:40%;">ธนาคาร</td>
-          <td style="text-align:right; font-weight:bold;">${safeBluetoothHtmlText(APP_CONFIG.bankName || '-')}</td>
-        </tr>
-        <tr>
-          <td>เลขบัญชี</td>
-          <td style="text-align:right; font-weight:bold; font-size:11px; letter-spacing:0.5px;">${safeBluetoothHtmlText(APP_CONFIG.bankAccountNo || '-')}</td>
-        </tr>
-        <tr>
-          <td>ชื่อบัญชี</td>
-          <td style="text-align:right; font-weight:bold;">${safeBluetoothHtmlText(APP_CONFIG.bankAccountName || '-')}</td>
-        </tr>
-      </table>
+    <div style="border-top:1px dashed #000; margin:2px 0 0; padding-top:2px;">
+      <div style="font-weight:bold; text-align:center;">ข้อมูลบัญชีรับโอน</div>
+      <div>ธนาคาร: ${safeBluetoothHtmlText(APP_CONFIG.bankName || '-')}</div>
+      <div>เลขบัญชี: ${safeBluetoothHtmlText(APP_CONFIG.bankAccountNo || '-')}</div>
+      <div>ชื่อบัญชี: ${safeBluetoothHtmlText(APP_CONFIG.bankAccountName || '-')}</div>
     </div>
   ` : '';
 
@@ -1794,9 +1786,20 @@ function buildAndroidReceiptHtmlFromScreen() {
         min-height: 0 !important;
         background: #fff !important;
       }
-      * { box-sizing: border-box; }
-      table { width: 100%; border-collapse: collapse; }
-      td { padding: 0; vertical-align: top; }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      td {
+        padding: 0;
+        vertical-align: top;
+      }
     </style>
 
     <div style="
@@ -1807,39 +1810,40 @@ function buildAndroidReceiptHtmlFromScreen() {
       color: #000;
       background: #fff;
       font-size: 9px;
-      line-height: 1.3;
+      line-height: 1;
       text-align: left;
       margin: 0;
-      padding: 2px 2px 4px;
+      padding: 0;
       overflow: hidden;
     ">
 
-      <!-- หัวใบเสร็จ -->
-      <div style="text-align:center; font-weight:bold; font-size:11px; line-height:1.2;">
+      <div style="text-align:center; font-weight:bold; font-size:11px; line-height:1;">
         ${safeBluetoothHtmlText(APP_CONFIG.orgName)}
       </div>
-      <div style="text-align:center; font-size:8.5px; line-height:1.2; margin-top:1px;">
+
+      <div style="text-align:center; font-size:8.5px; line-height:1; margin-top:1px;">
         ${safeBluetoothHtmlText(APP_CONFIG.villageName)}
       </div>
 
-      <div style="border-top:1px dashed #000; margin:3px 0;"></div>
+      <div style="border-top:1px dashed #000; margin:2px 0;"></div>
 
-      <div style="text-align:center; font-weight:bold; font-size:11px; line-height:1.2;">
+      <div style="text-align:center; font-weight:bold; font-size:11px; line-height:1;">
         ${receiptTitle}
       </div>
-      <div style="text-align:center; font-weight:bold; font-size:9px; line-height:1.2; margin-top:1px;">
+
+      <div style="text-align:center; font-weight:bold; font-size:9px; line-height:1; margin-top:1px;">
         ${getText('rNo')}
       </div>
-      <div style="text-align:center; font-size:8.5px; line-height:1.2; margin-top:1px;">
+
+      <div style="text-align:center; font-size:8.5px; line-height:1; margin-top:1px;">
         ${getText('rDate')}
       </div>
 
-      <div style="border-top:1px dashed #000; margin:3px 0;"></div>
+      <div style="border-top:1px dashed #000; margin:2px 0;"></div>
 
-      <!-- ข้อมูลลูกค้า -->
-      <table style="font-size:9px; line-height:1.5;">
+      <table style="font-size:9px; line-height:1;">
         <tr>
-          <td style="width:45%;">ชื่อลูกค้า</td>
+          <td>ชื่อลูกค้า</td>
           <td style="text-align:right; font-weight:bold;">${getText('rName')}</td>
         </tr>
         <tr>
@@ -1856,30 +1860,37 @@ function buildAndroidReceiptHtmlFromScreen() {
         </tr>
       </table>
 
-      <div style="border-top:1px dashed #000; margin:3px 0;"></div>
+      <div style="border-top:1px dashed #000; margin:2px 0;"></div>
 
-      <!-- ยอดก่อนหน้า / ยอดปัจจุบัน (เน้น, ≤12px) -->
-      <table style="text-align:center; width:100%; font-size:9px; line-height:1.3;">
+      <table style="text-align:center; font-size:9px; line-height:1;">
         <tr>
-          <td style="width:46%; font-weight:bold; font-size:9px;">ยอดก่อนหน้า</td>
-          <td style="width:8%;"></td>
-          <td style="width:46%; font-weight:bold; font-size:9px;">ยอดปัจจุบัน</td>
+          <td style="font-weight:bold;">ยอดก่อนหน้า</td>
+          <td></td>
+          <td style="font-weight:bold;">ยอดปัจจุบัน</td>
         </tr>
         <tr>
-          <td style="font-size:12px; font-weight:bold; padding-top:1px;">${getText('rPrev')}</td>
-          <td style="font-size:10px; font-weight:bold; padding-top:2px;">&#9658;</td>
-          <td style="font-size:12px; font-weight:bold; padding-top:1px;">${getText('rCurr')}</td>
+          <td style="font-size:13px; font-weight:bold; padding-top:1px;">${getText('rPrev')}</td>
+          <td style="font-size:12px; font-weight:bold; padding-top:1px;">&gt;</td>
+          <td style="font-size:13px; font-weight:bold; padding-top:1px;">${getText('rCurr')}</td>
         </tr>
       </table>
 
-      <div style="border-top:1px dashed #000; margin:3px 0;"></div>
-
-      <!-- รายการค่าใช้จ่าย -->
-      <table style="font-size:9px; line-height:1.5;">
+      <table style="
+        border:1px solid #000;
+        font-size:9px;
+        line-height:1;
+        margin-top:2px;
+        font-weight:bold;
+      ">
         <tr>
-          <td>หน่วยที่ใช้</td>
-          <td style="text-align:right; font-weight:bold;">${getText('rUnits')} หน่วย</td>
+          <td style="padding:2px 3px;">หน่วยที่ใช้</td>
+          <td style="padding:2px 3px; text-align:right;">${getText('rUnits')}</td>
         </tr>
+      </table>
+
+      <div style="border-top:1px dashed #000; margin:2px 0;"></div>
+
+      <table style="font-size:9px; line-height:1;">
         <tr>
           <td>ค่าน้ำประปา</td>
           <td style="text-align:right; font-weight:bold;">${waterText}</td>
@@ -1892,34 +1903,34 @@ function buildAndroidReceiptHtmlFromScreen() {
 
       <div style="border-top:2px solid #000; margin:3px 0;"></div>
 
-      <!-- จำนวนเงินทั้งสิ้น (เน้น, ≤12px) -->
-      <div style="text-align:center; line-height:1.4;">
-        <div style="font-weight:bold; font-size:10px; letter-spacing:0.3px;">จำนวนเงินทั้งสิ้น</div>
-        <div style="font-size:12px; font-weight:bold; margin-top:1px;">
+      <div style="text-align:center; line-height:1;">
+        <div style="font-weight:bold; font-size:9px;">จำนวนเงินทั้งสิ้น</div>
+        <div style="font-size:15px; font-weight:bold; margin-top:1px;">
           ${totalText}
         </div>
       </div>
 
       <div style="border-top:2px solid #000; margin:3px 0;"></div>
 
-      <!-- สถานะ + วิธีชำระ -->
-      <div style="text-align:center; font-weight:bold; font-size:9.5px; line-height:1.3;">
+      <div style="text-align:center; font-weight:bold; font-size:10px; line-height:1;">
         สถานะ: ${statusText}
       </div>
+
       ${payMethodHtml}
 
-      <!-- ข้อมูลบัญชีรับโอน (เน้น, ≤12px) -->
       ${bankHtml}
 
-      <div style="border-top:1px dashed #000; margin:3px 0;"></div>
+      <div style="border-top:1px dashed #000; margin:2px 0;"></div>
 
-      <div style="text-align:center; font-weight:bold; font-size:9px; line-height:1.3;">
+      <div style="text-align:center; font-weight:bold; font-size:9px; line-height:1;">
         ขอบคุณที่ใช้บริการ
       </div>
-      <div style="text-align:center; font-size:8.5px; line-height:1.3;">
+
+      <div style="text-align:center; font-size:8.5px; line-height:1;">
         สอบถาม: ${safeBluetoothHtmlText(APP_CONFIG.contact)}
       </div>
-      <div style="text-align:center; font-size:8px; line-height:1.3; margin-top:1px;">
+
+      <div style="text-align:center; font-size:8px; line-height:1; margin-top:1px;">
         ${
           isUnpaid
             ? 'เอกสารนี้ยังไม่ใช่หลักฐานการชำระเงิน'

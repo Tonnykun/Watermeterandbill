@@ -6,7 +6,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>ระบบประปา</title>
-  <link rel="stylesheet" href="style.css?v=20260430-navcenter1">
+  <link rel="stylesheet" href="style.css?v=20260430-navcenter2">
 </head>
 <body>
     <div class="maintenance-overlay">
@@ -117,7 +117,21 @@
           </svg>
           <span class="nav-btn-label">สรุปยอด</span>
         </button>
-        </div>
+
+        <!-- stub สำหรับ JS (ไม่แสดงผล) -->
+      <div class="nav-user-wrap">
+        <button class="nav-avatar" id="navAvatar" type="button" onclick="handleLogout()" aria-label="ผู้ใช้งาน">
+          A
+        </button>
+
+        <button class="nav-logout-btn" id="logoutBtn" type="button" onclick="handleLogout()" aria-label="ออกจากระบบ">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+            <polyline points="16 17 21 12 16 7"/>
+            <line x1="21" y1="12" x2="9" y2="12"/>
+          </svg>
+        </button>
+      </div>
       </div>
     </header>
 
@@ -408,26 +422,10 @@
               ✅ ชำระแล้ว
             </div>
 
-            <div class="receipt-qr-section" id="qrSection" style="display:none;">
+            <div class="receipt-qr-section" id="qrSection">
               <div class="receipt-qr-title">ช่องทางโอนชำระ</div>
               <div class="receipt-qr-box" id="qrCode"></div>
               <div class="receipt-qr-note" id="qrNote">QR สำหรับชำระค่าน้ำประปา</div>
-            </div>
-
-            <div class="receipt-bank-section" id="bankSection">
-              <div class="receipt-bank-title">ข้อมูลบัญชีรับโอน</div>
-              <div class="receipt-bank-row">
-                <span class="bank-label">ธนาคาร</span>
-                <span class="bank-val" id="cfgBankName">ธนาคารกรุงไทย</span>
-              </div>
-              <div class="receipt-bank-row">
-                <span class="bank-label">เลขบัญชี</span>
-                <span class="bank-val bank-no" id="cfgBankNo">519-0-58775-4</span>
-              </div>
-              <div class="receipt-bank-row">
-                <span class="bank-label">ชื่อบัญชี</span>
-                <span class="bank-val" id="cfgBankAccName">กองทุนประปาป่าบ้านไผ่หมู่ 8</span>
-              </div>
             </div>
 
             <div class="receipt-footer">
@@ -655,7 +653,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-  <script src="app.js?v=20260430-navcenter2"></script>
+  <script src="app.js?v=20260430-usermenu1"></script>
 
 </body>
 </html>
