@@ -49,7 +49,8 @@ let bprintFallbackTimer = null;
 
 const VALID_USERS = [
   { username: 'admin', password: 'water12345', displayName: 'ผู้ดูแลระบบ' },
-  { username: 'staff', password: 'staff12345',      displayName: 'เจ้าหน้าที่' },
+  { username: 'staff1', password: 'staff12345',      displayName: 'เจ้าหน้าที่' },
+  { username: 'staff2', password: 'staff12345',      displayName: 'เจ้าหน้าที่' },
 ];
 
 /* ── State ── */
@@ -108,12 +109,13 @@ function buildDomRefs() {
     changeHouseBtn: $('changeHouseBtn'),
 
     sectionMeter: $('sectionMeter'), sectionReadings: $('sectionReadings'),
-    sectionCost: $('sectionCost'), segThumb: $('segThumb'), meterDesc: $('meterDesc'),
+    sectionCost: $('sectionCost'), meterGrid: $('meterGrid'), meterDesc: $('meterDesc'),
 
     prevDate: $('prevDate'), prevDigits: $('prevDigits'),
     todayDate: $('todayDate'), currentInput: $('currentMeterInput'), inputHint: $('inputHint'),
 
     unitsUsed: $('unitsUsed'), waterCost: $('waterCost'), totalAmount: $('totalAmount'),
+    ratePerUnitDisplay: $('ratePerUnitDisplay'), serviceFeeDisplay: $('serviceFeeDisplay'),
     errorBox: $('errorBox'), errorText: $('errorText'),
     saveBtn: $('saveBtn'), saveBtnLabel: $('saveBtnLabel'),
 
@@ -534,6 +536,7 @@ function pickHouse(id) {
       meterKey: house.meter_key || house.meterKey || 'meter1',
       prev: Number(house.prev_reading ?? house.prevReading ?? 0),
       prevDate: house.prev_date || house.prevDate || null,
+      rate_per_unit: house.rate_per_unit ?? house.ratePerUnit ?? APP_CONFIG.ratePerUnit,
     }];
   }
 
@@ -581,10 +584,11 @@ function bindMainEvents() {
     hideSection(dom.sectionMeter); hideSection(dom.sectionReadings); hideSection(dom.sectionCost);
     if (dom.lastSavedDate) dom.lastSavedDate.textContent = '—';
     if (dom.lastSaveWarning) dom.lastSaveWarning.style.display = 'none';
-    dom.currentInput.value = ''; dom.segThumb.style.transform = 'translateX(0)';
-    document.querySelectorAll('.seg-btn').forEach((btn, i) => {
-      btn.classList.toggle('active', i === 0); btn.disabled = false; btn.classList.remove('disabled');
-    });
+    state.selectedMeter = 0;
+    if (dom.meterGrid) {
+      dom.meterGrid.innerHTML = '';
+    }
+    dom.currentInput.value = '';
     openDropdown();
   });
 
@@ -596,42 +600,183 @@ function bindMainEvents() {
 }
 
 /* ── Meter helpers ── */
-function hasSecondMeter() {
-  return !!(state.selectedHouse && Array.isArray(state.selectedHouse.meters) && state.selectedHouse.meters.length > 1);
-}
-function updateMeterSelectorUI() {
-  const segBtns = document.querySelectorAll('.seg-btn');
-  const canUse2 = hasSecondMeter();
-  if (segBtns[1]) { segBtns[1].disabled = !canUse2; segBtns[1].classList.toggle('disabled', !canUse2); }
-  if (!canUse2) {
-    state.selectedMeter = 0; dom.segThumb.style.transform = 'translateX(0)';
-    segBtns.forEach((btn, i) => btn.classList.toggle('active', i === 0));
+const MAX_METER_SLOTS = 10;
+
+function getSelectedHouseMeters() {
+  if (!state.selectedHouse) return [];
+
+  if (Array.isArray(state.selectedHouse.meters) && state.selectedHouse.meters.length > 0) {
+    return state.selectedHouse.meters;
   }
+
+  return [{
+    id: 'm1',
+    label: 'มิเตอร์ 1',
+    desc: `หมายเลข ${state.selectedHouse.meter_no || state.selectedHouse.meterNo || 'M-???'}`,
+    meterKey: state.selectedHouse.meter_key || state.selectedHouse.meterKey || 'meter1',
+    prev: Number(state.selectedHouse.prev_reading ?? state.selectedHouse.prevReading ?? 0),
+    prevDate: state.selectedHouse.prev_date || state.selectedHouse.prevDate || null,
+    rate_per_unit: state.selectedHouse.rate_per_unit ?? state.selectedHouse.ratePerUnit ?? APP_CONFIG.ratePerUnit,
+  }];
+}
+
+function parseRateValue(value) {
+  if (value === null || value === undefined || value === '') return null;
+  const cleaned = String(value).replace(/,/g, '').trim();
+  if (!cleaned) return null;
+  const num = Number(cleaned);
+  return Number.isFinite(num) && num >= 0 ? num : null;
+}
+
+function getMeterRate(meter, house = state.selectedHouse) {
+  const candidates = [
+    meter?.rate_per_unit,
+    meter?.ratePerUnit,
+    meter?.unit_rate,
+    meter?.unitRate,
+    meter?.rate,
+    house?.rate_per_unit,
+    house?.ratePerUnit,
+    APP_CONFIG.ratePerUnit,
+  ];
+
+  for (const value of candidates) {
+    const parsed = parseRateValue(value);
+    if (parsed !== null) return parsed;
+  }
+
+  return Number(APP_CONFIG.ratePerUnit || 0);
+}
+
+function getServiceFeeValue() {
+  const parsed = parseRateValue(APP_CONFIG.serviceFee);
+  return parsed !== null ? parsed : 0;
+}
+
+function formatRateValue(rate) {
+  const value = Number(rate || 0);
+  return value.toLocaleString('th-TH', {
+    minimumFractionDigits: Number.isInteger(value) ? 0 : 2,
+    maximumFractionDigits: 2,
+  });
+}
+
+function calculateMeterCosts(prev, curr, meter, house = state.selectedHouse) {
+  const previous = Number(prev || 0);
+  const current = Number(curr || 0);
+  const units = Math.max(0, current - previous);
+  const ratePerUnit = getMeterRate(meter, house);
+  const serviceFee = getServiceFeeValue();
+  const waterCost = units * ratePerUnit;
+  const totalAmount = waterCost + serviceFee;
+
+  return { units, ratePerUnit, serviceFee, waterCost, totalAmount };
+}
+
+function updateRateAndFeeDisplay(meter = getSelectedHouseMeters()[state.selectedMeter]) {
+  if (dom.ratePerUnitDisplay) {
+    dom.ratePerUnitDisplay.textContent = `${formatRateValue(getMeterRate(meter))} บาท/หน่วย`;
+  }
+
+  if (dom.serviceFeeDisplay) {
+    dom.serviceFeeDisplay.textContent = `${getServiceFeeValue().toLocaleString('th-TH', { minimumFractionDigits: 2 })} บาท`;
+  }
+}
+
+function escapeMeterBoxText(value) {
+  return String(value ?? '').replace(/[&<>"']/g, char => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#039;',
+  }[char]));
+}
+
+function getMeterBoxTitle(meter, index) {
+  const fallbackLabel = `มิเตอร์ ${index + 1}`;
+  const label = meter?.label || fallbackLabel;
+  const desc = meter?.desc || meter?.meter_no || meter?.meterNo || '';
+
+  if (!desc || String(desc).trim() === String(label).trim()) return label;
+  return `${label} · ${desc}`;
+}
+
+function updateMeterSelectorUI() {
+  const meters = getSelectedHouseMeters();
+
+  if (state.selectedMeter < 0 || state.selectedMeter >= meters.length || !meters[state.selectedMeter]) {
+    state.selectedMeter = 0;
+  }
+
+  if (!dom.meterGrid) return;
+
+  dom.meterGrid.innerHTML = Array.from({ length: MAX_METER_SLOTS }, (_, index) => {
+    const meter = meters[index];
+    const isAvailable = !!meter;
+    const isActive = isAvailable && index === state.selectedMeter;
+    const className = [
+      'meter-box',
+      isActive ? 'active' : '',
+      !isAvailable ? 'disabled' : '',
+    ].filter(Boolean).join(' ');
+    const title = isAvailable ? escapeMeterBoxText(getMeterBoxTitle(meter, index)) : `ไม่มีมิเตอร์ ${index + 1}`;
+    const disabledAttr = isAvailable ? '' : ' disabled aria-disabled="true"';
+    const onclickAttr = isAvailable ? ` onclick="selectMeterSlot(${index})"` : '';
+
+    return `
+      <button class="${className}" type="button" title="${title}" aria-label="${title}"${onclickAttr}${disabledAttr}>
+        <span class="meter-box-num">${index + 1}</span>
+        <span class="meter-box-text">มิเตอร์</span>
+      </button>
+    `;
+  }).join('');
 }
 
 /* ════════════════════════════════
    METER SELECTOR
 ════════════════════════════════ */
+function selectMeterSlot(idx) {
+  selectMeterByIndex(idx);
+}
+
 function selectMeter(num) {
-  const idx = num - 1;
+  // คงฟังก์ชันเดิมไว้ เผื่อมีจุดอื่นเรียก selectMeter(1), selectMeter(2)
+  selectMeterByIndex(Number(num || 1) - 1);
+}
+
+function selectMeterByIndex(idx) {
   if (!state.selectedHouse) return;
-  if (idx === 1 && !hasSecondMeter()) return;
-  state.selectedMeter = idx; state.currentReading = null;
-  dom.segThumb.style.transform = idx === 0 ? 'translateX(0)' : 'translateX(100%)';
-  document.querySelectorAll('.seg-btn').forEach((btn, i) => btn.classList.toggle('active', i === idx));
-  dom.currentInput.value = ''; dom.inputHint.style.display = 'none';
-  dom.saveBtn.disabled = true; dom.errorBox.style.display = 'none';
-  refreshMeterView(); resetCostDisplay();
+
+  const meters = getSelectedHouseMeters();
+  if (!meters.length) return;
+
+  const requestedIdx = Math.min(Math.max(Number(idx) || 0, 0), MAX_METER_SLOTS - 1);
+  if (!meters[requestedIdx]) return;
+
+  state.selectedMeter = requestedIdx;
+  state.currentReading = null;
+
+  updateMeterSelectorUI();
+
+  dom.currentInput.value = '';
+  dom.inputHint.style.display = 'none';
+  dom.saveBtn.disabled = true;
+  dom.errorBox.style.display = 'none';
+
+  refreshMeterView();
+  resetCostDisplay();
 }
 
 function refreshMeterView() {
   if (!state.selectedHouse) return;
-  const meter = state.selectedHouse.meters[state.selectedMeter];
+  const meter = getSelectedHouseMeters()[state.selectedMeter];
   if (!meter) return;
   const dd = formatDisplayDate(meter.prevDate);
   dom.prevDigits.textContent = formatMeterDigits(meter.prev);
   dom.prevDate.textContent   = dd;
   dom.meterDesc.textContent  = meter.desc || '';
+  updateRateAndFeeDisplay(meter);
   if (meter.prevDate) { dom.lastSavedDate.textContent = dd; dom.lastSaveWarning.style.display = 'block'; }
   else { dom.lastSavedDate.textContent = '—'; dom.lastSaveWarning.style.display = 'none'; }
 }
@@ -643,7 +788,7 @@ function onMeterInput() {
   const raw   = dom.currentInput.value.replace(/\D/g, '');
   dom.currentInput.value = raw;
   const val   = raw === '' ? NaN : Number(raw);
-  const meter = state.selectedHouse?.meters?.[state.selectedMeter];
+  const meter = getSelectedHouseMeters()[state.selectedMeter];
   if (!meter) return;
   dom.errorBox.style.display = 'none';
   if (raw === '' || isNaN(val)) {
@@ -661,20 +806,26 @@ function onMeterInput() {
   dom.inputHint.className   = 'input-hint ok';
   dom.inputHint.textContent = units === 0 ? `✓ ไม่มีการใช้น้ำ (0 หน่วย)` : `✓ ใช้ไป ${units.toLocaleString()} หน่วย`;
   dom.inputHint.style.display = 'block'; dom.saveBtn.disabled = false;
-  updateCostDisplay(meter.prev, val);
+  updateCostDisplay(meter.prev, val, meter);
 }
 
 /* ════════════════════════════════
    COST
 ════════════════════════════════ */
-function updateCostDisplay(prev, curr) {
-  const units = curr - prev, water = units * RATE_PER_UNIT, total = water + SERVICE_FEE;
-  dom.unitsUsed.textContent   = `${units.toLocaleString()} หน่วย`;
-  dom.waterCost.textContent   = `${water.toLocaleString('th-TH', { minimumFractionDigits: 2 })} บาท`;
-  dom.totalAmount.textContent = `${total.toLocaleString('th-TH', { minimumFractionDigits: 2 })} บาท`;
+function updateCostDisplay(prev, curr, meter = getSelectedHouseMeters()[state.selectedMeter]) {
+  const costs = calculateMeterCosts(prev, curr, meter);
+  updateRateAndFeeDisplay(meter);
+
+  dom.unitsUsed.textContent   = `${costs.units.toLocaleString()} หน่วย`;
+  dom.waterCost.textContent   = `${costs.waterCost.toLocaleString('th-TH', { minimumFractionDigits: 2 })} บาท`;
+  dom.totalAmount.textContent = `${costs.totalAmount.toLocaleString('th-TH', { minimumFractionDigits: 2 })} บาท`;
 }
+
 function resetCostDisplay() {
-  dom.unitsUsed.textContent = '— หน่วย'; dom.waterCost.textContent = '— บาท'; dom.totalAmount.textContent = '—';
+  updateRateAndFeeDisplay();
+  dom.unitsUsed.textContent = '— หน่วย';
+  dom.waterCost.textContent = '— บาท';
+  dom.totalAmount.textContent = '—';
 }
 
 function normalizePaymentMethod(method) {
@@ -761,10 +912,11 @@ function selectPayment(status) {
 async function handleSave() {
   if (!state.isValid || !state.selectedHouse) return;
   const house = state.selectedHouse;
-  const meter = house.meters?.[state.selectedMeter];
+  const meter = getSelectedHouseMeters()[state.selectedMeter];
   if (!meter) { dom.errorText.textContent = 'ไม่พบข้อมูลมิเตอร์'; dom.errorBox.style.display = 'flex'; return; }
 
   const curr = state.currentReading, isPaid = state.paymentStatus === 'paid';
+  const costs = calculateMeterCosts(meter.prev, curr, meter, house);
   dom.saveBtn.disabled = true; dom.errorBox.style.display = 'none';
 
   try {
@@ -776,6 +928,11 @@ async function handleSave() {
         house_id: house.id,
         meter_key: meter.meterKey || meter.id || 'meter1',
         current_reading: curr,
+        rate_per_unit: costs.ratePerUnit,
+        units_used: costs.units,
+        water_cost: costs.waterCost,
+        service_fee: costs.serviceFee,
+        total_amount: costs.totalAmount,
         payment_status: state.paymentStatus,
         payment_method: isPaid ? state.paymentMethod : '',
         reader_name: state.currentUser?.displayName || 'เจ้าหน้าที่',
@@ -784,11 +941,16 @@ async function handleSave() {
     const json = await res.json();
     if (!json.ok) throw new Error(json.error || 'บันทึกไม่สำเร็จ');
 
-    const saved = json.data;
-    meter.prev = saved.current_reading; meter.prevDate = saved.read_date;
-    state.currentReading = null; state.isValid = false;
-    dom.currentInput.value = ''; dom.inputHint.style.display = 'none';
-    refreshMeterView(); resetCostDisplay();
+    const saved = {
+      ...json.data,
+      rate_per_unit: json.data?.rate_per_unit ?? costs.ratePerUnit,
+      units_used: json.data?.units_used ?? costs.units,
+      water_cost: json.data?.water_cost ?? costs.waterCost,
+      service_fee: json.data?.service_fee ?? costs.serviceFee,
+      total_amount: json.data?.total_amount ?? costs.totalAmount,
+    };
+
+    meter.rate_per_unit = saved.rate_per_unit;
 
     // Reload history first, then refresh stat
     await loadHistory(true);
@@ -1358,6 +1520,8 @@ function openReceiptFromHistoryItem(item, delay = 180) {
     water_cost: Number(item.water_cost || 0),
     service_fee: Number(item.service_fee || SERVICE_FEE),
     total_amount: Number(item.total_amount || 0),
+    created_at: item.created_at || '',
+    reader_name: item.reader_name || '',
   };
 
   populateReceipt(receiptHouse, receiptMeter, receiptSaved);
@@ -1518,6 +1682,11 @@ function populateReceipt(house, meter, saved) {
   const isUnpaid = String(saved.payment_status || '').toLowerCase() === 'unpaid';
   const paymentMethod = String(saved.payment_method || '').toLowerCase();
   const paymentMethodLabel = paymentMethod === 'transfer' ? 'เงินโอน' : 'เงินสด';
+  const receiptRate = getMeterRate({ ...meter, rate_per_unit: saved.rate_per_unit }, house);
+  const receiptUnits = Number(saved.units_used ?? Math.max(0, Number(saved.current_reading || 0) - Number(saved.prev_reading || 0)));
+  const receiptServiceFee = Number(saved.service_fee ?? getServiceFeeValue());
+  const receiptWaterCost = Number(saved.water_cost ?? (receiptUnits * receiptRate));
+  const receiptTotalAmount = Number(saved.total_amount ?? (receiptWaterCost + receiptServiceFee));
 
   currentReceiptReadingId = saved.reading_id || saved.receipt_no || '';
 
@@ -1544,6 +1713,13 @@ function populateReceipt(house, meter, saved) {
   setTextIfExists('cfgReceiptOrg', APP_CONFIG.orgName || 'การประปาหมู่บ้านแสนสุข');
   setTextIfExists('cfgReceiptSub', APP_CONFIG.villageName || 'บ้านแสนสุข หมู่ 4');
   setTextIfExists('cfgReceiptContact', `สอบถาม: ${APP_CONFIG.contact || '0XX-XXX-XXXX'}`);
+  const issuerName =
+  saved.reader_name ||
+  state.currentUser?.displayName ||
+  'เจ้าหน้าที่';
+
+  setTextIfExists('rIssuer', issuerName);
+  setTextIfExists('rPrintedAt', formatReceiptDateTimeTH(new Date()));
 
   setTextIfExists(
     'rNo',
@@ -1560,11 +1736,12 @@ function populateReceipt(house, meter, saved) {
 
   setTextIfExists('rPrev', Number(saved.prev_reading || 0).toLocaleString());
   setTextIfExists('rCurr', Number(saved.current_reading || 0).toLocaleString());
-  setTextIfExists('rUnits', Number(saved.units_used || 0).toLocaleString());
+  setTextIfExists('rUnits', receiptUnits.toLocaleString());
+  setTextIfExists('rRate', formatRateValue(receiptRate));
 
-  setTextIfExists('rWater', `${formatReceiptMoney(saved.water_cost)} ฿`);
-  setTextIfExists('rServiceFee', `${formatReceiptMoney(saved.service_fee)} ฿`);
-  setTextIfExists('rTotal', `${formatReceiptMoney(saved.total_amount)} ฿`);
+  setTextIfExists('rWater', `${formatReceiptMoney(receiptWaterCost)} ฿`);
+  setTextIfExists('rServiceFee', `${formatReceiptMoney(receiptServiceFee)} ฿`);
+  setTextIfExists('rTotal', `${formatReceiptMoney(receiptTotalAmount)} ฿`);
 
   const statusEl = document.getElementById('rStatus');
   if (statusEl) {
@@ -1596,7 +1773,7 @@ function populateReceipt(house, meter, saved) {
   }
 
   // ซ่อน QR เดิมไว้ก่อน เพราะตอนนี้ใช้ข้อมูลบัญชีแทน
-  updateQrDisplay(false, saved.total_amount);
+  updateQrDisplay(false, receiptTotalAmount);
 
   // ให้แสดงข้อมูลบัญชีเฉพาะใบค้างชำระ
   // ถ้าต้องการให้ใบเสร็จเงินโอนแสดงบัญชีด้วย เปลี่ยน shouldShowBank เป็น: isUnpaid || paymentMethod === 'transfer'
@@ -1616,6 +1793,26 @@ function formatReceiptMoney(value) {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2
   });
+}
+
+function formatReceiptDateTimeTH(value = new Date()) {
+  const d = value instanceof Date ? value : new Date(value || Date.now());
+
+  if (isNaN(d.getTime())) return '-';
+
+  const dateText = d.toLocaleDateString('th-TH', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  });
+
+  const timeText = d.toLocaleTimeString('th-TH', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  });
+
+  return `${dateText} ${timeText}`;
 }
 
 function updateBankSectionForReceipt(show) {

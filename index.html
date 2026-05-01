@@ -6,7 +6,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>ระบบประปา</title>
-  <link rel="stylesheet" href="style.css?v=20260430-receiptreadable1">
+  <link rel="stylesheet" href="style.css?v=20260501-receipt-audit1">
 </head>
 <body>
     <div class="maintenance-overlay">
@@ -216,15 +216,10 @@
       <!-- SECTION 2: เลือกมิเตอร์ -->
       <section class="card meter-selector-card" id="sectionMeter" style="display:none">
         <div class="section-label">มิเตอร์</div>
-        <div class="segmented-control">
-          <div class="segmented-thumb" id="segThumb"></div>
-          <button class="seg-btn active" data-meter="1" onclick="selectMeter(1)">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-            มิเตอร์ 1
-          </button>
-          <button class="seg-btn" data-meter="2" onclick="selectMeter(2)">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-            มิเตอร์ 2
+        <div class="meter-grid" id="meterGrid" aria-label="เลือกมิเตอร์">
+          <button class="meter-box active" type="button" onclick="selectMeterSlot(0)">
+            <span class="meter-box-num">1</span>
+            <span class="meter-box-text">มิเตอร์</span>
           </button>
         </div>
         <p class="meter-desc" id="meterDesc">มิเตอร์น้ำใช้ทั่วไป · หมายเลข M-001</p>
@@ -272,7 +267,7 @@
           </div>
           <div class="cost-row">
             <span class="cost-label">อัตราค่าน้ำ</span>
-            <span class="cost-value">3 บาท/หน่วย</span>
+            <span class="cost-value" id="ratePerUnitDisplay">— บาท/หน่วย</span>
           </div>
           <div class="cost-row">
             <span class="cost-label">ค่าน้ำ</span>
@@ -416,6 +411,9 @@
             <div class="receipt-units-line">
               <b>หน่วยที่ใช้: <span id="rUnits">0</span></b>
             </div>
+            <div class="receipt-units-line receipt-rate-line">
+              <b>อัตรา: <span id="rRate">0</span> บาท/หน่วย</b>
+            </div>
           </div>
 
           <div class="receipt-text-divider">------------------</div>
@@ -479,6 +477,13 @@
             <div class="footer-contact" id="cfgReceiptContact">สอบถาม: 0XX-XXX-XXXX</div>
             <div class="footer-note" id="receiptFooterNote">
               ใบเสร็จนี้ใช้เป็นหลักฐานการชำระเงิน
+            </div>
+
+            <div class="footer-meta">
+              ผู้ออกใบเสร็จ: <span id="rIssuer">—</span>
+            </div>
+            <div class="footer-meta">
+              พิมพ์เมื่อ: <span id="rPrintedAt">—</span>
             </div>
           </div>
 
@@ -706,7 +711,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-  <script src="app.js?v=20260430-receiptsize2"></script>
+  <script src="app.js?v=20260501-receipt-audit1"></script>
 
 </body>
 </html>
