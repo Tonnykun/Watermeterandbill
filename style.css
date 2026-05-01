@@ -2789,3 +2789,20 @@ body.maintenance .app-screen {
   color: #000 !important;
   text-align: center !important;
 }
+
+/* ===== Receipt bottom safe area for iOS image print ===== */
+#receiptContent.receipt-image-bprint,
+.receipt-content.receipt-image-bprint {
+  padding-bottom: 7mm !important;
+}
+
+.receipt-image-bprint .receipt-footer {
+  padding-bottom: 2.5mm !important;
+}
+
+.receipt-image-bprint .footer-meta {
+  font-size: 8px !important;
+  line-height: 1.1 !important;
+  margin-top: 1px !important;
+  margin-bottom: 0 !important;
+}
