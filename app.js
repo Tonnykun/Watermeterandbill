@@ -29,6 +29,7 @@ const APP_CONFIG = {
 const API_URL             = APP_CONFIG.apiUrl;
 const RATE_PER_UNIT       = APP_CONFIG.ratePerUnit;
 const SERVICE_FEE         = APP_CONFIG.serviceFee;
+const ZERO_USAGE_SERVICE_FEE = 10;
 const PROMPTPAY_ID        = APP_CONFIG.promptPayId;
 const PROMPTPAY_NAME      = APP_CONFIG.promptPayName;
 
@@ -666,7 +667,13 @@ function calculateMeterCosts(prev, curr, meter, house = state.selectedHouse) {
   const current = Number(curr || 0);
   const units = Math.max(0, current - previous);
   const ratePerUnit = getMeterRate(meter, house);
-  const serviceFee = getServiceFeeValue();
+
+  // ถ้ายอดมิเตอร์เท่าเดิม = ไม่มีการใช้น้ำ คิดค่าบริการ 10 บาท
+  // ถ้ามีการใช้น้ำ ใช้ค่าบริการเดิมจากระบบ
+  const serviceFee = units === 0
+    ? ZERO_USAGE_SERVICE_FEE
+    : getServiceFeeValue();
+
   const waterCost = units * ratePerUnit;
   const totalAmount = waterCost + serviceFee;
 
@@ -814,7 +821,14 @@ function onMeterInput() {
 ════════════════════════════════ */
 function updateCostDisplay(prev, curr, meter = getSelectedHouseMeters()[state.selectedMeter]) {
   const costs = calculateMeterCosts(prev, curr, meter);
-  updateRateAndFeeDisplay(meter);
+
+  if (dom.ratePerUnitDisplay) {
+    dom.ratePerUnitDisplay.textContent = `${formatRateValue(costs.ratePerUnit)} บาท/หน่วย`;
+  }
+
+  if (dom.serviceFeeDisplay) {
+    dom.serviceFeeDisplay.textContent = `${costs.serviceFee.toLocaleString('th-TH', { minimumFractionDigits: 2 })} บาท`;
+  }
 
   dom.unitsUsed.textContent   = `${costs.units.toLocaleString()} หน่วย`;
   dom.waterCost.textContent   = `${costs.waterCost.toLocaleString('th-TH', { minimumFractionDigits: 2 })} บาท`;
@@ -2152,7 +2166,7 @@ function buildAndroidReceiptHtmlFromScreen() {
         </tr>
         <tr>
           <td>ค่าบริการรายเดือน</td>
-          <td style="text-align:right; font-weight:bold;">0.00 บาท</td>
+          <td style="text-align:right; font-weight:bold;">${getText('rServiceFee')}</td>
         </tr>
       </table>
 
