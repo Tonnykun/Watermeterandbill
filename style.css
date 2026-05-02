@@ -2806,3 +2806,25 @@ body.maintenance .app-screen {
   margin-top: 1px !important;
   margin-bottom: 0 !important;
 }
+
+/* ===== Hide bank / QR section from receipt ===== */
+#bankSection,
+#qrSection,
+.receipt-bank-section,
+.receipt-image-bprint #bankSection,
+.receipt-image-bprint #qrSection,
+.receipt-image-bprint .receipt-bank-section {
+  display: none !important;
+  height: 0 !important;
+  min-height: 0 !important;
+  max-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  border: none !important;
+}
+
+/* ขยับ footer ขึ้นหลังจากซ่อนบัญชีธนาคาร */
+.receipt-image-bprint .receipt-footer {
+  margin-top: 1px !important;
+}

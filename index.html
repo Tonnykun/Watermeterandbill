@@ -6,7 +6,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>ระบบประปา</title>
-  <link rel="stylesheet" href="style.css?v=20260501-receipt-bottomsafe1">
+  <link rel="stylesheet" href="style.css?v=20260502-nobank1">
 </head>
 <body>
     <div class="maintenance-overlay">
@@ -453,7 +453,7 @@
           <div class="receipt-text-divider">------------------</div>
 
           <!-- Bank Transfer Section: ใช้กับใบค้างชำระ หรือเงินโอน -->
-          <div class="receipt-qr-section receipt-bank-section" id="bankSection" style="display:none">
+          <div class="receipt-qr-section receipt-bank-section" id="bankSection" hidden aria-hidden="true" style="display:none">
             <div class="receipt-qr-title">ช่องทางโอนชำระ</div>
 
             <div class="bank-transfer-box">
@@ -711,7 +711,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-  <script src="app.js?v=20260501-receipt-audit1"></script>
+  <script src="app.js?v=20260502-nobank1"></script>
 
 </body>
 </html>

@@ -1775,10 +1775,8 @@ function populateReceipt(house, meter, saved) {
   // ซ่อน QR เดิมไว้ก่อน เพราะตอนนี้ใช้ข้อมูลบัญชีแทน
   updateQrDisplay(false, receiptTotalAmount);
 
-  // ให้แสดงข้อมูลบัญชีเฉพาะใบค้างชำระ
-  // ถ้าต้องการให้ใบเสร็จเงินโอนแสดงบัญชีด้วย เปลี่ยน shouldShowBank เป็น: isUnpaid || paymentMethod === 'transfer'
-  const shouldShowBank = isUnpaid || paymentMethod === 'transfer';
-  updateBankSectionForReceipt(shouldShowBank);
+  // ลูกค้าขอเอาข้อมูลบัญชีธนาคารออกจากใบเสร็จทุกกรณี
+  updateBankSectionForReceipt(false);
 }
 
 function setTextIfExists(id, text) {
@@ -1821,48 +1819,20 @@ function updateBankSectionForReceipt(show) {
 
   if (qrSection) {
     qrSection.style.display = 'none';
+    qrSection.setAttribute('hidden', '');
+    qrSection.setAttribute('aria-hidden', 'true');
   }
 
-  if (!bankSection) return;
-
-  bankSection.style.display = show ? 'block' : 'none';
-
-  setTextIfExists('cfgBankName', APP_CONFIG.bankName || '-');
-  setTextIfExists('cfgBankNo', APP_CONFIG.bankAccountNo || '-');
-  setTextIfExists('cfgBankAccName', APP_CONFIG.bankAccountName || '-');
+  if (bankSection) {
+    bankSection.style.display = 'none';
+    bankSection.setAttribute('hidden', '');
+    bankSection.setAttribute('aria-hidden', 'true');
+  }
 }
 
 function updateBankTransferSection(amount) {
-  const bankSection = document.getElementById('bankSection');
-  const qrSection = document.getElementById('qrSection');
-
-  if (bankSection) {
-    bankSection.style.display = 'block';
-
-    if (qrSection) {
-      qrSection.style.display = 'none';
-    }
-
-    const cfgBankName    = document.getElementById('cfgBankName');
-    const cfgBankNo      = document.getElementById('cfgBankNo');
-    const cfgBankAccName = document.getElementById('cfgBankAccName');
-    const cfgBankAmount  = document.getElementById('cfgBankAmount');
-
-    if (cfgBankName)    cfgBankName.textContent    = APP_CONFIG.bankName || '-';
-    if (cfgBankNo)      cfgBankNo.textContent      = APP_CONFIG.bankAccountNo || '-';
-    if (cfgBankAccName) cfgBankAccName.textContent = APP_CONFIG.bankAccountName || '-';
-
-    if (cfgBankAmount) {
-      cfgBankAmount.textContent = `${Number(amount || 0).toLocaleString('th-TH', {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-      })} บาท`;
-    }
-
-    return;
-  }
-
-  updateQrDisplay(true, amount);
+  updateBankSectionForReceipt(false);
+  updateQrDisplay(false, amount);
 }
 
 // จัดการแสดงผล QR Code
@@ -1871,35 +1841,18 @@ function updateQrDisplay(showInfo, amount) {
   const qrSection = document.getElementById('qrSection');
   const qrNote = document.getElementById('qrNote');
 
-  if (!qrBox) {
-    console.warn('ไม่พบ element id="qrCode"');
-    return;
+  if (qrBox) {
+    qrBox.innerHTML = '';
   }
-
-  qrBox.innerHTML = '';
 
   if (qrSection) {
-    qrSection.style.display = showInfo ? 'block' : 'none';
+    qrSection.style.display = 'none';
+    qrSection.setAttribute('hidden', '');
+    qrSection.setAttribute('aria-hidden', 'true');
   }
-
-  if (!showInfo) {
-    return;
-  }
-
-  qrBox.innerHTML = `
-    <div class="bank-transfer-box">
-      <div class="bank-transfer-title">โอนเข้าบัญชี</div>
-      <div class="bank-transfer-line">${APP_CONFIG.bankName || '-'}</div>
-      <div class="bank-transfer-account">${APP_CONFIG.bankAccountNo || '-'}</div>
-      <div class="bank-transfer-line">${APP_CONFIG.bankAccountName || '-'}</div>
-    </div>
-  `;
 
   if (qrNote) {
-    qrNote.textContent = `ยอดชำระ ${Number(amount || 0).toLocaleString('th-TH', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    })} บาท`;
+    qrNote.textContent = '';
   }
 }
 
@@ -2219,8 +2172,6 @@ function buildAndroidReceiptHtmlFromScreen() {
       </div>
 
       ${payMethodHtml}
-
-      ${bankHtml}
 
       <div style="border-top:1px dashed #000; margin:2px 0;"></div>
 
