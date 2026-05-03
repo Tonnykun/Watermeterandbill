@@ -50,8 +50,8 @@ let bprintFallbackTimer = null;
 
 const VALID_USERS = [
   { username: 'admin', password: 'water12345', displayName: 'ผู้ดูแลระบบ' },
-  { username: 'staff1', password: 'staff12345',      displayName: 'เจ้าหน้าที่' },
-  { username: 'staff2', password: 'staff12345',      displayName: 'เจ้าหน้าที่' },
+  { username: 'staff1', password: 'staff12345',      displayName: 'เจ้าหน้าที่1' },
+  { username: 'staff2', password: 'staff12345',      displayName: 'เจ้าหน้าที่2' },
 ];
 
 /* ── State ── */
