@@ -2285,7 +2285,7 @@ function buildAndroidReceiptHtmlFromScreen() {
           <td style="text-align:right; font-weight:bold;">${getText('rName')}</td>
         </tr>
         <tr>
-          <td>บ้านเลขที่</td>
+          <td>เลขที่มิเตอร์</td>
           <td style="text-align:right; font-weight:bold;">${getText('rAddr')}</td>
         </tr>
         <tr>
