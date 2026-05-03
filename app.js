@@ -1913,8 +1913,23 @@ function populateReceipt(house, meter, saved) {
 
   setTextIfExists('rDate', `วันที่: ${formatDateTH(new Date(saved.read_date || saved.created_at || Date.now()))}`);
   setTextIfExists('rName', house.name || saved.owner_name || saved.name || '---');
-  setTextIfExists('rAddr', house.addr || house.address || house.num || saved.house_no || saved.house_id || '---');
-  setTextIfExists('rMeter', meter.label || saved.meter_label || saved.meter_key || 'มิเตอร์ 1');
+  const receiptMeterNo =
+    house.num ||
+    saved.house_no ||
+    saved.meter_no ||
+    saved.house_id ||
+    '---';
+
+  const receiptHouseAddress =
+    house.addr ||
+    house.address ||
+    saved.addr ||
+    saved.address ||
+    saved.house_address ||
+    '---';
+
+  setTextIfExists('rMeter', receiptMeterNo);
+  setTextIfExists('rAddr', receiptHouseAddress);
   setTextIfExists('rMonth', formatMonthTH(new Date(saved.read_date || saved.created_at || Date.now())));
 
   setTextIfExists('rPrev', Number(saved.prev_reading || 0).toLocaleString());
