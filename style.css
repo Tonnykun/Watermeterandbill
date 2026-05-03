@@ -2828,3 +2828,107 @@ body.maintenance .app-screen {
 .receipt-image-bprint .receipt-footer {
   margin-top: 1px !important;
 }
+
+/* ===== Edit reading fields in history edit sheet ===== */
+.edit-reading-box {
+  background: rgba(0, 122, 255, 0.06);
+  border: 1px solid rgba(0, 122, 255, 0.14);
+  border-radius: 16px;
+  padding: 14px;
+  margin: 14px 0;
+}
+
+.edit-reading-title {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--label-primary);
+  margin-bottom: 10px;
+}
+
+.edit-reading-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.edit-reading-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.edit-reading-field span {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--label-secondary);
+}
+
+.edit-reading-field input {
+  width: 100%;
+  background: #fff;
+  border: 1.5px solid var(--separator);
+  border-radius: 12px;
+  padding: 12px;
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--label-primary);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.edit-reading-field input:read-only {
+  color: var(--label-secondary);
+  background: rgba(120, 120, 128, 0.12);
+}
+
+.edit-reading-field input:focus {
+  border-color: var(--ios-blue);
+  box-shadow: 0 0 0 4px rgba(0,122,255,0.12);
+}
+
+.edit-reading-hint {
+  margin-top: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.edit-reading-hint.ok {
+  color: var(--ios-green);
+}
+
+.edit-reading-hint.err {
+  color: var(--ios-red);
+}
+
+.edit-reading-preview {
+  margin-top: 10px;
+  background: #fff;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--separator);
+}
+
+.edit-reading-preview div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--separator);
+  font-size: 13px;
+}
+
+.edit-reading-preview div:last-child {
+  border-bottom: none;
+  background: rgba(0, 122, 255, 0.06);
+}
+
+.edit-reading-preview span {
+  color: var(--label-secondary);
+  font-weight: 600;
+}
+
+.edit-reading-preview strong {
+  color: var(--ios-blue);
+  font-weight: 800;
+}

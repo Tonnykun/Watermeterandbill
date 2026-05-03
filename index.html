@@ -6,7 +6,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>ระบบประปา</title>
-  <link rel="stylesheet" href="style.css?v=20260502-zero-use-fee1">
+  <link rel="stylesheet" href="style.css?v=20260503-edit-reading1">
 </head>
 <body>
     <div class="maintenance-overlay">
@@ -666,8 +666,55 @@
       <div class="sheet-scroll">
         <div class="edit-pay-header">
           <div class="edit-pay-icon">✏️</div>
-          <div class="edit-pay-title">แก้ไขสถานะการชำระ</div>
+          <div class="edit-pay-title">แก้ไขรายการย้อนหลัง</div>
           <div class="edit-pay-sub" id="editPaySub">—</div>
+        </div>
+          <div class="edit-reading-box">
+          <div class="edit-reading-title">แก้ไขเลขมิเตอร์</div>
+
+          <div class="edit-reading-row">
+            <label class="edit-reading-field">
+              <span>ยอดก่อนหน้า</span>
+              <input
+                type="text"
+                id="editPrevReadingInput"
+                inputmode="numeric"
+                readonly
+              >
+            </label>
+
+            <label class="edit-reading-field">
+              <span>ยอดใหม่</span>
+              <input
+                type="text"
+                id="editCurrentReadingInput"
+                inputmode="numeric"
+                placeholder="กรอกยอดใหม่"
+                oninput="onEditCurrentReadingInput()"
+              >
+            </label>
+          </div>
+
+          <div class="edit-reading-hint" id="editReadingHint">—</div>
+
+          <div class="edit-reading-preview">
+            <div>
+              <span>หน่วยที่ใช้</span>
+              <strong id="editPreviewUnits">—</strong>
+            </div>
+            <div>
+              <span>ค่าน้ำ</span>
+              <strong id="editPreviewWater">—</strong>
+            </div>
+            <div>
+              <span>ค่าบริการ</span>
+              <strong id="editPreviewService">—</strong>
+            </div>
+            <div>
+              <span>ยอดรวมใหม่</span>
+              <strong id="editPreviewTotal">—</strong>
+            </div>
+          </div>
         </div>
         <div class="edit-pay-choices">
           <button class="edit-pay-opt" id="editOptPaid" onclick="selectEditPaymentStatus('paid')">
@@ -711,7 +758,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-  <script src="app.js?v=20260502-zero-use-fee1"></script>
+  <script src="app.js?v=20260503-edit-reading1"></script>
 
 </body>
 </html>

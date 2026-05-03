@@ -69,6 +69,7 @@ let state = {
   editingItem:    null,       // history item being edited  ← NEW
   editingStatus: null,
   editingPaymentMethod: 'cash',
+  editingCurrentReading: null,
 };
 
 let historyLoaded = false;
@@ -140,6 +141,13 @@ function buildDomRefs() {
     editPayMethodWrap: $('editPayMethodWrap'),
     editPayMethodCash: $('editPayMethodCash'),
     editPayMethodTransfer: $('editPayMethodTransfer'),
+    editPrevReadingInput: $('editPrevReadingInput'),
+    editCurrentReadingInput: $('editCurrentReadingInput'),
+    editReadingHint: $('editReadingHint'),
+    editPreviewUnits: $('editPreviewUnits'),
+    editPreviewWater: $('editPreviewWater'),
+    editPreviewService: $('editPreviewService'),
+    editPreviewTotal: $('editPreviewTotal'),
 
     summaryBtn: $('summaryBtn'),
     summaryOverlay: $('summaryOverlay'),
@@ -1027,7 +1035,7 @@ async function loadHistory(force = false) {
 
   try {
     dom.historySummary.textContent = 'กำลังโหลดข้อมูล...';
-    const res = await fetch(`${API_URL}?action=history&month=${state.selectedMonth}&limit=100`);
+    const res = await fetch(`${API_URL}?action=history&month=${state.selectedMonth}&limit=1000`);
     const json = await res.json();
     if (!json.ok) throw new Error(json.error || 'โหลดประวัติไม่สำเร็จ');
 
@@ -1048,9 +1056,12 @@ async function loadHistory(force = false) {
 function refreshHistory() { historyLoaded = false; loadHistory(true); }
 
 function getHistoryDate(item) {
-  if (!item || !item.read_date) return null;
+  if (!item) return null;
 
-  const d = new Date(item.read_date);
+  const value = item.created_at || item.read_date;
+  if (!value) return null;
+
+  const d = new Date(value);
   return isNaN(d.getTime()) ? null : d;
 }
 
@@ -1061,7 +1072,7 @@ function getHistoryYM(item) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 }
 
-function getLatestHistoryRowsForMonth(items, ym) {
+function getLatestHistoryRowsForMonth(items, ym, groupBy = 'house') {
   const rows = items
     .map((item, realIdx) => ({
       item,
@@ -1075,16 +1086,28 @@ function getLatestHistoryRowsForMonth(items, ym) {
     })
     .sort((a, b) => b.date - a.date);
 
-  const latestByHouse = new Map();
+  const latestMap = new Map();
 
   rows.forEach(row => {
-    const key = row.item.house_id || row.item.house_no;
-    if (!latestByHouse.has(key)) {
-      latestByHouse.set(key, row);
+    const houseKey = String(row.item.house_id || row.item.house_no || '').trim();
+
+    const meterKey = String(
+      row.item.meter_key ||
+      row.item.meter_label ||
+      row.item.meter_code ||
+      'meter1'
+    ).trim();
+
+    const key = groupBy === 'meter'
+      ? `${houseKey}__${meterKey}`
+      : houseKey;
+
+    if (!latestMap.has(key)) {
+      latestMap.set(key, row);
     }
   });
 
-  return [...latestByHouse.values()];
+  return [...latestMap.values()];
 }
 
 /* Filter chip handler */
@@ -1101,7 +1124,7 @@ function renderHistoryList(query = '') {
   const ym = state.selectedMonth;
   const f  = state.historyFilter;
 
-  const filteredItems = getLatestHistoryRowsForMonth(state.historyItems, ym)
+  const filteredItems = getLatestHistoryRowsForMonth(state.historyItems, ym, 'meter')
   .filter(({ item }) => {
       const matchQ = !q ||
         String(item.house_no || '').toLowerCase().includes(q) ||
@@ -1189,6 +1212,139 @@ function editHistoryItem(readingId) {
   console.log('edit item =', item);
 }
 
+function calculateEditReadingCosts(item, currentReading) {
+  const prev = Number(item.prev_reading || 0);
+  const curr = Number(currentReading || 0);
+  const units = Math.max(0, curr - prev);
+  const ratePerUnit = Number(item.rate_per_unit || RATE_PER_UNIT || 0);
+
+  const serviceFee = units === 0
+    ? ZERO_USAGE_SERVICE_FEE
+    : getServiceFeeValue();
+
+  const waterCost = units * ratePerUnit;
+  const totalAmount = waterCost + serviceFee;
+
+  return { units, ratePerUnit, serviceFee, waterCost, totalAmount };
+}
+
+function fillEditReadingFields(item) {
+  if (!item) return;
+
+  const prev = Number(item.prev_reading || 0);
+  const curr = Number(item.current_reading || 0);
+
+  state.editingCurrentReading = curr;
+
+  if (dom.editPrevReadingInput) {
+    dom.editPrevReadingInput.value = prev.toLocaleString('th-TH');
+  }
+
+  if (dom.editCurrentReadingInput) {
+    dom.editCurrentReadingInput.value = curr;
+  }
+
+  updateEditReadingPreview();
+}
+
+function onEditCurrentReadingInput() {
+  if (!dom.editCurrentReadingInput) return;
+
+  const raw = String(dom.editCurrentReadingInput.value || '').replace(/\D/g, '');
+  dom.editCurrentReadingInput.value = raw;
+
+  state.editingCurrentReading = raw === '' ? null : Number(raw);
+
+  updateEditReadingPreview();
+}
+
+function updateEditReadingPreview() {
+  const item = state.editingItem;
+  if (!item) return;
+
+  const prev = Number(item.prev_reading || 0);
+  const curr = Number(state.editingCurrentReading);
+
+  const isValidNumber = Number.isInteger(curr);
+  const isTooLow = isValidNumber && curr < prev;
+  const canSave = isValidNumber && !isTooLow;
+
+  if (!isValidNumber) {
+    if (dom.editReadingHint) {
+      dom.editReadingHint.className = 'edit-reading-hint err';
+      dom.editReadingHint.textContent = 'กรุณากรอกยอดมิเตอร์ใหม่';
+    }
+
+    if (dom.editPaySaveBtn) dom.editPaySaveBtn.disabled = true;
+    return;
+  }
+
+  if (isTooLow) {
+    if (dom.editReadingHint) {
+      dom.editReadingHint.className = 'edit-reading-hint err';
+      dom.editReadingHint.textContent = `ยอดใหม่ต้องไม่น้อยกว่ายอดก่อนหน้า (${prev.toLocaleString('th-TH')})`;
+    }
+
+    if (dom.editPaySaveBtn) dom.editPaySaveBtn.disabled = true;
+    return;
+  }
+
+  const costs = calculateEditReadingCosts(item, curr);
+
+  if (dom.editReadingHint) {
+    dom.editReadingHint.className = 'edit-reading-hint ok';
+    dom.editReadingHint.textContent =
+      costs.units === 0
+        ? 'ไม่มีการใช้น้ำ ระบบคิดค่าบริการ 10 บาท'
+        : `ใช้ไป ${costs.units.toLocaleString('th-TH')} หน่วย`;
+  }
+
+  if (dom.editPreviewUnits) {
+    dom.editPreviewUnits.textContent = `${costs.units.toLocaleString('th-TH')} หน่วย`;
+  }
+
+  if (dom.editPreviewWater) {
+    dom.editPreviewWater.textContent = `${costs.waterCost.toLocaleString('th-TH', { minimumFractionDigits: 2 })} บาท`;
+  }
+
+  if (dom.editPreviewService) {
+    dom.editPreviewService.textContent = `${costs.serviceFee.toLocaleString('th-TH', { minimumFractionDigits: 2 })} บาท`;
+  }
+
+  if (dom.editPreviewTotal) {
+    dom.editPreviewTotal.textContent = `${costs.totalAmount.toLocaleString('th-TH', { minimumFractionDigits: 2 })} บาท`;
+  }
+
+  if (dom.editPaySaveBtn) dom.editPaySaveBtn.disabled = !canSave;
+}
+
+function getEditReadingPayload() {
+  const item = state.editingItem;
+  if (!item) throw new Error('ไม่พบรายการที่ต้องการแก้ไข');
+
+  const prev = Number(item.prev_reading || 0);
+  const curr = Number(state.editingCurrentReading);
+
+  if (!Number.isInteger(curr)) {
+    throw new Error('กรุณากรอกยอดมิเตอร์ใหม่');
+  }
+
+  if (curr < prev) {
+    throw new Error(`ยอดใหม่ต้องไม่น้อยกว่ายอดก่อนหน้า (${prev.toLocaleString('th-TH')})`);
+  }
+
+  const costs = calculateEditReadingCosts(item, curr);
+
+  return {
+    current_reading: curr,
+    units_used: costs.units,
+    rate_per_unit: costs.ratePerUnit,
+    water_cost: costs.waterCost,
+    service_fee: costs.serviceFee,
+    total_amount: costs.totalAmount,
+  };
+}
+
 /* ════════════════════════════════
    EDIT PAYMENT SHEET  (new)
 ════════════════════════════════ */
@@ -1206,6 +1362,7 @@ function openEditPaySheet(idx) {
 
   dom.editPaySub.textContent = `${item.house_no || '-'} · ${item.owner_name || '-'}`;
   dom.editPayError.style.display = 'none';
+  fillEditReadingFields(item);
 
   dom.editOptPaid.classList.toggle('active-paid', isPaid);
   dom.editOptUnpaid.classList.toggle('active-unpaid', !isPaid);
@@ -1228,6 +1385,7 @@ function closeEditPaySheet() {
 
   state.editingItem = null;
   state.editingStatus = null;
+  state.editingCurrentReading = null;
 }
 
 function selectEditPaymentStatus(status) {
@@ -1266,12 +1424,21 @@ async function submitEditPayment(newStatus) {
   }
 
   try {
+    const readingPayload = getEditReadingPayload();
     const res = await fetch(API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify({
         action: 'updatePaymentStatus',
         reading_id: item.reading_id,
+
+        current_reading: readingPayload.current_reading,
+        units_used: readingPayload.units_used,
+        rate_per_unit: readingPayload.rate_per_unit,
+        water_cost: readingPayload.water_cost,
+        service_fee: readingPayload.service_fee,
+        total_amount: readingPayload.total_amount,
+
         payment_status: newStatus,
         payment_method: newStatus === 'paid' ? state.editingPaymentMethod : '',
         editor_name: state.currentUser?.displayName || 'เจ้าหน้าที่',
@@ -1316,6 +1483,7 @@ async function submitEditPayment(newStatus) {
         prev_reading: Number(item.prev_reading || 0),
         current_reading: Number(item.current_reading || 0),
         units_used: Number(item.units_used || 0),
+        rate_per_unit: Number(item.rate_per_unit || RATE_PER_UNIT),
         water_cost: Number(item.water_cost || 0),
         service_fee: Number(item.service_fee || SERVICE_FEE),
         total_amount: Number(item.total_amount || 0),
@@ -1615,6 +1783,7 @@ function openEditPaySheetById(readingId) {
 
   dom.editPaySub.textContent = `${item.house_no || '-'} · ${item.owner_name || '-'}`;
   dom.editPayError.style.display = 'none';
+  fillEditReadingFields(item);
 
   dom.editOptPaid.classList.toggle('active-paid', isPaid);
   dom.editOptUnpaid.classList.toggle('active-unpaid', !isPaid);
