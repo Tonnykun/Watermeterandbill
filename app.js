@@ -1467,8 +1467,8 @@ async function submitEditPayment(newStatus) {
       const receiptHouse = {
         name: item.owner_name || item.name || '-',
         num: item.house_no || '-',
-        addr: item.house_no || item.addr || '-',
-        address: item.house_no || item.address || '-',
+        addr: item.addr || item.address || item.house_address || item.house_no || '-',
+        address: item.addr || item.address || item.house_address || item.house_no || '-',
       };
 
       const receiptMeter = {
@@ -1642,8 +1642,8 @@ function printUnpaidNoticeById(readingId) {
   const receiptHouse = {
     name: item.owner_name || item.name || '-',
     num: item.house_no || '-',
-    addr: item.house_no || item.addr || '-',
-    address: item.house_no || item.address || '-',
+    addr: item.addr || item.address || item.house_address || item.house_no || '-',
+    address: item.addr || item.address || item.house_address || item.house_no || '-',
   };
 
   const receiptMeter = {
@@ -1679,8 +1679,8 @@ function openReceiptFromHistoryItem(item, delay = 180) {
   const receiptHouse = {
     name: item.owner_name || item.name || '-',
     num: item.house_no || '-',
-    addr: item.house_no || item.addr || '-',
-    address: item.house_no || item.address || '-',
+    addr: item.addr || item.address || item.house_address || item.house_no || '-',
+    address: item.addr || item.address || item.house_address || item.house_no || '-',
   };
 
   const receiptMeter = {
@@ -1736,8 +1736,8 @@ function openReceiptFromHistoryItem(item, delay = 180) {
   const receiptHouse = {
     name: item.owner_name || item.name || '-',
     num: item.house_no || '-',
-    addr: item.house_no || item.addr || '-',
-    address: item.house_no || item.address || '-',
+    addr: item.addr || item.address || item.house_address || item.house_no || '-',
+    address: item.addr || item.address || item.house_address || item.house_no || '-',
   };
 
   const receiptMeter = {
@@ -2286,11 +2286,11 @@ function buildAndroidReceiptHtmlFromScreen() {
         </tr>
         <tr>
           <td>เลขที่มิเตอร์</td>
-          <td style="text-align:right; font-weight:bold;">${getText('rAddr')}</td>
+          <td style="text-align:right; font-weight:bold;">${getText('rMeter')}</td>
         </tr>
         <tr>
-          <td>มิเตอร์</td>
-          <td style="text-align:right; font-weight:bold;">${getText('rMeter')}</td>
+          <td>เลขที่บ้าน</td>
+          <td style="text-align:right; font-weight:bold;">${getText('rAddr')}</td>
         </tr>
         <tr>
           <td>ประจำเดือน</td>
