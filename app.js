@@ -629,6 +629,65 @@ function getSelectedHouseMeters() {
   }];
 }
 
+function getMeterSlotNumber(meter, fallbackIndex = 0) {
+  const sources = [
+    meter?.label,
+    meter?.meter_label,
+    meter?.meterKey,
+    meter?.meter_key,
+    meter?.id,
+    meter?.meter_code,
+    meter?.meterCode,
+  ];
+
+  for (const value of sources) {
+    const text = String(value || '').trim();
+    if (!text) continue;
+
+    // ดึงเลขตัวท้าย เช่น "มิเตอร์ 8", "M265-8", "WM-0266-8"
+    const match = text.match(/(\d+)\s*$/);
+    if (match) {
+      const num = Number(match[1]);
+      if (Number.isInteger(num) && num >= 1 && num <= MAX_METER_SLOTS) {
+        return num;
+      }
+    }
+  }
+
+  return fallbackIndex + 1;
+}
+
+function getMeterSlotMap() {
+  const meters = getSelectedHouseMeters();
+  const map = new Map();
+
+  meters.forEach((meter, index) => {
+    const slotNo = getMeterSlotNumber(meter, index);
+    if (slotNo >= 1 && slotNo <= MAX_METER_SLOTS && !map.has(slotNo)) {
+      map.set(slotNo, meter);
+    }
+  });
+
+  return map;
+}
+
+function getSelectedMeterObject() {
+  const slotNo = Number(state.selectedMeter || 0) + 1;
+  return getMeterSlotMap().get(slotNo) || null;
+}
+
+function getFirstAvailableMeterSlotIndex() {
+  const slotMap = getMeterSlotMap();
+
+  for (let slotNo = 1; slotNo <= MAX_METER_SLOTS; slotNo++) {
+    if (slotMap.has(slotNo)) {
+      return slotNo - 1;
+    }
+  }
+
+  return 0;
+}
+
 function parseRateValue(value) {
   if (value === null || value === undefined || value === '') return null;
   const cleaned = String(value).replace(/,/g, '').trim();
@@ -688,7 +747,7 @@ function calculateMeterCosts(prev, curr, meter, house = state.selectedHouse) {
   return { units, ratePerUnit, serviceFee, waterCost, totalAmount };
 }
 
-function updateRateAndFeeDisplay(meter = getSelectedHouseMeters()[state.selectedMeter]) {
+function updateRateAndFeeDisplay(meter = getSelectedMeterObject()) {
   if (dom.ratePerUnitDisplay) {
     dom.ratePerUnitDisplay.textContent = `${formatRateValue(getMeterRate(meter))} บาท/หน่วย`;
   }
@@ -718,30 +777,36 @@ function getMeterBoxTitle(meter, index) {
 }
 
 function updateMeterSelectorUI() {
-  const meters = getSelectedHouseMeters();
+  const slotMap = getMeterSlotMap();
 
-  if (state.selectedMeter < 0 || state.selectedMeter >= meters.length || !meters[state.selectedMeter]) {
-    state.selectedMeter = 0;
+  if (!slotMap.has(Number(state.selectedMeter || 0) + 1)) {
+    state.selectedMeter = getFirstAvailableMeterSlotIndex();
   }
 
   if (!dom.meterGrid) return;
 
   dom.meterGrid.innerHTML = Array.from({ length: MAX_METER_SLOTS }, (_, index) => {
-    const meter = meters[index];
+    const slotNo = index + 1;
+    const meter = slotMap.get(slotNo) || null;
     const isAvailable = !!meter;
     const isActive = isAvailable && index === state.selectedMeter;
+
     const className = [
       'meter-box',
       isActive ? 'active' : '',
       !isAvailable ? 'disabled' : '',
     ].filter(Boolean).join(' ');
-    const title = isAvailable ? escapeMeterBoxText(getMeterBoxTitle(meter, index)) : `ไม่มีมิเตอร์ ${index + 1}`;
+
+    const title = isAvailable
+      ? escapeMeterBoxText(getMeterBoxTitle(meter, index))
+      : `ไม่มีมิเตอร์ ${slotNo}`;
+
     const disabledAttr = isAvailable ? '' : ' disabled aria-disabled="true"';
     const onclickAttr = isAvailable ? ` onclick="selectMeterSlot(${index})"` : '';
 
     return `
       <button class="${className}" type="button" title="${title}" aria-label="${title}"${onclickAttr}${disabledAttr}>
-        <span class="meter-box-num">${index + 1}</span>
+        <span class="meter-box-num">${slotNo}</span>
         <span class="meter-box-text">มิเตอร์</span>
       </button>
     `;
@@ -763,11 +828,12 @@ function selectMeter(num) {
 function selectMeterByIndex(idx) {
   if (!state.selectedHouse) return;
 
-  const meters = getSelectedHouseMeters();
-  if (!meters.length) return;
-
   const requestedIdx = Math.min(Math.max(Number(idx) || 0, 0), MAX_METER_SLOTS - 1);
-  if (!meters[requestedIdx]) return;
+  const slotNo = requestedIdx + 1;
+  const meter = getMeterSlotMap().get(slotNo);
+
+  // ถ้า slot นี้ไม่มีมิเตอร์จริง ให้กดไม่ได้
+  if (!meter) return;
 
   state.selectedMeter = requestedIdx;
   state.currentReading = null;
@@ -785,7 +851,7 @@ function selectMeterByIndex(idx) {
 
 function refreshMeterView() {
   if (!state.selectedHouse) return;
-  const meter = getSelectedHouseMeters()[state.selectedMeter];
+  const meter = getSelectedMeterObject();
   if (!meter) return;
   const dd = formatDisplayDate(meter.prevDate);
   dom.prevDigits.textContent = formatMeterDigits(meter.prev);
@@ -803,7 +869,7 @@ function onMeterInput() {
   const raw   = dom.currentInput.value.replace(/\D/g, '');
   dom.currentInput.value = raw;
   const val   = raw === '' ? NaN : Number(raw);
-  const meter = getSelectedHouseMeters()[state.selectedMeter];
+  const meter = getSelectedMeterObject();
   if (!meter) return;
   dom.errorBox.style.display = 'none';
   if (raw === '' || isNaN(val)) {
@@ -934,7 +1000,7 @@ function selectPayment(status) {
 async function handleSave() {
   if (!state.isValid || !state.selectedHouse) return;
   const house = state.selectedHouse;
-  const meter = getSelectedHouseMeters()[state.selectedMeter];
+  const meter = getSelectedMeterObject();
   if (!meter) { dom.errorText.textContent = 'ไม่พบข้อมูลมิเตอร์'; dom.errorBox.style.display = 'flex'; return; }
 
   const curr = state.currentReading, isPaid = state.paymentStatus === 'paid';
