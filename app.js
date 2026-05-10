@@ -22,7 +22,7 @@ const APP_CONFIG = {
   ratePerUnit: 3,
   serviceFee: 0,
 
-  apiUrl: 'https://script.google.com/macros/s/AKfycbwDYBiYgoew9Cq1o6J0tSjO5Or8oWgUPqcswr6h0n3HDj76SVRKwRx8tlaxMw8k-a-b/exec',
+  apiUrl: 'https://script.google.com/macros/s/AKfycbzLmhwutAmGQzCVPmXY34Q82gO_k69xChPO8ahqi7p7Jg3VPwZ7hqyaqEmVVBpm_O_j-g/exec',
 };
 
 // คงชื่อตัวแปรเดิมไว้ เพื่อไม่ต้องแก้โค้ดทั้งไฟล์
@@ -48,11 +48,6 @@ let shareRecoveryTimer = null;
 let currentReceiptReadingId = '';
 let bprintFallbackTimer = null;
 
-const VALID_USERS = [
-  { username: 'admin', password: 'water12345', displayName: 'ผู้ดูแลระบบ' },
-  { username: 'staff1', password: 'staff12345',      displayName: 'เจ้าหน้าที่1' },
-  { username: 'staff2', password: 'staff12345',      displayName: 'เจ้าหน้าที่2' },
-];
 
 /* ── State ── */
 let state = {
@@ -261,14 +256,14 @@ function autoLogoutDueToIdle() {
   try { cancelLogout(); } catch (e) {}
 
   // ใช้ระบบ logout เดิม
-  confirmLogout();
+  confirmLogout('auto_logout');
 
   // แจ้งเหตุผลบนหน้า login
   showLoginError('ออกจากระบบอัตโนมัติ เนื่องจากไม่ได้ใช้งานเกิน 10 นาที');
 }
 
 function isAdminUser() {
-  return state.currentUser?.username === 'admin';
+  return state.currentUser?.role === 'admin' || state.currentUser?.username === 'admin';
 }
 
 function updateAdminVisibility() {
@@ -293,23 +288,130 @@ function togglePassword() {
   dom.eyeIconHide.style.display = isPass ? '' : 'none';
 }
 
-function handleLogin() {
+function createRequestId(action) {
+  const user = state.currentUser?.username || 'unknown';
+  const ts = Date.now();
+  const rand = Math.random().toString(36).slice(2, 10);
+  return `${action}-${user}-${ts}-${rand}`;
+}
+
+function logReceiptPrintAction(printAction, extra = {}) {
+  if (!currentReceiptReadingId) return;
+
+  postApi({
+    action: 'logReceiptPrint',
+    request_id: createRequestId(printAction),
+    print_action: printAction,
+    reading_id: currentReceiptReadingId,
+    actor_username: state.currentUser?.username || '',
+    actor_display_name: state.currentUser?.displayName || '',
+    device: isAndroidDevice()
+      ? 'android'
+      : isIOSDevice()
+        ? 'ios'
+        : 'desktop',
+    user_agent: navigator.userAgent || '',
+    ...extra
+  }).catch(err => {
+    console.warn('[receipt print log failed]', err);
+  });
+}
+
+async function postApi(payload) {
+  const res = await fetch(API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify(payload)
+  });
+
+  const json = await res.json();
+
+  if (!json || json.ok !== true) {
+    throw new Error((json && json.error) || 'เชื่อมต่อระบบไม่สำเร็จ');
+  }
+
+  return json;
+}
+
+function logLogoutToBackend(reason = 'logout', userSnapshot = null) {
+  const user = userSnapshot || state.currentUser;
+  if (!user) return;
+
+  postApi({
+    action: 'logout',
+    username: user.username || '',
+    displayName: user.displayName || user.display_name || '',
+    reason: reason
+  }).catch(err => {
+    console.warn('[logout log failed]', err);
+  });
+}
+
+async function handleLogin() {
   const username = dom.loginUsername.value.trim();
   const password = dom.loginPassword.value;
-  if (!username || !password) { showLoginError('กรุณากรอกชื่อผู้ใช้และรหัสผ่าน'); return; }
 
-  const user = VALID_USERS.find(u => u.username === username && u.password === password);
-  if (!user) {
-    showLoginError('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง');
-    dom.loginBtnLabel.textContent = 'ไม่ถูกต้อง';
-    setTimeout(() => { dom.loginBtnLabel.textContent = 'เข้าสู่ระบบ'; }, 1500);
+  if (!username || !password) {
+    showLoginError('กรุณากรอกชื่อผู้ใช้และรหัสผ่าน');
     return;
   }
 
   dom.loginError.style.display = 'none';
-  state.currentUser = { username: user.username, displayName: user.displayName };
-  if (rememberMe) { try { localStorage.setItem(SESSION_KEY, JSON.stringify(state.currentUser)); } catch (e) {} }
-  enterApp(user.displayName);
+
+  if (dom.loginBtn) dom.loginBtn.disabled = true;
+  if (dom.loginBtnLabel) dom.loginBtnLabel.textContent = 'กำลังตรวจสอบ...';
+
+  try {
+    const json = await postApi({
+      action: 'login',
+      username: username,
+      password: password
+    });
+
+    const user = json.user || {};
+
+    if (!user.username || !user.displayName) {
+      throw new Error('ข้อมูลผู้ใช้งานไม่สมบูรณ์');
+    }
+
+    state.currentUser = {
+      username: user.username,
+      displayName: user.displayName,
+      role: user.role || 'staff'
+    };
+
+    if (rememberMe) {
+      try {
+        localStorage.setItem(SESSION_KEY, JSON.stringify(state.currentUser));
+      } catch (e) {}
+    } else {
+      try {
+        localStorage.removeItem(SESSION_KEY);
+      } catch (e) {}
+    }
+
+    dom.loginPassword.value = '';
+    dom.loginError.style.display = 'none';
+
+    enterApp(user.displayName);
+
+  } catch (err) {
+    showLoginError(err.message || 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง');
+
+    if (dom.loginBtnLabel) {
+      dom.loginBtnLabel.textContent = 'ไม่ถูกต้อง';
+      setTimeout(() => {
+        if (dom.loginBtnLabel) dom.loginBtnLabel.textContent = 'เข้าสู่ระบบ';
+      }, 1500);
+    }
+
+  } finally {
+    if (dom.loginBtn) dom.loginBtn.disabled = false;
+
+    if (dom.loginBtnLabel && dom.loginBtnLabel.textContent === 'กำลังตรวจสอบ...') {
+      dom.loginBtnLabel.textContent = 'เข้าสู่ระบบ';
+    }
+  }
 }
 
 function showLoginError(msg) {
@@ -318,12 +420,23 @@ function showLoginError(msg) {
 }
 
 function applyNavAvatarRole() {
-  const u = state.currentUser?.username || '';
+  const username = state.currentUser?.username || '';
+  const role = state.currentUser?.role || '';
+
   if (!dom.navAvatar) return;
+
   dom.navAvatar.classList.remove('role-admin', 'role-staff', 'role-default');
-  if (u === 'admin') { dom.navAvatar.textContent = 'A'; dom.navAvatar.classList.add('role-admin'); }
-  else if (u === 'staff') { dom.navAvatar.textContent = 'S'; dom.navAvatar.classList.add('role-staff'); }
-  else { dom.navAvatar.textContent = 'U'; dom.navAvatar.classList.add('role-default'); }
+
+  if (role === 'admin' || username === 'admin') {
+    dom.navAvatar.textContent = 'A';
+    dom.navAvatar.classList.add('role-admin');
+  } else if (role === 'staff' || username.startsWith('staff')) {
+    dom.navAvatar.textContent = 'S';
+    dom.navAvatar.classList.add('role-staff');
+  } else {
+    dom.navAvatar.textContent = 'U';
+    dom.navAvatar.classList.add('role-default');
+  }
 }
 
 function enterApp(displayName) {
@@ -365,52 +478,72 @@ function cancelLogout() {
   document.body.style.overflow = '';
 }
 
-function confirmLogout() {
+function confirmLogout(reason = 'logout') {
   clearTimeout(idleTimer);
   idleTimer = null;
 
+  const userBeforeLogout = state.currentUser
+    ? { ...state.currentUser }
+    : null;
+
+  logLogoutToBackend(reason, userBeforeLogout);
+
   try { localStorage.removeItem(SESSION_KEY); } catch (e) {}
   try { sessionStorage.removeItem(BOOTSTRAP_CACHE_KEY); } catch (e) {}
+
   state.currentUser = null;
   cancelLogout();
 
   dom.appScreen.style.display  = 'none';
   dom.loginScreen.style.opacity = '0';
   dom.loginScreen.style.display = 'flex';
+
   requestAnimationFrame(() => {
     dom.loginScreen.style.transition = 'opacity 0.35s';
     dom.loginScreen.style.opacity    = '1';
   });
+
   dom.loginUsername.value = '';
   dom.loginPassword.value = '';
   dom.loginError.style.display = 'none';
+
   rememberMe = false;
   dom.rememberToggle.classList.remove('on');
+
   if (dom.navAvatar) {
     dom.navAvatar.textContent = 'A';
     dom.navAvatar.classList.remove('role-admin', 'role-staff', 'role-default');
   }
 
   if (dom.summaryBtn) {
-  dom.summaryBtn.style.display = 'none';
+    dom.summaryBtn.style.display = 'none';
   }
 }
 
 function checkSavedSession() {
   try {
     const saved = localStorage.getItem(SESSION_KEY);
+
     if (saved) {
       const user = JSON.parse(saved);
+
       if (user && user.displayName) {
-        state.currentUser = user;
-        dom.loginUsername.value = user.username || '';
+        state.currentUser = {
+          username: user.username || '',
+          displayName: user.displayName || user.display_name || '',
+          role: user.role || (user.username === 'admin' ? 'admin' : 'staff')
+        };
+
+        dom.loginUsername.value = state.currentUser.username || '';
         rememberMe = true;
         dom.rememberToggle.classList.add('on');
-        enterApp(user.displayName);
+
+        enterApp(state.currentUser.displayName);
         return true;
       }
     }
   } catch (e) {}
+
   return false;
 }
 
@@ -1013,6 +1146,9 @@ async function handleSave() {
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify({
         action: 'saveReading',
+        request_id: createRequestId('saveReading'),
+        actor_username: state.currentUser?.username || '',
+        actor_display_name: state.currentUser?.displayName || 'เจ้าหน้าที่',
         house_id: house.id,
         meter_key: meter.meterKey || meter.id || 'meter1',
         current_reading: curr,
@@ -1496,6 +1632,10 @@ async function submitEditPayment(newStatus) {
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify({
         action: 'updatePaymentStatus',
+        request_id: createRequestId('updatePaymentStatus'),
+        actor_username: state.currentUser?.username || '',
+        actor_display_name: state.currentUser?.displayName || 'เจ้าหน้าที่',
+
         reading_id: item.reading_id,
 
         current_reading: readingPayload.current_reading,
@@ -2517,6 +2657,8 @@ function printReceiptAndroidByWebPrint() {
     return;
   }
 
+  logReceiptPrintAction('printReceipt_android_html4');
+
   const responseUrl = buildAndroidBluetoothPrintResponseUrl(currentReceiptReadingId);
   openBluetoothPrintScheme(responseUrl);
 }
@@ -2531,6 +2673,10 @@ function printReceipt() {
     printReceiptAndroidByWebPrint();
     return;
   }
+
+  logReceiptPrintAction(
+    isIOSDevice() ? 'printReceipt_ios_bprint' : 'printReceipt_browser_or_bprint'
+  );
 
   const responseUrl = buildBluetoothPrintResponseUrl(currentReceiptReadingId);
 
@@ -2875,6 +3021,10 @@ async function saveReceiptImage() {
         text: 'รูปใบเสร็จค่าน้ำประปา'
       });
 
+      logReceiptPrintAction('saveReceiptImage_share', {
+        file_name: fileName
+      });
+
       recoverAfterShareImage();
       return;
     }
@@ -2885,6 +3035,10 @@ async function saveReceiptImage() {
     document.body.appendChild(a);
     a.click();
     a.remove();
+
+    logReceiptPrintAction('saveReceiptImage_download', {
+      file_name: fileName
+    });
 
     recoverAfterShareImage();
 
