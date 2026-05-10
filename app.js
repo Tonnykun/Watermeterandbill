@@ -23,6 +23,8 @@ const APP_CONFIG = {
   serviceFee: 0,
 
   apiUrl: 'https://script.google.com/macros/s/AKfycbzLmhwutAmGQzCVPmXY34Q82gO_k69xChPO8ahqi7p7Jg3VPwZ7hqyaqEmVVBpm_O_j-g/exec',
+  bprintEdgeUrl: 'https://wmmubmjfejtqdkqggzkp.supabase.co/functions/v1/receipt-print',
+  bprintToken: 'water-print-2026-paipai-8-21234',
 };
 
 // คงชื่อตัวแปรเดิมไว้ เพื่อไม่ต้องแก้โค้ดทั้งไฟล์
@@ -2279,26 +2281,40 @@ function isAndroidDevice() {
   return /Android/i.test(navigator.userAgent);
 }
 
-function buildBluetoothPrintResponseUrl(readingId) {
+function buildBprintEdgeResponseUrl(readingId, mode = '') {
   const id = String(readingId || '').trim();
 
   if (!id) {
     return '';
   }
 
-  return `${API_URL}?action=bprintReceipt&reading_id=${encodeURIComponent(id)}`;
+  const baseUrl = String(APP_CONFIG.bprintEdgeUrl || '').trim();
+  const token = String(APP_CONFIG.bprintToken || '').trim();
+
+  if (!baseUrl || !token) {
+    return '';
+  }
+
+  const params = new URLSearchParams({
+    reading_id: id,
+    token: token
+  });
+
+  if (mode) {
+    params.set('mode', mode);
+  }
+
+  return `${baseUrl}?${params.toString()}`;
+}
+
+function buildBluetoothPrintResponseUrl(readingId) {
+  return buildBprintEdgeResponseUrl(readingId, 'html4');
 }
 
 function buildAndroidBluetoothPrintResponseUrl(readingId) {
-  const id = String(readingId || '').trim();
-
-  if (!id) {
-    return '';
-  }
-
-  // ของ Android เท่านั้น
-  return `${API_URL}?action=bprintReceipt&reading_id=${encodeURIComponent(id)}&mode=html4`;
+  return buildBprintEdgeResponseUrl(readingId, 'html4');
 }
+
 
 function closeReceiptPopupAfterExternalPrint() {
   document.body.classList.remove('printing-receipt');
