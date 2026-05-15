@@ -312,7 +312,38 @@ async function getBootstrapData() {
       addr: String(h.address || "").trim(),
       meters: metersByHouse[h.house_id] || [],
     }))
-    .filter((h: JsonMap) => h.id && h.num && h.name && h.meters.length > 0);
+    .filter((h: JsonMap) => h.id && h.num && h.name && h.meters.length > 0)
+    .sort(compareHouseNoNatural);
+}
+
+function getHouseSortParts(value: unknown) {
+  const text = String(value || '').trim();
+  const match = text.match(/d+/);
+
+  return {
+    number: match ? Number(match[0]) : Number.MAX_SAFE_INTEGER,
+    suffix: match ? text.slice((match.index || 0) + match[0].length) : text,
+    text,
+  };
+}
+
+function compareHouseNoNatural(a: JsonMap, b: JsonMap) {
+  const aa = getHouseSortParts(a?.num || a?.house_no || a);
+  const bb = getHouseSortParts(b?.num || b?.house_no || b);
+
+  if (aa.number !== bb.number) return aa.number - bb.number;
+
+  const suffixCompare = aa.suffix.localeCompare(bb.suffix, 'th', {
+    numeric: true,
+    sensitivity: 'base',
+  });
+
+  if (suffixCompare !== 0) return suffixCompare;
+
+  return aa.text.localeCompare(bb.text, 'th', {
+    numeric: true,
+    sensitivity: 'base',
+  });
 }
 
 function buildMeterDesc(m: JsonMap) {
