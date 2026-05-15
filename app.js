@@ -657,6 +657,36 @@ function getPendingMeterLabelsForHouse(house) {
     .map(meter => meters.length > 1 ? meter.shortLabel : '');
 }
 
+function getHouseSortParts(value) {
+  const text = String(value || '').trim();
+  const match = text.match(/d+/);
+
+  return {
+    number: match ? Number(match[0]) : Number.MAX_SAFE_INTEGER,
+    suffix: match ? text.slice(match.index + match[0].length) : text,
+    text
+  };
+}
+
+function compareHouseNoNatural(a, b) {
+  const aa = getHouseSortParts(a?.num || a?.house_no || a);
+  const bb = getHouseSortParts(b?.num || b?.house_no || b);
+
+  if (aa.number !== bb.number) return aa.number - bb.number;
+
+  const suffixCompare = aa.suffix.localeCompare(bb.suffix, 'th', {
+    numeric: true,
+    sensitivity: 'base'
+  });
+
+  if (suffixCompare !== 0) return suffixCompare;
+
+  return aa.text.localeCompare(bb.text, 'th', {
+    numeric: true,
+    sensitivity: 'base'
+  });
+}
+
 /* ════════════════════════════════
    DROPDOWN
 ════════════════════════════════ */
@@ -664,7 +694,7 @@ function renderList(query = '') {
   const q = query.trim().toLowerCase();
   const filtered = HOUSES.filter(h =>
     (h.num || '').toLowerCase().includes(q) || (h.name || '').toLowerCase().includes(q)
-  );
+  ).sort(compareHouseNoNatural);
   if (filtered.length === 0) {
     dom.dropdownList.innerHTML = `<li class="dropdown-empty">ไม่พบข้อมูล</li>`;
     return;
