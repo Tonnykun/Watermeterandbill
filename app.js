@@ -22,13 +22,15 @@ const APP_CONFIG = {
   ratePerUnit: 3,
   serviceFee: 0,
 
-  apiUrl: 'https://script.google.com/macros/s/AKfycbzLmhwutAmGQzCVPmXY34Q82gO_k69xChPO8ahqi7p7Jg3VPwZ7hqyaqEmVVBpm_O_j-g/exec',
+  apiUrl: 'https://wmmubmjfejtqdkqggzkp.supabase.co/functions/v1/water-meter-api',
+  apiToken: '',
   bprintEdgeUrl: 'https://wmmubmjfejtqdkqggzkp.supabase.co/functions/v1/receipt-print',
   bprintToken: 'water-print-2026-paipai-8-21234',
 };
 
 // คงชื่อตัวแปรเดิมไว้ เพื่อไม่ต้องแก้โค้ดทั้งไฟล์
 const API_URL             = APP_CONFIG.apiUrl;
+const API_TOKEN           = APP_CONFIG.apiToken || '';
 const RATE_PER_UNIT       = APP_CONFIG.ratePerUnit;
 const SERVICE_FEE         = APP_CONFIG.serviceFee;
 const ZERO_USAGE_SERVICE_FEE = 10;
@@ -72,6 +74,50 @@ let state = {
 let historyLoaded = false;
 let rememberMe    = false;
 let dom           = {};
+
+function buildApiHeaders(extra = {}) {
+  const headers = {
+    ...extra
+  };
+
+  if (API_TOKEN) {
+    headers.Authorization = `Bearer ${API_TOKEN}`;
+  }
+
+  return headers;
+}
+
+async function apiFetch(url, options = {}) {
+  const res = await fetch(url, {
+    ...options,
+    headers: buildApiHeaders(options.headers || {})
+  });
+
+  const json = await res.json();
+
+  if (!json || json.ok !== true) {
+    throw new Error((json && json.error) || 'เชื่อมต่อระบบไม่สำเร็จ');
+  }
+
+  return json;
+}
+
+function apiUrl(action, params = {}) {
+  const url = new URL(API_URL);
+  url.searchParams.set('action', action);
+
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== '') {
+      url.searchParams.set(key, value);
+    }
+  });
+
+  return url.toString();
+}
+
+async function apiGet(action, params = {}) {
+  return apiFetch(apiUrl(action, params));
+}
 
 /* ════════════════════════════════
    DOM REFS
@@ -320,19 +366,11 @@ function logReceiptPrintAction(printAction, extra = {}) {
 }
 
 async function postApi(payload) {
-  const res = await fetch(API_URL, {
+  return apiFetch(API_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload)
   });
-
-  const json = await res.json();
-
-  if (!json || json.ok !== true) {
-    throw new Error((json && json.error) || 'เชื่อมต่อระบบไม่สำเร็จ');
-  }
-
-  return json;
 }
 
 function logLogoutToBackend(reason = 'logout', userSnapshot = null) {
@@ -1143,29 +1181,23 @@ async function handleSave() {
   dom.saveBtn.disabled = true; dom.errorBox.style.display = 'none';
 
   try {
-    const res  = await fetch(API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({
-        action: 'saveReading',
-        request_id: createRequestId('saveReading'),
-        actor_username: state.currentUser?.username || '',
-        actor_display_name: state.currentUser?.displayName || 'เจ้าหน้าที่',
-        house_id: house.id,
-        meter_key: meter.meterKey || meter.id || 'meter1',
-        current_reading: curr,
-        rate_per_unit: costs.ratePerUnit,
-        units_used: costs.units,
-        water_cost: costs.waterCost,
-        service_fee: costs.serviceFee,
-        total_amount: costs.totalAmount,
-        payment_status: state.paymentStatus,
-        payment_method: isPaid ? state.paymentMethod : '',
-        reader_name: state.currentUser?.displayName || 'เจ้าหน้าที่',
-      })
+    const json = await postApi({
+      action: 'saveReading',
+      request_id: createRequestId('saveReading'),
+      actor_username: state.currentUser?.username || '',
+      actor_display_name: state.currentUser?.displayName || 'เจ้าหน้าที่',
+      house_id: house.id,
+      meter_key: meter.meterKey || meter.id || 'meter1',
+      current_reading: curr,
+      rate_per_unit: costs.ratePerUnit,
+      units_used: costs.units,
+      water_cost: costs.waterCost,
+      service_fee: costs.serviceFee,
+      total_amount: costs.totalAmount,
+      payment_status: state.paymentStatus,
+      payment_method: isPaid ? state.paymentMethod : '',
+      reader_name: state.currentUser?.displayName || 'เจ้าหน้าที่',
     });
-    const json = await res.json();
-    if (!json.ok) throw new Error(json.error || 'บันทึกไม่สำเร็จ');
 
     const saved = {
       ...json.data,
@@ -1174,26 +1206,20 @@ async function handleSave() {
       water_cost: json.data?.water_cost ?? costs.waterCost,
       service_fee: json.data?.service_fee ?? costs.serviceFee,
       total_amount: json.data?.total_amount ?? costs.totalAmount,
+      payment_method: json.data?.payment_method ?? (isPaid ? state.paymentMethod : ''),
     };
 
     meter.rate_per_unit = saved.rate_per_unit;
+    meter.prev = curr;
+    meter.prevDate = saved.read_date || saved.created_at || new Date().toISOString();
 
-    // Reload history first, then refresh stat
-    await loadHistory(true);
-    refreshStatBar();
+    populateReceipt(house, meter, saved);
+    setTimeout(() => openSheet(), 180);
 
-    // ใช้ข้อมูลเต็มจากประวัติย้อนหลัง ถ้ามี
-    const fullItem = state.historyItems.find(item =>
-      String(item.reading_id || '') === String(saved.reading_id || '')
-    );
-
-    if (fullItem) {
-      openReceiptFromHistoryItem(fullItem, 600);
-    } else {
-      // fallback เผื่อ history ยังโหลดไม่ทัน
-      populateReceipt(house, meter, saved);
-      setTimeout(() => openSheet(), 600);
-    }
+    historyLoaded = false;
+    loadHistory(true)
+      .then(() => refreshStatBar())
+      .catch(err => console.warn('[refresh history after save]', err));
 
     if (isPaid) {
       showToast('บันทึก + ออกใบเสร็จสำเร็จ!');
@@ -1204,7 +1230,6 @@ async function handleSave() {
     dom.errorText.textContent = err.message || 'เกิดข้อผิดพลาด'; dom.errorBox.style.display = 'flex';
   } finally { dom.saveBtn.disabled = false; }
 }
-
 function openSheet() {
   dom.sheetOverlay.classList.add('show');
   dom.receiptSheet.classList.add('open');
@@ -1239,9 +1264,7 @@ async function loadHistory(force = false) {
 
   try {
     dom.historySummary.textContent = 'กำลังโหลดข้อมูล...';
-    const res = await fetch(`${API_URL}?action=history&month=${state.selectedMonth}&limit=1000`);
-    const json = await res.json();
-    if (!json.ok) throw new Error(json.error || 'โหลดประวัติไม่สำเร็จ');
+    const json = await apiGet('history', { month: state.selectedMonth, limit: 1000 });
 
     state.historyItems = Array.isArray(json.items) ? json.items : [];
     historyLoaded = true;
@@ -1629,32 +1652,25 @@ async function submitEditPayment(newStatus) {
 
   try {
     const readingPayload = getEditReadingPayload();
-    const res = await fetch(API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({
-        action: 'updatePaymentStatus',
-        request_id: createRequestId('updatePaymentStatus'),
-        actor_username: state.currentUser?.username || '',
-        actor_display_name: state.currentUser?.displayName || 'เจ้าหน้าที่',
+    const json = await postApi({
+      action: 'updatePaymentStatus',
+      request_id: createRequestId('updatePaymentStatus'),
+      actor_username: state.currentUser?.username || '',
+      actor_display_name: state.currentUser?.displayName || 'เจ้าหน้าที่',
 
-        reading_id: item.reading_id,
+      reading_id: item.reading_id,
 
-        current_reading: readingPayload.current_reading,
-        units_used: readingPayload.units_used,
-        rate_per_unit: readingPayload.rate_per_unit,
-        water_cost: readingPayload.water_cost,
-        service_fee: readingPayload.service_fee,
-        total_amount: readingPayload.total_amount,
+      current_reading: readingPayload.current_reading,
+      units_used: readingPayload.units_used,
+      rate_per_unit: readingPayload.rate_per_unit,
+      water_cost: readingPayload.water_cost,
+      service_fee: readingPayload.service_fee,
+      total_amount: readingPayload.total_amount,
 
-        payment_status: newStatus,
-        payment_method: newStatus === 'paid' ? state.editingPaymentMethod : '',
-        editor_name: state.currentUser?.displayName || 'เจ้าหน้าที่',
-      })
+      payment_status: newStatus,
+      payment_method: newStatus === 'paid' ? state.editingPaymentMethod : '',
+      editor_name: state.currentUser?.displayName || 'เจ้าหน้าที่',
     });
-
-    const json = await res.json();
-    if (!json.ok) throw new Error(json.error || 'อัปเดตไม่สำเร็จ');
 
     const updatedData = json.data || {};
     Object.assign(item, updatedData);
@@ -1827,9 +1843,7 @@ async function loadBootstrap(force = false) {
       return;
     }
   }
-  const res  = await fetch(`${API_URL}?action=bootstrap`);
-  const json = await res.json();
-  if (!json.ok) throw new Error(json.error || 'โหลดข้อมูลไม่สำเร็จ');
+  const json = await apiGet('bootstrap');
   HOUSES = Array.isArray(json.houses) ? json.houses : [];
   HOUSE_MAP = new Map(HOUSES.map(h => [String(h.id), h]));
   saveBootstrapCache(HOUSES);
@@ -2808,12 +2822,7 @@ async function loadAdminSummary(force = false) {
 
     setSummaryLoading();
 
-    const res = await fetch(`${API_URL}?action=summary&month=${encodeURIComponent(month)}`);
-    const json = await res.json();
-
-    if (!json.ok) {
-      throw new Error(json.error || 'โหลดสรุปยอดไม่สำเร็จ');
-    }
+    const json = await apiGet('summary', { month });
 
     renderAdminSummary(json.summary || {});
 
