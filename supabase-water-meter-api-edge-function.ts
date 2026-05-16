@@ -378,7 +378,7 @@ async function getHistoryData(limit: number, month: string) {
       addr: String(row.house_address || row.address || ""),
       house_address: String(row.house_address || row.address || ""),
       receipt_meter_no: String(row.house_no || ""),
-      receipt_house_no: String(row.house_address || row.address || ""),
+      receipt_house_no: String(row.house_address || ""),
       meter_key: row.meter_key,
       meter_label: row.meter_label,
       meter_code: row.meter_code,
@@ -581,7 +581,7 @@ async function updatePaymentStatus(payload: JsonMap) {
     data: {
       ...updated,
       receipt_meter_no: updated.house_no || "",
-      receipt_house_no: updated.house_address || updated.address || "",
+      receipt_house_no: updated.house_address || "",
       address: updated.house_address || updated.address || "",
       addr: updated.house_address || updated.address || "",
     },
