@@ -1726,8 +1726,10 @@ async function submitEditPayment(newStatus) {
       };
 
       const receiptMeter = {
-        label: item.meter_label || item.meter_key || 'มิเตอร์ 1',
-      };
+    label: item.meter_label || item.meter_key || 'มิเตอร์ 1',
+    meter_code: item.meter_code || '',
+    meterKey: item.meter_key || '',
+  };
 
       const receiptSaved = {
         reading_id: item.reading_id || '',
@@ -1900,6 +1902,8 @@ function printUnpaidNoticeById(readingId) {
 
   const receiptMeter = {
     label: item.meter_label || item.meter_key || 'มิเตอร์ 1',
+    meter_code: item.meter_code || '',
+    meterKey: item.meter_key || '',
   };
 
   const receiptSaved = {
@@ -1937,6 +1941,8 @@ function openReceiptFromHistoryItem(item, delay = 180) {
 
   const receiptMeter = {
     label: item.meter_label || item.meter_key || 'มิเตอร์ 1',
+    meter_code: item.meter_code || '',
+    meterKey: item.meter_key || '',
   };
 
   const isUnpaid = item.payment_status === 'unpaid';
@@ -1994,6 +2000,8 @@ function openReceiptFromHistoryItem(item, delay = 180) {
 
   const receiptMeter = {
     label: item.meter_label || item.meter_key || 'มิเตอร์ 1',
+    meter_code: item.meter_code || '',
+    meterKey: item.meter_key || '',
   };
 
   const isUnpaid = item.payment_status === 'unpaid';
@@ -2166,22 +2174,24 @@ function populateReceipt(house, meter, saved) {
   setTextIfExists('rDate', `วันที่: ${formatDateTH(new Date(saved.read_date || saved.created_at || Date.now()))}`);
   setTextIfExists('rName', house.name || saved.owner_name || saved.name || '---');
   const receiptMeterNo =
+    saved.meter_code ||
+    saved.meter_no ||
+    meter.meter_code ||
+    meter.meterCode ||
+    meter.code ||
+    meter.meterKey ||
+    meter.id ||
+    meter.label ||
+    '---';
+
+  const receiptHouseNo =
     house.num ||
     saved.house_no ||
-    saved.meter_no ||
     saved.house_id ||
     '---';
 
-  const receiptHouseAddress =
-    house.addr ||
-    house.address ||
-    saved.addr ||
-    saved.address ||
-    saved.house_address ||
-    '---';
-
   setTextIfExists('rMeter', receiptMeterNo);
-  setTextIfExists('rAddr', receiptHouseAddress);
+  setTextIfExists('rAddr', receiptHouseNo);
   setTextIfExists('rMonth', formatMonthTH(new Date(saved.read_date || saved.created_at || Date.now())));
 
   setTextIfExists('rPrev', Number(saved.prev_reading || 0).toLocaleString());

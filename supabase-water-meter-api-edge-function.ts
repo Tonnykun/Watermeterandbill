@@ -290,6 +290,7 @@ async function getBootstrapData() {
     metersByHouse[houseId].push({
       id: String(m.meter_label || "").replace("มิเตอร์ ", "M") || "M1",
       meterKey: String(m.meter_key || "").trim(),
+      meter_code: String(m.meter_code || "").trim(),
       label: String(m.meter_label || "มิเตอร์ 1"),
       desc: buildMeterDesc(m),
       prev: Number(m.last_reading || 0),
