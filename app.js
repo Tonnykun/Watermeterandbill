@@ -1735,6 +1735,10 @@ async function submitEditPayment(newStatus) {
         reading_id: item.reading_id || '',
         receipt_no: item.receipt_no || item.reading_id || '---',
         read_date: item.read_date || item.created_at || new Date().toISOString(),
+        receipt_meter_no: item.house_no || '',
+        receipt_house_no: item.house_address || item.addr || item.address || '',
+        house_no: item.house_no || '',
+        house_address: item.house_address || item.addr || item.address || '',
         payment_status: newStatus,
         prev_reading: Number(item.prev_reading || 0),
         current_reading: Number(item.current_reading || 0),
@@ -1910,6 +1914,10 @@ function printUnpaidNoticeById(readingId) {
     receipt_no: item.receipt_no || item.reading_id || '---',
     reading_id: item.reading_id || '',
     read_date: item.read_date || new Date().toISOString(),
+    receipt_meter_no: item.house_no || '',
+    receipt_house_no: item.house_address || item.addr || item.address || '',
+    house_no: item.house_no || '',
+    house_address: item.house_address || item.addr || item.address || '',
     payment_status: 'unpaid',
     prev_reading: item.prev_reading,
     current_reading: item.current_reading,
@@ -1951,7 +1959,11 @@ function openReceiptFromHistoryItem(item, delay = 180) {
     reading_id: item.reading_id || '',
     receipt_no: item.receipt_no || item.reading_id || '---',
     read_date: item.read_date || item.created_at || new Date().toISOString(),
-    payment_status: isUnpaid ? 'unpaid' : 'paid',
+        receipt_meter_no: item.house_no || '',
+        receipt_house_no: item.house_address || item.addr || item.address || '',
+        house_no: item.house_no || '',
+        house_address: item.house_address || item.addr || item.address || '',
+        payment_status: isUnpaid ? 'unpaid' : 'paid',
     payment_method: item.payment_method || '',
     prev_reading: Number(item.prev_reading || 0),
     current_reading: Number(item.current_reading || 0),
@@ -2010,7 +2022,11 @@ function openReceiptFromHistoryItem(item, delay = 180) {
     reading_id: item.reading_id || '',
     receipt_no: item.receipt_no || item.reading_id || '---',
     read_date: item.read_date || item.created_at || new Date().toISOString(),
-    payment_status: isUnpaid ? 'unpaid' : 'paid',
+        receipt_meter_no: item.house_no || '',
+        receipt_house_no: item.house_address || item.addr || item.address || '',
+        house_no: item.house_no || '',
+        house_address: item.house_address || item.addr || item.address || '',
+        payment_status: isUnpaid ? 'unpaid' : 'paid',
     prev_reading: Number(item.prev_reading || 0),
     current_reading: Number(item.current_reading || 0),
     units_used: Number(item.units_used || 0),
@@ -2174,12 +2190,14 @@ function populateReceipt(house, meter, saved) {
   setTextIfExists('rDate', `วันที่: ${formatDateTH(new Date(saved.read_date || saved.created_at || Date.now()))}`);
   setTextIfExists('rName', house.name || saved.owner_name || saved.name || '---');
   const receiptMeterNo =
+    saved.receipt_meter_no ||
     house.num ||
     saved.house_no ||
     saved.house_id ||
     '---';
 
   const receiptHouseNo =
+    saved.receipt_house_no ||
     saved.house_address ||
     saved.addr ||
     saved.address ||
