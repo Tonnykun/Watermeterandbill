@@ -2199,10 +2199,6 @@ function populateReceipt(house, meter, saved) {
   const receiptHouseNo =
     saved.receipt_house_no ||
     saved.house_address ||
-    saved.addr ||
-    saved.address ||
-    house.addr ||
-    house.address ||
     '---';
 
   setTextIfExists('rMeter', receiptMeterNo);
