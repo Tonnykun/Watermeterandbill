@@ -2174,20 +2174,17 @@ function populateReceipt(house, meter, saved) {
   setTextIfExists('rDate', `วันที่: ${formatDateTH(new Date(saved.read_date || saved.created_at || Date.now()))}`);
   setTextIfExists('rName', house.name || saved.owner_name || saved.name || '---');
   const receiptMeterNo =
-    saved.meter_code ||
-    saved.meter_no ||
-    meter.meter_code ||
-    meter.meterCode ||
-    meter.code ||
-    meter.meterKey ||
-    meter.id ||
-    meter.label ||
-    '---';
-
-  const receiptHouseNo =
     house.num ||
     saved.house_no ||
     saved.house_id ||
+    '---';
+
+  const receiptHouseNo =
+    saved.house_address ||
+    saved.addr ||
+    saved.address ||
+    house.addr ||
+    house.address ||
     '---';
 
   setTextIfExists('rMeter', receiptMeterNo);
