@@ -72,6 +72,7 @@ let state = {
 };
 
 let historyLoaded = false;
+let historyLoadedMonth = '';
 let rememberMe    = false;
 let dom           = {};
 
@@ -232,11 +233,12 @@ function buildMonthOptions() {
 
 function onMonthChange() {
   state.selectedMonth = dom.monthSelect.value;
+  historyLoaded = false;
+  historyLoadedMonth = '';
+  state.historyItems = [];
   refreshStatBar();
-  // If history is open, re-render
-  if (dom.historySheet.classList.contains('open')) {
-    renderHistoryList(dom.historySearchInput.value);
-  }
+
+  loadHistory(true).catch(err => console.warn('[load history after month change]', err));
 }
 
 /* ════════════════════════════════
@@ -1287,30 +1289,36 @@ function showToast(msg = 'บันทึกสำเร็จ!') {
    HISTORY  (updated)
 ════════════════════════════════ */
 async function loadHistory(force = false) {
-  if (historyLoaded && !force) {
+  const month = state.selectedMonth || '';
+
+  if (historyLoaded && historyLoadedMonth === month && !force) {
     renderHistoryList(dom.historySearchInput.value);
     return;
   }
 
   try {
     dom.historySummary.textContent = 'กำลังโหลดข้อมูล...';
-    const json = await apiGet('history', { month: state.selectedMonth, limit: 1000 });
+    const json = await apiGet('history', { month, limit: 1000 });
+
+    if (month !== (state.selectedMonth || '')) return;
 
     state.historyItems = Array.isArray(json.items) ? json.items : [];
     historyLoaded = true;
+    historyLoadedMonth = month;
     refreshStatBar();
     renderHistoryList(dom.historySearchInput.value);
 
   } catch (err) {
     state.historyItems = [];
     historyLoaded = false;
+    historyLoadedMonth = '';
     refreshStatBar();
     dom.historySummary.textContent = 'โหลดข้อมูลไม่สำเร็จ';
     dom.historyList.innerHTML = `<div class="history-empty">${err.message || 'เกิดข้อผิดพลาด'}</div>`;
   }
 }
 
-function refreshHistory() { historyLoaded = false; loadHistory(true); }
+function refreshHistory() { historyLoaded = false; historyLoadedMonth = ''; loadHistory(true); }
 
 function getHistoryDate(item) {
   if (!item) return null;
@@ -1323,6 +1331,10 @@ function getHistoryDate(item) {
 }
 
 function getHistoryYM(item) {
+  if (item?.read_month) {
+    return String(item.read_month).slice(0, 7);
+  }
+
   const d = getHistoryDate(item);
   if (!d) return '';
 
